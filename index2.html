@@ -54,7 +54,7 @@
       background: #1a0505;
       color: var(--text);
       padding: 18px;
-      overflow-x: hidden;
+      overflow: hidden;
     }
 
     /* Balatro-style deep red ambient glow */
@@ -372,11 +372,9 @@
 
     .main {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(320px, 1fr) minmax(280px, 380px);
       gap: 16px;
     }
-
-    .log-panel { display: none !important; }
 
     .board-panel,
     .log-panel {
