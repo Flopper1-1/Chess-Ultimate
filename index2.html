@@ -372,9 +372,11 @@
 
     .main {
       display: grid;
-      grid-template-columns: minmax(320px, 1fr) minmax(280px, 380px);
+      grid-template-columns: 1fr;
       gap: 16px;
     }
+
+    .log-panel { display: none !important; }
 
     .board-panel,
     .log-panel {
@@ -3585,11 +3587,13 @@
 
     let _musicEnabled = true;
     function toggleMusic(force) {
-      _musicEnabled = force !== undefined ? force : !_musicEnabled;
+      if (force === undefined) _musicEnabled = !_musicEnabled;
+      else _musicEnabled = force;
       const btn = document.getElementById("musicToggleBtn");
       if (_musicEnabled) {
+        stopBackgroundMusic();
         resumeAudio();
-        getMasterGain(); /* ensure gain tree exists */
+        getMasterGain();
         startBackgroundMusic();
         _musicFadeIn();
         if (btn) { btn.textContent = "♪ Music"; btn.classList.remove("music-off"); }
@@ -8704,20 +8708,11 @@
 
     /* ── Music toggle button ── */
     document.getElementById("musicToggleBtn").addEventListener("click", (e) => {
-      e.stopPropagation(); /* prevent bubbling to onFirstInteraction */
+      e.stopPropagation();
       resumeAudio();
       getMasterGain();
       if (!_introPlayed) { _introPlayed = true; synthIntroSting(); }
-      if (!_bgMusic) {
-        /* First press: music was never started — start it */
-        _musicEnabled = true;
-        startBackgroundMusic();
-        _musicFadeIn();
-        const btn = document.getElementById("musicToggleBtn");
-        if (btn) { btn.textContent = "♪ Music"; btn.classList.remove("music-off"); }
-      } else {
-        toggleMusic();
-      }
+      toggleMusic();
     });
 
     /* ── Music volume slider ── */
@@ -8759,7 +8754,7 @@
       } catch(e) {}
     }
 
-    /* ── Start music on first user interaction (non-button clicks / keyboard) ── */
+    /* ── Start music on first user interaction ── */
     let _introPlayed = false;
     function onFirstInteraction() {
       resumeAudio();
@@ -8767,17 +8762,16 @@
       if (!_introPlayed) {
         _introPlayed = true;
         synthIntroSting();
-        /* start music automatically on first non-button interaction */
         if (_musicEnabled && !_bgMusic) {
           startBackgroundMusic();
           _musicFadeIn();
         }
       }
-      document.removeEventListener("click", onFirstInteraction);
-      document.removeEventListener("keydown", onFirstInteraction);
+      document.removeEventListener("click", onFirstInteraction, true);
+      document.removeEventListener("keydown", onFirstInteraction, true);
     }
-    document.addEventListener("click", onFirstInteraction);
-    document.addEventListener("keydown", onFirstInteraction);
+    document.addEventListener("click", onFirstInteraction, true);
+    document.addEventListener("keydown", onFirstInteraction, true);
 
     p2pInitUI();
     startNewGame();

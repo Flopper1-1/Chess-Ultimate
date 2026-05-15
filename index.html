@@ -345,9 +345,11 @@
 
     .main {
       display: grid;
-      grid-template-columns: minmax(320px, 1fr) minmax(280px, 380px);
+      grid-template-columns: 1fr;
       gap: 16px;
     }
+
+    .log-panel { display: none !important; }
 
     .board-panel,
     .log-panel {
@@ -3060,9 +3062,11 @@
 
     let _musicEnabled = true;
     function toggleMusic(force) {
-      _musicEnabled = force !== undefined ? force : !_musicEnabled;
+      if (force === undefined) _musicEnabled = !_musicEnabled;
+      else _musicEnabled = force;
       const btn = document.getElementById("musicToggleBtn");
       if (_musicEnabled) {
+        stopBackgroundMusic();
         resumeAudio();
         getMasterGain();
         startBackgroundMusic();
@@ -7159,15 +7163,7 @@
       resumeAudio();
       getMasterGain();
       if (!_introPlayed) { _introPlayed = true; synthIntroSting(); }
-      if (!_bgMusic) {
-        _musicEnabled = true;
-        startBackgroundMusic();
-        _musicFadeIn();
-        const btn = document.getElementById("musicToggleBtn");
-        if (btn) { btn.textContent = "♪ Music"; btn.classList.remove("music-off"); }
-      } else {
-        toggleMusic();
-      }
+      toggleMusic();
     });
 
     /* ── Music volume slider ── */
@@ -7177,7 +7173,7 @@
       e.target.style.background = `linear-gradient(90deg, #38bdf8 ${e.target.value}%, rgba(30,50,90,0.6) ${e.target.value}%)`;
     });
 
-    /* ── Start music on first non-button interaction ── */
+    /* ── Start music on first interaction ── */
     let _introPlayed = false;
     function onFirstInteraction() {
       resumeAudio();
@@ -7190,11 +7186,11 @@
           _musicFadeIn();
         }
       }
-      document.removeEventListener("click", onFirstInteraction);
-      document.removeEventListener("keydown", onFirstInteraction);
+      document.removeEventListener("click", onFirstInteraction, true);
+      document.removeEventListener("keydown", onFirstInteraction, true);
     }
-    document.addEventListener("click", onFirstInteraction);
-    document.addEventListener("keydown", onFirstInteraction);
+    document.addEventListener("click", onFirstInteraction, true);
+    document.addEventListener("keydown", onFirstInteraction, true);
 
     p2pInitUI();
     startNewGame();
