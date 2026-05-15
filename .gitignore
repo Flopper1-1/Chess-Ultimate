@@ -5,6 +5,7 @@ build-out/
 *.mp3
 *.wav
 *.ogg
+*.zip
 .DS_Store
 Thumbs.db
 AGENTS.md
