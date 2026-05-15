@@ -445,8 +445,10 @@
         0 0 80px rgba(200,80,20,0.12),
         0 0 var(--music-board-size) rgba(245,200,66,var(--music-board-alpha));
       position: relative;
-      transition: box-shadow 0.2s ease;
-      animation: boardBeat 652ms ease-in-out infinite; /* 92 BPM */
+      transition: box-shadow 0.2s cubic-bezier(0,0,0.2,1);
+      animation: boardBeat 652ms ease-in-out infinite;
+      transform: translateZ(0);
+      will-change: transform, box-shadow;
     }
 
     .board::after {
@@ -561,7 +563,8 @@
       place-items: center;
       font-family: "Noto Sans Symbols 2", "Segoe UI Symbol", sans-serif;
       user-select: none;
-      transition: transform 0.08s ease;
+      transition: transform 0.08s cubic-bezier(0,0,0.2,1);
+      will-change: transform;
     }
 
     .square:active {
@@ -775,12 +778,14 @@
     /* Piece colour tinting */
     .piece-glyph.white-piece {
       filter: drop-shadow(0 2px 6px rgba(0,0,0,0.9)) drop-shadow(0 0 12px rgba(245,200,66,0.7)) drop-shadow(0 0 24px rgba(245,200,66,0.25));
-      transition: filter 0.15s ease;
+      transition: filter 0.15s cubic-bezier(0,0,0.2,1);
+      will-change: filter;
     }
 
     .piece-glyph.black-piece {
       filter: drop-shadow(0 2px 6px rgba(0,0,0,0.95)) drop-shadow(0 0 10px rgba(180,30,10,0.75)) drop-shadow(0 0 22px rgba(180,30,10,0.3));
-      transition: filter 0.15s ease;
+      transition: filter 0.15s cubic-bezier(0,0,0.2,1);
+      will-change: filter;
     }
 
     .square:hover .piece-glyph.white-piece {
@@ -1500,7 +1505,28 @@
       border: 1px solid rgba(180,80,20,0.35);
       border-radius: 10px;
       background: rgba(25,4,4,0.7);
+      scroll-behavior: smooth;
     }
+
+    /* Joker's Gambit — deep red/gold casino scrollbar */
+    .move-table-wrap::-webkit-scrollbar {
+      width: 7px;
+    }
+    .move-table-wrap::-webkit-scrollbar-track {
+      background: rgba(20,4,4,0.85);
+      border-radius: 6px;
+    }
+    .move-table-wrap::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #c8960c 0%, #8b1a1a 50%, #c8960c 100%);
+      border-radius: 6px;
+      border: 1px solid rgba(200,150,12,0.3);
+      box-shadow: inset 0 1px 0 rgba(255,220,80,0.2), 0 0 8px rgba(200,140,0,0.35);
+    }
+    .move-table-wrap::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #f0b429 0%, #c02020 50%, #f0b429 100%);
+      box-shadow: 0 0 12px rgba(220,160,0,0.7);
+    }
+    .move-table-wrap { scrollbar-width: thin; scrollbar-color: #8b1a1a rgba(20,4,4,0.85); }
 
     table {
       width: 100%;
