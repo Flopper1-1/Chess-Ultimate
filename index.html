@@ -46,12 +46,13 @@
 
     body {
       margin: 0;
-      height: 100vh;
+      min-height: 100vh;
       font-family: "Segoe UI", "Trebuchet MS", "Verdana", sans-serif;
       background: linear-gradient(140deg, #0c1628 0%, #0f172a 45%, #1a2540 100%);
       color: var(--text);
       padding: 10px;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
       display: flex;
       flex-direction: column;
     }
@@ -101,7 +102,7 @@
       flex-direction: column;
       gap: 8px;
       flex: 1;
-      min-height: 0;
+      min-height: calc(100vh - 20px);
     }
 
     .title {
@@ -355,7 +356,7 @@
       grid-template-columns: minmax(320px, 1fr) minmax(260px, 340px);
       gap: 8px;
       flex: 1;
-      min-height: 0;
+      min-height: 600px;
     }
 
     .board-panel {
@@ -364,8 +365,8 @@
       border-radius: 10px;
       padding: 10px;
       backdrop-filter: blur(5px);
-      min-height: 0;
-      overflow: hidden;
+      min-height: 400px;
+      overflow: visible;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -377,8 +378,10 @@
       border-radius: 10px;
       padding: 10px;
       backdrop-filter: blur(5px);
-      min-height: 0;
+      min-height: 400px;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     .status {
@@ -453,6 +456,14 @@
       animation: musicEventBloom 0.9s cubic-bezier(0.16,1,0.3,1) forwards;
     }
 
+    /* ── Planning mode: arrows + square highlights ── */
+    #planOverlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+      overflow: visible;
+    }
     /* Four-player 14×14 board */
     .board.board-4p {
       --tile4: clamp(22px, 4.2vw, 48px);
@@ -535,6 +546,36 @@
       user-select: none;
       transition: transform 0.08s cubic-bezier(0,0,0.2,1);
       will-change: transform;
+    }
+
+    /* Wii-glove cursor: open hand on pieces, default on empty */
+    .square.has-own-piece {
+      cursor: grab;
+    }
+    .square.has-own-piece:active {
+      cursor: grabbing;
+    }
+    body.dragging-piece {
+      cursor: grabbing !important;
+    }
+    body.dragging-piece * {
+      cursor: grabbing !important;
+    }
+
+    /* Floating drag ghost */
+    #dragGhost {
+      position: fixed;
+      pointer-events: none;
+      z-index: 99998;
+      display: none;
+      transform: translate(-50%, -50%) scale(1.55);
+      filter: drop-shadow(0 6px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 14px rgba(56,189,248,0.8));
+      font-size: calc(var(--tile-size) * 0.64);
+      font-family: "Noto Sans Symbols 2", "Segoe UI Symbol", sans-serif;
+      transition: filter 0.1s;
+    }
+    #dragGhost.active {
+      display: block;
     }
 
     .square:active {
@@ -1889,7 +1930,9 @@
             </div>
           </aside>
           <div class="board-wrap">
-            <div class="board" id="board" aria-label="Chess board"></div>
+            <div class="board" id="board" aria-label="Chess board">
+              <svg id="planOverlay" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+            </div>
             <div class="bughouse-wrap" id="bughouseWrap" style="display:none;"></div>
           </div>
         </div>
@@ -1926,10 +1969,14 @@
         <div class="legend">
           <div><b>Symbols:</b> <b>!!</b> brilliant, <b>!</b> strong, <b>?!</b> inaccuracy, <b>?</b> mistake, <b>??</b> blunder.</div>
           <div>Annotations are estimated by comparing the played move to the engine's best candidate at the current analysis depth.</div>
+          <div style="margin-top:6px;"><b>Plan:</b> Right-click drag = arrow &nbsp;|&nbsp; Right-click square = highlight &nbsp;|&nbsp; Shift+drag/click same. Left-click clears.</div>
         </div>
       </aside>
     </section>
   </div>
+
+  <!-- Drag ghost for Wii-glove piece dragging -->
+  <div id="dragGhost" aria-hidden="true"></div>
 
   <!-- Promotion picker modal -->
   <div id="promotionModal" class="hidden" role="dialog" aria-modal="true" aria-label="Choose promotion piece">
@@ -4536,6 +4583,9 @@
           const wSpan = document.createElement("span");
           wSpan.className = "piece-weapon";
           wSpan.textContent = weapon;
+          // Randomised negative delay so weapons look like they're already mid-animation
+          // rather than all snapping to frame-0 every time the board re-renders.
+          wSpan.style.animationDelay = `-${(Math.random() * 3).toFixed(2)}s`;
           span.appendChild(wSpan);
         }
       }
@@ -6172,7 +6222,9 @@
       ui.board.classList.add("board-4p");
       document.getElementById("bughouseWrap").style.display = "none";
       ui.board.style.display = "grid";
+      const _fpOverlay = document.getElementById("planOverlay");
       ui.board.innerHTML = "";
+      if (_fpOverlay) ui.board.appendChild(_fpOverlay);
       const legalMoves = game.generateLegalMoves();
       state.lastLegalMoves = legalMoves;
       const selected = state.selectedSquare;
@@ -6223,7 +6275,9 @@
 
     function renderBughouseBoards(game) {
       ui.board.style.display = "none";
+      const _bhOverlay = document.getElementById("planOverlay");
       ui.board.innerHTML = "";
+      if (_bhOverlay) ui.board.appendChild(_bhOverlay);
       const wrap = document.getElementById("bughouseWrap");
       wrap.style.display = "flex";
       wrap.innerHTML = "";
@@ -6437,10 +6491,12 @@
     function renderBoard() {
       const game = state.game;
       if (!game) {
+        const _ngOverlay = document.getElementById("planOverlay");
         ui.board.innerHTML = "";
         ui.board.classList.remove("board-4p");
         ui.board.style.display = "grid";
         document.getElementById("bughouseWrap").style.display = "none";
+        if (_ngOverlay) ui.board.appendChild(_ngOverlay);
         return;
       }
 
@@ -6461,7 +6517,10 @@
 
       const board = game.position.board;
       const orientation = state.orientation;
+      // Preserve the planning overlay SVG before wiping children
+      const planOverlay = document.getElementById("planOverlay");
       ui.board.innerHTML = "";
+      if (planOverlay) ui.board.appendChild(planOverlay);
       const visibilityColor = activeHumanColor();
       const fogVisible = isVariant("fog_of_war") ? visibleSquaresForColor(game, visibilityColor) : null;
 
@@ -6517,6 +6576,10 @@
               badgeSpan.style.setProperty("--badge-color", badge.tone);
               square.appendChild(badgeSpan);
             }
+
+            if (colorOf(piece) === visibilityColor) {
+              square.classList.add("has-own-piece");
+            }
           }
 
           if ((orientation === "w" && boardRank === 7) || (orientation === "b" && boardRank === 0) || (orientation === "w" && boardFile === 0) || (orientation === "b" && boardFile === 7)) {
@@ -6527,9 +6590,12 @@
           }
 
           square.addEventListener("click", onSquareClick);
+          square.addEventListener("pointerdown", onSquarePointerDown);
           ui.board.appendChild(square);
         }
       }
+      // Re-draw planning arrows/highlights over the refreshed board
+      if (typeof planRenderOverlay === "function") planRenderOverlay();
     }
 
     function renderMoveLog() {
@@ -6859,7 +6925,300 @@
       }
     }
 
+    /* ══════════════════════════════════════════════════════════
+       CHESS.COM PLANNING MODE
+       Right-click drag or Shift+drag → arrow
+       Right-click single square or Shift+click → highlight
+       Any normal move clears all plans
+    ══════════════════════════════════════════════════════════ */
+    const PLAN_COLORS = ["green", "red", "blue", "yellow"];
+    const plan = {
+      highlights: new Map(), // squareIndex → colorName
+      arrows: [],            // [{from, to, color}]
+      dragFrom: -1,
+      dragColor: "green",
+      active: false
+    };
+
+    function planSquareCenter(idx) {
+      const tileSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tile-size")) || 64;
+      const orientation = state.orientation;
+      // Convert board index → display row/col
+      const rank = Math.floor(idx / 8);
+      const file = idx % 8;
+      const displayCol = orientation === "w" ? file         : 7 - file;
+      const displayRow = orientation === "w" ? 7 - rank     : rank;
+      return {
+        x: (displayCol + 0.5) * tileSize,
+        y: (displayRow + 0.5) * tileSize
+      };
+    }
+
+    function planRenderOverlay() {
+      const svg = document.getElementById("planOverlay");
+      if (!svg) return;
+      const tileSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tile-size")) || 64;
+      const boardSize = tileSize * 8;
+      svg.setAttribute("width",  boardSize);
+      svg.setAttribute("height", boardSize);
+      svg.setAttribute("viewBox", `0 0 ${boardSize} ${boardSize}`);
+      svg.innerHTML = "";
+
+      // Defs for arrowhead markers per colour
+      const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+      const colorMap = { green: "#22c55e", red: "#ef4444", blue: "#3b82f6", yellow: "#facc15" };
+      for (const [name, hex] of Object.entries(colorMap)) {
+        const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+        marker.setAttribute("id", `arrowhead-${name}`);
+        marker.setAttribute("markerWidth", "4");
+        marker.setAttribute("markerHeight", "4");
+        marker.setAttribute("refX", "2");
+        marker.setAttribute("refY", "2");
+        marker.setAttribute("orient", "auto");
+        const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        poly.setAttribute("points", "0 0, 4 2, 0 4");
+        poly.setAttribute("fill", hex);
+        marker.appendChild(poly);
+        defs.appendChild(marker);
+      }
+      svg.appendChild(defs);
+
+      // Square highlights
+      for (const [idx, color] of plan.highlights) {
+        const orientation = state.orientation;
+        const rank = Math.floor(idx / 8);
+        const file = idx % 8;
+        const displayCol = orientation === "w" ? file     : 7 - file;
+        const displayRow = orientation === "w" ? 7 - rank : rank;
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", displayCol * tileSize);
+        rect.setAttribute("y", displayRow * tileSize);
+        rect.setAttribute("width",  tileSize);
+        rect.setAttribute("height", tileSize);
+        rect.setAttribute("fill", colorMap[color] || colorMap.green);
+        rect.setAttribute("opacity", "0.45");
+        svg.appendChild(rect);
+      }
+
+      // Arrows
+      const strokeW = Math.max(4, tileSize * 0.12);
+      for (const arrow of plan.arrows) {
+        const from = planSquareCenter(arrow.from);
+        const to   = planSquareCenter(arrow.to);
+        if (arrow.from === arrow.to) continue;
+        // Shorten the line so the arrowhead sits on the square
+        const dx = to.x - from.x, dy = to.y - from.y;
+        const len = Math.hypot(dx, dy);
+        const nx = dx / len, ny = dy / len;
+        const toX = to.x - nx * strokeW * 1.5;
+        const toY = to.y - ny * strokeW * 1.5;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", from.x);
+        line.setAttribute("y1", from.y);
+        line.setAttribute("x2", toX);
+        line.setAttribute("y2", toY);
+        line.setAttribute("stroke", colorMap[arrow.color] || colorMap.green);
+        line.setAttribute("stroke-width", strokeW);
+        line.setAttribute("stroke-linecap", "round");
+        line.setAttribute("opacity", "0.82");
+        line.setAttribute("marker-end", `url(#arrowhead-${arrow.color})`);
+        svg.appendChild(line);
+      }
+    }
+
+    function planClear() {
+      plan.highlights.clear();
+      plan.arrows = [];
+      planRenderOverlay();
+    }
+
+    function planGetSquareAtPoint(x, y) {
+      const el = document.elementFromPoint(x, y);
+      const sq = el && el.closest(".square[data-index]");
+      return sq ? Number(sq.dataset.index) : -1;
+    }
+
+    // Right-click and Shift interactions on the board
+    ui.board.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      plan.active = false; // no drag context-menu
+    });
+
+    ui.board.addEventListener("mousedown", (e) => {
+      const isRightClick = e.button === 2;
+      const isShift = e.button === 0 && e.shiftKey;
+      if (!isRightClick && !isShift) return;
+      e.preventDefault();
+      const sq = e.target.closest(".square[data-index]");
+      if (!sq) return;
+      plan.dragFrom = Number(sq.dataset.index);
+      plan.dragColor = "green";
+      plan.active = true;
+    });
+
+    ui.board.addEventListener("mouseup", (e) => {
+      const isRightClick = e.button === 2;
+      const isShift = e.button === 0 && e.shiftKey;
+      if (!plan.active) return;
+      if (!isRightClick && !isShift) return;
+      e.preventDefault();
+      const sq = e.target.closest(".square[data-index]");
+      const toIdx = sq ? Number(sq.dataset.index) : -1;
+      const fromIdx = plan.dragFrom;
+      plan.active = false;
+      plan.dragFrom = -1;
+
+      if (fromIdx < 0) return;
+      if (toIdx < 0 || toIdx === fromIdx) {
+        // Highlight the square
+        const key = fromIdx;
+        if (plan.highlights.has(key)) {
+          plan.highlights.delete(key);
+        } else {
+          plan.highlights.set(key, plan.dragColor);
+        }
+      } else {
+        // Arrow from → to; toggle if already present
+        const existing = plan.arrows.findIndex((a) => a.from === fromIdx && a.to === toIdx);
+        if (existing >= 0) {
+          plan.arrows.splice(existing, 1);
+        } else {
+          plan.arrows.push({ from: fromIdx, to: toIdx, color: plan.dragColor });
+        }
+      }
+      planRenderOverlay();
+    });
+
+    /* ══════════════════════════════════════════════════════════
+       WII-GLOVE DRAG SYSTEM
+       Pointerdown on a piece → float it under cursor → pointerup on target square
+    ══════════════════════════════════════════════════════════ */
+    const drag = {
+      active: false,
+      fromIndex: -1,
+      ghost: document.getElementById("dragGhost"),
+      startX: 0,
+      startY: 0,
+      moved: false
+    };
+
+    function onSquarePointerDown(e) {
+      if (e.button !== 0) return; // left-button only
+      const square = e.currentTarget;
+      const idx = Number(square.dataset.index);
+      const game = state.game;
+      if (!game || game.isGameOver() || state.botThinking || state.moveInFlight) return;
+      if (isBughouseVariant() || isFourPlayerVariant()) return;
+      if (isP2PMode() && !p2p.ready) return;
+      const humanColor = activeHumanColor();
+      if (game.position.turn !== humanColor) return;
+      if (isP2PMode() && game.position.turn !== p2p.localColor) return;
+
+      const piece = game.position.board[idx];
+      if (!piece || colorOf(piece) !== humanColor) return;
+
+      e.preventDefault();
+      drag.active = true;
+      drag.fromIndex = idx;
+      drag.startX = e.clientX;
+      drag.startY = e.clientY;
+      drag.moved = false;
+
+      // Build ghost content matching the piece
+      const glyph = square.querySelector(".piece-glyph");
+      drag.ghost.innerHTML = glyph ? glyph.innerHTML : (PIECE_TO_UNICODE[piece] || piece);
+      drag.ghost.style.left = e.clientX + "px";
+      drag.ghost.style.top  = e.clientY + "px";
+
+      document.body.classList.add("dragging-piece");
+      document.addEventListener("pointermove", onDragMove, { passive: false });
+      document.addEventListener("pointerup",   onDragEnd);
+    }
+
+    function onDragMove(e) {
+      if (!drag.active) return;
+      e.preventDefault();
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (!drag.moved && Math.hypot(dx, dy) > 5) {
+        drag.moved = true;
+        drag.ghost.classList.add("active");
+        // Select the from-square so legal moves show
+        state.selectedSquare = drag.fromIndex;
+        state.selectedDropPiece = null;
+        renderBoard();
+        renderReservePanel();
+        // Hide the static piece on the origin square so only the ghost shows
+        const originSq = ui.board.querySelector(`.square[data-index='${drag.fromIndex}']`);
+        if (originSq) {
+          const glyph = originSq.querySelector(".piece-glyph");
+          if (glyph) glyph.style.opacity = "0";
+        }
+      }
+      if (drag.moved) {
+        drag.ghost.style.left = e.clientX + "px";
+        drag.ghost.style.top  = e.clientY + "px";
+      }
+    }
+
+    function onDragEnd(e) {
+      document.removeEventListener("pointermove", onDragMove);
+      document.removeEventListener("pointerup",   onDragEnd);
+      document.body.classList.remove("dragging-piece");
+      drag.ghost.classList.remove("active");
+      drag.ghost.innerHTML = "";
+
+      if (!drag.active) return;
+      drag.active = false;
+
+      if (!drag.moved) {
+        // Treat as a click (select/deselect)
+        return;
+      }
+
+      // Find which square the pointer is over
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const squareEl = el && el.closest(".square[data-index]");
+      if (!squareEl) {
+        state.selectedSquare = null;
+        state.selectedDropPiece = null;
+        renderBoard();
+        renderReservePanel();
+        return;
+      }
+
+      const toIndex = Number(squareEl.dataset.index);
+      const game = state.game;
+      if (!game) return;
+      const legalFromSelected = state.lastLegalMoves.filter(
+        (mv) => mv.from === drag.fromIndex && mv.to === toIndex
+      );
+
+      if (legalFromSelected.length > 0) {
+        const hasPromotion = legalFromSelected.some((mv) => mv.promotion);
+        if (hasPromotion) {
+          state.selectedSquare = null;
+          showPromotionPicker(legalFromSelected, (chosenPiece) => {
+            const move = legalFromSelected.find((mv) => mv.promotion && mv.promotion.toLowerCase() === chosenPiece) || legalFromSelected[0];
+            playHumanMove(move);
+          });
+          return;
+        }
+        state.selectedSquare = null;
+        playHumanMove(legalFromSelected[0]);
+      } else {
+        // Dropped on invalid square — just deselect
+        state.selectedSquare = null;
+        state.selectedDropPiece = null;
+        renderBoard();
+        renderReservePanel();
+      }
+    }
+
     function onSquareClick(event) {
+      // Left-click (non-shift) clears any planning annotations
+      if (!event.shiftKey && event.button === 0) planClear();
+
       const targetIndex = Number(event.currentTarget.dataset.index);
       const game = state.game;
 
@@ -6990,6 +7349,9 @@
     async function applyAnnotatedMove(move, annotation, color, actor, liveLabel) {
       const game = state.game;
       if (!game) return;
+
+      // Clear planning arrows/highlights on every real move
+      planClear();
 
       state.moveInFlight = true;
       try {
@@ -7457,6 +7819,8 @@
         const availW = panelW - PANEL_PAD_H;
         const tile = Math.max(30, Math.min(72, Math.floor(Math.min(availH, availW) / 8)));
         root.style.setProperty("--tile-size", tile + "px");
+        // Reflow planning overlay when board resizes
+        if (typeof planRenderOverlay === "function") planRenderOverlay();
       }
 
       const ro = new ResizeObserver(fitBoard);
