@@ -1,77 +1,40 @@
-# Building Chess Ultimate
+# Building & Releasing Chess Ultimate
 
-## Prerequisites
-
-- [Node.js](https://nodejs.org) v18 or later (includes npm)
-- Windows 10/11 (for building the Windows exe)
-
-## Setup
-
-Clone the repo and install dependencies:
+## Build
 
 ```bash
-git clone https://github.com/Flopper1-1/Chess-Ultimate.git
-cd Chess-Ultimate
 npm install
-```
-
-## Run from source (no build needed)
-
-```bash
-npm start
-```
-
-This opens the launcher directly. No internet required, no build step.
-
-## Build the exe
-
-```bash
 npm run build
 ```
 
-This does three things automatically:
-1. Packages the app with `@electron/packager`
-2. Strips all non-English locales (~48MB saved)
-3. Removes the Chromium license HTML (~20MB saved)
+Output: `build-out/ChessUltimate-win32-x64/`
 
-Output is at:
-```
-build-out/ChessUltimate-win32-x64/ChessUltimate.exe
-```
+The build script (`build-strip.js`) runs automatically after packaging and:
+- Strips all non-English locales (~48MB saved)
+- Removes `LICENSES.chromium.html` (~20MB saved)
 
-The folder contains everything needed — just zip it and share, or run the exe directly.
+## Release to GitHub
 
-## Expected sizes
+```powershell
+# Zip the build (PowerShell)
+Compress-Archive -Path build-out\ChessUltimate-win32-x64\* -DestinationPath ChessUltimate-v1.x.x-win64.zip
 
-| Item | Size |
-|------|------|
-| Full build folder | ~300MB |
-| Zipped for distribution | ~220MB |
+# Create release (requires gh CLI — https://cli.github.com)
+gh release create v1.x.x ChessUltimate-v1.x.x-win64.zip --title "Chess Ultimate v1.x.x" --notes "What changed"
 
-The size is normal — Electron bundles its own copy of Chromium (same as VS Code, Discord, Slack).
-
-## Releasing to GitHub
-
-After building:
-
-```bash
-# zip the build
-Compress-Archive -Path build-out\ChessUltimate-win32-x64\* -DestinationPath ChessUltimate-v1.0.x-win64.zip
-
-# create GitHub release (requires gh CLI — https://cli.github.com)
-gh release create v1.0.x ChessUltimate-v1.0.x-win64.zip --title "Chess Ultimate v1.0.x" --notes "Release notes here"
+# Clean up zip locally (gitignored but no need to keep it)
+del ChessUltimate-v1.x.x-win64.zip
 ```
 
-Then delete the local zip (it's gitignored but no need to keep it):
-```bash
-del ChessUltimate-v1.0.x-win64.zip
-```
+## What's gitignored
 
-## What NOT to commit
-
-The `.gitignore` already excludes these — just be aware:
-- `node_modules/` — reinstall with `npm install`
-- `build-out/` and `dist-pkg/` — regenerate with `npm run build`
-- `*.zip` — upload to GitHub Releases, don't commit
-- `*.mp3` / `*.wav` — no audio files in this project (all sound is synthesized)
-- `AGENTS.md` — local AI context file, not for the repo
+| Path | Reason |
+|------|--------|
+| `node_modules/` | Reinstall with `npm install` |
+| `build-out/` | Regenerate with `npm run build` |
+| `dist-pkg/` | Old build folder |
+| `*.zip` | Upload to Releases, don't commit |
+| `*.mp3`, `*.wav`, `*.ogg` | No audio files — all sound is synthesized |
+| `.vscode/` | Editor config |
+| `AGENTS.md` | Local AI context, not for the repo |
+| `build-strip.js` | Dev build tool |
