@@ -1,0 +1,40 @@
+{
+  "name": "chess-ultimate",
+  "version": "1.0.0",
+  "description": "Chess Ultimate — Battle Edition & Joker's Gambit",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.chessultimate.app",
+    "productName": "Chess Ultimate",
+    "files": [
+      "main.js",
+      "preload.js",
+      "launcher.html",
+      "index.html",
+      "index2.html",
+      "*.mp3",
+      "*.wav"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "icon.ico"
+    },
+    "portable": {
+      "artifactName": "ChessUltimate.exe"
+    }
+  },
+  "dependencies": {
+    "@breezystack/lamejs": "^1.2.7",
+    "lamejs": "^1.2.1",
+    "node-lame": "^2.0.2"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.0.0",
+    "electron": "^42.1.0",
+    "electron-builder": "^26.8.1"
+  }
+}

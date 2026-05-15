@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chess Ultimate — Launcher</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #07050f;
+    color: #fff;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
+  }
+  /* Frameless drag region */
+  .titlebar {
+    position: fixed; top: 0; left: 0; right: 0; height: 36px;
+    -webkit-app-region: drag;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding: 0 8px;
+  }
+  .titlebar-btn {
+    -webkit-app-region: no-drag;
+    width: 28px; height: 28px; border-radius: 50%;
+    border: none; cursor: pointer; font-size: 0.8rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .titlebar-close { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+  .titlebar-close:hover { background: #e81123; color: #fff; }
+
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  .glow-orb {
+    position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0;
+  }
+  .glow-orb.blue  { width: 500px; height: 500px; background: rgba(56,189,248,0.12); top: -100px; right: -100px; }
+  .glow-orb.gold  { width: 400px; height: 400px; background: rgba(245,200,66,0.1);  bottom: -80px; left: -80px; }
+
+  .content {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 48px;
+  }
+
+  .logo {
+    text-align: center;
+  }
+  .logo h1 {
+    font-size: 3rem; font-weight: 900; letter-spacing: 0.08em;
+    background: linear-gradient(135deg, #fff 0%, #a0aec0 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-transform: uppercase;
+  }
+  .logo p {
+    font-size: 0.95rem; color: rgba(255,255,255,0.35);
+    letter-spacing: 0.25em; text-transform: uppercase; margin-top: 8px;
+  }
+
+  .cards {
+    display: flex; gap: 32px;
+  }
+
+  .card {
+    width: 280px; border-radius: 20px; padding: 40px 32px;
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+    cursor: pointer; border: 1px solid transparent;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative; overflow: hidden;
+  }
+  .card:hover {
+    transform: translateY(-6px);
+  }
+
+  .card.battle {
+    background: linear-gradient(160deg, rgba(15,25,50,0.95), rgba(8,15,35,0.98));
+    border-color: rgba(56,189,248,0.25);
+    box-shadow: 0 8px 40px rgba(56,189,248,0.08);
+  }
+  .card.battle:hover {
+    border-color: rgba(56,189,248,0.6);
+    box-shadow: 0 16px 60px rgba(56,189,248,0.2);
+  }
+
+  .card.balatro {
+    background: linear-gradient(160deg, rgba(40,10,10,0.95), rgba(20,5,5,0.98));
+    border-color: rgba(245,200,66,0.2);
+    box-shadow: 0 8px 40px rgba(245,200,66,0.06);
+  }
+  .card.balatro:hover {
+    border-color: rgba(245,200,66,0.55);
+    box-shadow: 0 16px 60px rgba(245,200,66,0.18);
+  }
+
+  .card-icon {
+    font-size: 3.5rem; line-height: 1;
+    filter: drop-shadow(0 0 16px currentColor);
+  }
+  .card.battle .card-icon { color: #38bdf8; }
+  .card.balatro .card-icon { color: #f5c842; }
+
+  .card-title {
+    font-size: 1.25rem; font-weight: 800;
+    letter-spacing: 0.04em; text-align: center;
+  }
+  .card.battle .card-title  { color: #e2f4ff; }
+  .card.balatro .card-title { color: #fdf6e3; }
+
+  .card-desc {
+    font-size: 0.82rem; color: rgba(255,255,255,0.4);
+    text-align: center; line-height: 1.6;
+  }
+
+  .card-btn {
+    margin-top: 8px;
+    padding: 10px 28px; border-radius: 9px; border: none;
+    font-size: 0.88rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .card-btn:hover { opacity: 0.85; }
+  .card.battle  .card-btn { background: #38bdf8; color: #020d1a; }
+  .card.balatro .card-btn { background: #f5c842; color: #1a0a00; }
+
+  .version {
+    position: fixed; bottom: 18px;
+    font-size: 0.72rem; color: rgba(255,255,255,0.18);
+    letter-spacing: 0.12em;
+  }
+
+  @keyframes floatCard { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+</style>
+</head>
+<body>
+<div class="titlebar">
+  <button class="titlebar-btn titlebar-close" id="btnClose" title="Close">✕</button>
+</div>
+<div class="bg-grid"></div>
+<div class="glow-orb blue"></div>
+<div class="glow-orb gold"></div>
+
+<div class="content">
+  <div class="logo">
+    <h1>Chess Ultimate</h1>
+    <p>Choose your battlefield</p>
+  </div>
+
+  <div class="cards">
+    <div class="card battle">
+      <div class="card-icon">⚔️</div>
+      <div class="card-title">Battle Edition</div>
+      <div class="card-desc">Classic chess with epic battle animations, SSB Brawl soundtrack, and full annotation engine.</div>
+      <button class="card-btn" id="btnBattle">Play</button>
+    </div>
+
+    <div class="card balatro">
+      <div class="card-icon">🃏</div>
+      <div class="card-title">Joker's Gambit</div>
+      <div class="card-desc">Balatro-themed chess with jazz soundtrack, card aesthetics, and poker-style piece flair.</div>
+      <button class="card-btn" id="btnBalatro">Play</button>
+    </div>
+  </div>
+</div>
+
+<div class="version">Chess Ultimate v1.0</div>
+
+<script>
+  function launchGame(file) {
+    if (window.electronAPI) window.electronAPI.openGame(file);
+  }
+  document.getElementById("btnBattle").addEventListener("click", () => launchGame("index.html"));
+  document.getElementById("btnBalatro").addEventListener("click", () => launchGame("index2.html"));
+  document.getElementById("btnClose").addEventListener("click", () => {
+    if (window.electronAPI) window.electronAPI.closeApp();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+node_modules/
+dist-pkg/
+*.log
+*.mp3
+*.wav
+*.ogg
+.DS_Store
+Thumbs.db
