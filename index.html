@@ -27,7 +27,7 @@
       --ann-inaccuracy: #f59e0b;
       --ann-mistake: #fb7185;
       --ann-blunder: #ef4444;
-      --tile-size: clamp(34px, 10vw, 78px);
+      --tile-size: clamp(30px, min(8.5vw, 9vh), 72px);
       --music-tension: 0;
       --music-board-alpha: 0.08;
       --music-board-size: 70px;
@@ -46,13 +46,14 @@
 
     body {
       margin: 0;
-      min-height: 100vh;
+      height: 100vh;
       font-family: "Segoe UI", "Trebuchet MS", "Verdana", sans-serif;
-      /* Static base — no animation on background, browser can't interpolate gradients */
       background: linear-gradient(140deg, #0c1628 0%, #0f172a 45%, #1a2540 100%);
       color: var(--text);
-      padding: 18px;
+      padding: 10px;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     /* Smooth ambient glow layer — opacity animation is GPU-composited and silky */
@@ -93,22 +94,27 @@
     }
 
     .app {
-      max-width: 1160px;
+      max-width: 1400px;
+      width: 100%;
       margin: 0 auto;
-      display: grid;
-      gap: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      min-height: 0;
     }
 
     .title {
       display: grid;
-      gap: 6px;
+      gap: 4px;
       background: var(--panel);
       border: 1px solid rgba(56,189,248,0.4);
-      border-radius: 14px;
-      padding: 16px;
+      border-radius: 10px;
+      padding: 8px 14px;
       backdrop-filter: blur(8px);
       box-shadow: 0 0 30px rgba(56,189,248,0.08), inset 0 1px 0 rgba(255,255,255,0.06);
       animation: borderPulse 2.4s ease-in-out infinite;
+      flex-shrink: 0;
     }
 
     .title-row {
@@ -183,13 +189,14 @@
     .controls {
       display: grid;
       grid-template-columns: 1fr auto;
-      gap: 14px;
+      gap: 10px;
       align-items: end;
       background: var(--panel);
       border: 1px solid var(--panel-border);
-      border-radius: 14px;
-      padding: 16px;
+      border-radius: 10px;
+      padding: 8px 14px;
       backdrop-filter: blur(5px);
+      flex-shrink: 0;
     }
 
     .control-grid {
@@ -345,17 +352,21 @@
 
     .main {
       display: grid;
-      grid-template-columns: minmax(320px, 1fr) minmax(280px, 380px);
-      gap: 16px;
+      grid-template-columns: minmax(320px, 1fr) minmax(260px, 340px);
+      gap: 8px;
+      flex: 1;
+      min-height: 0;
     }
 
     .board-panel,
     .log-panel {
       background: var(--panel);
       border: 1px solid var(--panel-border);
-      border-radius: 14px;
-      padding: 14px;
+      border-radius: 10px;
+      padding: 10px;
       backdrop-filter: blur(5px);
+      min-height: 0;
+      overflow: hidden;
     }
 
     .status {
@@ -1046,6 +1057,9 @@
     .board-wrap {
       display: flex;
       justify-content: center;
+      align-items: center;
+      flex: 1;
+      min-height: 0;
     }
 
     .accuracy-meter {
@@ -1447,14 +1461,21 @@
       50%       { opacity: 1;   transform: scaleY(1.04); }
     }
 
+    .log-panel {
+      display: flex;
+      flex-direction: column;
+    }
+
     .log-panel h2 {
-      margin: 0 0 10px;
-      font-size: 1.1rem;
+      margin: 0 0 6px;
+      font-size: 1rem;
+      flex-shrink: 0;
     }
 
     .move-table-wrap {
       overflow: auto;
-      max-height: 470px;
+      flex: 1;
+      min-height: 0;
       border: 1px solid rgba(148, 163, 184, 0.25);
       border-radius: 10px;
       background: rgba(15, 23, 42, 0.45);
@@ -3134,7 +3155,7 @@
         shelf.frequency.value = 3500;
         shelf.gain.value = 14;
         const clangGain = ctx.createGain();
-        clangGain.gain.setValueAtTime(0.7, t);
+        clangGain.gain.setValueAtTime(0.3, t);
         clangGain.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
         clang.connect(shelf); shelf.connect(clangGain); clangGain.connect(ctx.destination);
         clang.start(t); clang.stop(t + 0.35);
@@ -3145,7 +3166,7 @@
           const og = ctx.createGain();
           osc.type = "sawtooth";
           osc.frequency.value = freq + i * 7; /* tiny detune for thickness */
-          og.gain.setValueAtTime(0.18 - i * 0.04, t);
+          og.gain.setValueAtTime(0.08 - i * 0.02, t);
           og.gain.exponentialRampToValueAtTime(0.001, t + 0.45 - i * 0.06);
           const bp = ctx.createBiquadFilter();
           bp.type = "bandpass"; bp.frequency.value = freq; bp.Q.value = 4;
@@ -3159,7 +3180,7 @@
         thump.type = "sine";
         thump.frequency.setValueAtTime(200, t);
         thump.frequency.exponentialRampToValueAtTime(60, t + 0.08);
-        tg.gain.setValueAtTime(0.55, t);
+        tg.gain.setValueAtTime(0.22, t);
         tg.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
         thump.connect(tg); tg.connect(ctx.destination);
         thump.start(t); thump.stop(t + 0.12);

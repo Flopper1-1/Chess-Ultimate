@@ -29,7 +29,7 @@
       --ann-inaccuracy: #fb923c;
       --ann-mistake: #f87171;
       --ann-blunder: #ff4444;
-      --tile-size: clamp(34px, 10vw, 78px);
+      --tile-size: clamp(30px, min(8.5vw, 9vh), 72px);
       --card-radius: 14px;
       --gold: #f5c842;
       --red-deep: #8b0000;
@@ -49,12 +49,14 @@
 
     body {
       margin: 0;
-      min-height: 100vh;
+      height: 100vh;
       font-family: "IM Fell English", "Georgia", serif;
       background: #1a0505;
       color: var(--text);
-      padding: 18px;
+      padding: 10px;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
     /* Balatro-style deep red ambient glow */
@@ -90,19 +92,24 @@
     }
 
     .app {
-      max-width: 1160px;
+      max-width: 1400px;
+      width: 100%;
       margin: 0 auto;
-      display: grid;
-      gap: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      min-height: 0;
     }
 
     .title {
       display: grid;
-      gap: 6px;
+      gap: 4px;
       background: linear-gradient(160deg, rgba(80,15,10,0.95) 0%, rgba(40,8,8,0.95) 100%);
       border: 2px solid var(--gold);
-      border-radius: 18px;
-      padding: 18px 20px;
+      border-radius: 12px;
+      padding: 8px 14px;
+      flex-shrink: 0;
       backdrop-filter: blur(8px);
       box-shadow:
         0 0 40px rgba(200,80,20,0.25),
@@ -198,14 +205,15 @@
     .controls {
       display: grid;
       grid-template-columns: 1fr auto;
-      gap: 14px;
+      gap: 10px;
       align-items: end;
       background: linear-gradient(160deg, rgba(60,12,12,0.92) 0%, rgba(30,6,6,0.95) 100%);
       border: 2px solid rgba(180,80,20,0.45);
-      border-radius: 16px;
-      padding: 16px;
+      border-radius: 12px;
+      padding: 8px 14px;
       backdrop-filter: blur(6px);
       box-shadow: 0 4px 24px rgba(100,10,5,0.35), inset 0 1px 0 rgba(245,200,66,0.08);
+      flex-shrink: 0;
     }
 
     .control-grid {
@@ -372,19 +380,23 @@
 
     .main {
       display: grid;
-      grid-template-columns: minmax(320px, 1fr) minmax(280px, 380px);
-      gap: 16px;
+      grid-template-columns: minmax(320px, 1fr) minmax(260px, 340px);
+      gap: 8px;
+      flex: 1;
+      min-height: 0;
     }
 
     .board-panel,
     .log-panel {
       background: linear-gradient(160deg, rgba(50,10,10,0.92) 0%, rgba(25,5,5,0.96) 100%);
       border: 2px solid rgba(180,80,20,0.5);
-      border-radius: 18px;
-      padding: 14px;
+      border-radius: 12px;
+      padding: 10px;
       backdrop-filter: blur(6px);
       box-shadow: 0 6px 30px rgba(80,10,5,0.4), inset 0 1px 0 rgba(245,200,66,0.08);
       position: relative;
+      min-height: 0;
+      overflow: hidden;
     }
 
     /* Card corner ornaments */
@@ -1458,17 +1470,24 @@
       50%       { opacity: 1;   transform: scaleY(1.04); }
     }
 
+    .log-panel {
+      display: flex;
+      flex-direction: column;
+    }
+
     .log-panel h2 {
-      margin: 0 0 10px;
-      font-size: 1.1rem;
+      margin: 0 0 6px;
+      font-size: 1rem;
       font-family: "Cinzel", "Georgia", serif;
       color: var(--gold);
       letter-spacing: 0.08em;
+      flex-shrink: 0;
     }
 
     .move-table-wrap {
       overflow: auto;
-      max-height: 470px;
+      flex: 1;
+      min-height: 0;
       border: 1px solid rgba(180,80,20,0.35);
       border-radius: 10px;
       background: rgba(25,4,4,0.7);
@@ -3659,7 +3678,7 @@
         shelf.frequency.value = 3500;
         shelf.gain.value = 14;
         const clangGain = ctx.createGain();
-        clangGain.gain.setValueAtTime(0.7, t);
+        clangGain.gain.setValueAtTime(0.3, t);
         clangGain.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
         clang.connect(shelf); shelf.connect(clangGain); clangGain.connect(ctx.destination);
         clang.start(t); clang.stop(t + 0.35);
@@ -3669,8 +3688,8 @@
           const osc = ctx.createOscillator();
           const og = ctx.createGain();
           osc.type = "sawtooth";
-          osc.frequency.value = freq + i * 7; /* tiny detune for thickness */
-          og.gain.setValueAtTime(0.18 - i * 0.04, t);
+          osc.frequency.value = freq + i * 7;
+          og.gain.setValueAtTime(0.08 - i * 0.02, t);
           og.gain.exponentialRampToValueAtTime(0.001, t + 0.45 - i * 0.06);
           const bp = ctx.createBiquadFilter();
           bp.type = "bandpass"; bp.frequency.value = freq; bp.Q.value = 4;
@@ -3684,7 +3703,7 @@
         thump.type = "sine";
         thump.frequency.setValueAtTime(200, t);
         thump.frequency.exponentialRampToValueAtTime(60, t + 0.08);
-        tg.gain.setValueAtTime(0.55, t);
+        tg.gain.setValueAtTime(0.22, t);
         tg.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
         thump.connect(tg); tg.connect(ctx.destination);
         thump.start(t); thump.stop(t + 0.12);
