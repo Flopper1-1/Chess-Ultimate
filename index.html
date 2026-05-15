@@ -28,6 +28,16 @@
       --ann-mistake: #fb7185;
       --ann-blunder: #ef4444;
       --tile-size: clamp(34px, 10vw, 78px);
+      --music-tension: 0;
+      --music-board-alpha: 0.08;
+      --music-board-size: 70px;
+      --music-board-strong-size: 90px;
+      --music-bg-opacity: 0.72;
+      --music-bg-saturation: 1;
+      --music-bg-brightness: 1;
+      --music-hue: 0deg;
+      --music-event-glow: rgba(56,189,248,0);
+      --music-event-scale: 1;
     }
 
     * {
@@ -57,6 +67,12 @@
         radial-gradient(ellipse 45% 35% at 88% 5%,  rgba(56,189,248,0.18) 0%, transparent 100%),
         radial-gradient(ellipse 60% 30% at 50% 110%, rgba(56,189,248,0.10) 0%, transparent 100%);
       animation: bgBreath 6s ease-in-out infinite;
+      opacity: var(--music-bg-opacity);
+      filter:
+        saturate(var(--music-bg-saturation))
+        brightness(var(--music-bg-brightness))
+        hue-rotate(var(--music-hue));
+      transition: filter 0.25s ease, opacity 0.25s ease;
     }
 
     /* CRT scanlines — fixed to viewport, pointer-events off so it never blocks clicks */
@@ -370,10 +386,43 @@
       box-shadow:
         0 10px 40px rgba(2,8,23,0.65),
         0 0 0 1px rgba(56,189,248,0.18),
-        0 0 60px rgba(56,189,248,0.08);
+        0 0 60px rgba(56,189,248,0.08),
+        0 0 var(--music-board-size) rgba(56,189,248,var(--music-board-alpha));
       position: relative;
       transition: box-shadow 0.2s ease;
       animation: boardBeat 577ms ease-in-out infinite; /* 104 BPM */
+    }
+
+    .board::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 9;
+      pointer-events: none;
+      opacity: 0;
+      mix-blend-mode: screen;
+      background:
+        radial-gradient(circle at center, var(--music-event-glow) 0%, transparent 58%),
+        linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.12) 48%, transparent 78%);
+      transform: scale(var(--music-event-scale));
+    }
+
+    .board.music-move::after,
+    .board.music-castle::after {
+      animation: musicEventFlash 0.42s ease-out forwards;
+    }
+
+    .board.music-capture::after,
+    .board.music-check::after,
+    .board.music-blunder::after {
+      animation: musicEventFlash 0.62s cubic-bezier(0.16,1,0.3,1) forwards;
+    }
+
+    .board.music-brilliant::after,
+    .board.music-promotion::after,
+    .board.music-win::after,
+    .board.music-loss::after {
+      animation: musicEventBloom 0.9s cubic-bezier(0.16,1,0.3,1) forwards;
     }
 
     /* Four-player 14×14 board */
@@ -1263,6 +1312,19 @@
       100% { opacity: 0; transform: scale(1.04); }
     }
 
+    @keyframes musicEventFlash {
+      0% { opacity: 0; transform: scale(0.96); }
+      18% { opacity: 0.86; transform: scale(var(--music-event-scale)); }
+      100% { opacity: 0; transform: scale(1.08); }
+    }
+
+    @keyframes musicEventBloom {
+      0% { opacity: 0; transform: scale(0.9); }
+      24% { opacity: 0.95; transform: scale(var(--music-event-scale)); }
+      62% { opacity: 0.42; transform: scale(1.04); }
+      100% { opacity: 0; transform: scale(1.12); }
+    }
+
     @keyframes titleGlow {
       0%, 100% { filter: brightness(0.92) drop-shadow(0 0 0px rgba(56,189,248,0)); }
       50%       { filter: brightness(1.08) drop-shadow(0 0 12px rgba(56,189,248,0.6)); }
@@ -1275,8 +1337,8 @@
 
     /* Board beat-pulse — 104 BPM = ~577ms */
     @keyframes boardBeat {
-      0%, 100% { box-shadow: 0 0 0 2px rgba(30,58,95,0.6), 0 0 30px rgba(56,189,248,0.08), 0 16px 40px rgba(0,0,0,0.55); }
-      8%, 22%  { box-shadow: 0 0 0 3px rgba(56,189,248,0.7), 0 0 40px rgba(56,189,248,0.3), 0 0 70px rgba(56,189,248,0.12), 0 16px 50px rgba(0,0,0,0.65); }
+      0%, 100% { box-shadow: 0 0 0 2px rgba(30,58,95,0.6), 0 0 30px rgba(56,189,248,0.08), 0 16px 40px rgba(0,0,0,0.55), 0 0 var(--music-board-size) rgba(56,189,248,var(--music-board-alpha)); }
+      8%, 22%  { box-shadow: 0 0 0 3px rgba(56,189,248,0.7), 0 0 40px rgba(56,189,248,0.3), 0 0 70px rgba(56,189,248,0.12), 0 16px 50px rgba(0,0,0,0.65), 0 0 var(--music-board-strong-size) rgba(56,189,248,var(--music-board-alpha)); }
     }
 
     /* Floating particle background */
@@ -2411,11 +2473,29 @@
       counterGain: null,   /* counter-melody gain node */
       percGain: null,      /* extra percussion gain */
       bpmMult: 1,          /* tempo multiplier applied next loop */
+      hitTimer: null,      /* clears one-shot board music flashes */
     };
+
+    function _musicRefreshScene(t) {
+      const root = document.documentElement;
+      root.style.setProperty("--music-tension", t.toFixed(3));
+      root.style.setProperty("--music-board-alpha", (0.08 + t * 0.24).toFixed(3));
+      root.style.setProperty("--music-board-size", `${70 + t * 90}px`);
+      root.style.setProperty("--music-board-strong-size", `${90 + t * 110}px`);
+      root.style.setProperty("--music-bg-opacity", (0.72 + t * 0.28).toFixed(3));
+      root.style.setProperty("--music-bg-saturation", (1 + t * 0.55).toFixed(3));
+      root.style.setProperty("--music-bg-brightness", (1 + t * 0.18).toFixed(3));
+      root.style.setProperty("--music-hue", `${(-8 * t).toFixed(2)}deg`);
+      if (document.body) {
+        document.body.classList.toggle("music-hot", t > 0.35);
+        document.body.classList.toggle("music-peak", t > 0.72);
+      }
+    }
 
     function _musicSetTension(val) {
       _music.tension = Math.max(0, Math.min(1, val));
       const t = _music.tension;
+      _musicRefreshScene(t);
       const ctx = _audioCtx;
       if (!ctx) return;
       const now = ctx.currentTime;
@@ -2434,6 +2514,159 @@
       _music.bpmMult = 1 + t * 0.22;
     }
 
+    function _musicPulseVisual(kind, intensity = 0.5) {
+      if (!state.cinematicFx || !ui.board) return;
+      const board = ui.board;
+      const amount = Math.max(0.15, Math.min(1, Number(intensity) || 0.5));
+      const glow = {
+        move: "rgba(56,189,248,0.28)",
+        castle: "rgba(125,211,252,0.42)",
+        capture: "rgba(248,113,113,0.54)",
+        check: "rgba(239,68,68,0.62)",
+        brilliant: "rgba(250,204,21,0.62)",
+        blunder: "rgba(244,63,94,0.58)",
+        promotion: "rgba(167,139,250,0.58)",
+        win: "rgba(250,204,21,0.64)",
+        loss: "rgba(148,163,184,0.44)"
+      };
+      const classes = [
+        "music-move", "music-castle", "music-capture", "music-check",
+        "music-brilliant", "music-blunder", "music-promotion",
+        "music-win", "music-loss"
+      ];
+      classes.forEach((cls) => board.classList.remove(cls));
+      board.style.setProperty("--music-event-glow", glow[kind] || glow.move);
+      board.style.setProperty("--music-event-scale", (1 + amount * 0.26).toFixed(3));
+      void board.offsetWidth;
+      board.classList.add(`music-${kind}`);
+      clearTimeout(_music.hitTimer);
+      _music.hitTimer = window.setTimeout(() => {
+        board.classList.remove(`music-${kind}`);
+      }, 950);
+    }
+
+    function _musicPlayReactiveStinger(kind, intensity = 0.5) {
+      try {
+        if (!_musicEnabled) return;
+        resumeAudio();
+        const ctx = getAudioCtx();
+        const { master } = getMasterGain();
+        const t0 = ctx.currentTime + 0.01;
+        const amount = Math.max(0.15, Math.min(1, Number(intensity) || 0.5));
+        const bus = ctx.createGain();
+        const out = ctx.createGain();
+        out.gain.value = Math.max(0, Math.min(1, Number(document.getElementById("musicVolSlider")?.value ?? 40) / 100));
+        bus.gain.setValueAtTime(0.0001, t0);
+        bus.gain.linearRampToValueAtTime(0.62 + amount * 0.22, t0 + 0.015);
+        bus.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.35);
+        bus.connect(out);
+        out.connect(master);
+
+        function tone(freq, offset, dur, peak, type = "triangle", opts = {}) {
+          const start = t0 + offset;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const filt = ctx.createBiquadFilter();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, start);
+          if (opts.bendTo) {
+            osc.frequency.exponentialRampToValueAtTime(opts.bendTo, start + dur * 0.85);
+          }
+          if (opts.detune) osc.detune.value = opts.detune;
+          filt.type = opts.filterType || "lowpass";
+          filt.frequency.value = opts.cutoff || 2400;
+          filt.Q.value = opts.q || 0.7;
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.linearRampToValueAtTime(Math.max(0.0001, peak), start + (opts.attack || 0.012));
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+          osc.connect(filt);
+          filt.connect(gain);
+          gain.connect(bus);
+          osc.start(start);
+          osc.stop(start + dur + 0.04);
+        }
+
+        function noise(offset, dur, peak, cutoff = 1800, type = "bandpass") {
+          const start = t0 + offset;
+          const frames = Math.max(1, Math.floor(ctx.sampleRate * dur));
+          const buf = ctx.createBuffer(1, frames, ctx.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < frames; i += 1) {
+            data[i] = (Math.random() * 2 - 1) * (1 - i / frames);
+          }
+          const src = ctx.createBufferSource();
+          const filt = ctx.createBiquadFilter();
+          const gain = ctx.createGain();
+          src.buffer = buf;
+          filt.type = type;
+          filt.frequency.value = cutoff;
+          filt.Q.value = 0.9;
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.linearRampToValueAtTime(peak, start + 0.006);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+          src.connect(filt);
+          filt.connect(gain);
+          gain.connect(bus);
+          src.start(start);
+          src.stop(start + dur + 0.02);
+        }
+
+        const A1 = NOTE("A",-3);
+        const A2 = NOTE("A",-2);
+        const A3 = NOTE("A",-1);
+        const C4 = NOTE("C");
+        const DSharp4 = NOTE("D#");
+        const E4 = NOTE("E");
+        const G4 = NOTE("G");
+        const A4 = NOTE("A");
+        const C5 = NOTE("C",1);
+
+        if (kind === "move") {
+          tone(A3, 0.00, 0.16, 0.05, "triangle", { cutoff: 1800 });
+          tone(E4, 0.055, 0.14, 0.035, "triangle", { cutoff: 2000 });
+        } else if (kind === "castle") {
+          tone(A2, 0.00, 0.32, 0.12, "sine", { cutoff: 900 });
+          tone(E4, 0.08, 0.22, 0.08, "triangle", { cutoff: 1900 });
+          tone(A4, 0.16, 0.24, 0.07, "triangle", { cutoff: 2200 });
+        } else if (kind === "capture") {
+          tone(A2, 0.00, 0.34, 0.16 + amount * 0.14, "sawtooth", { bendTo: A1, cutoff: 650 });
+          tone(E4, 0.00, 0.22, 0.09 + amount * 0.10, "square", { cutoff: 1200 });
+          if (amount > 0.52) tone(C4, 0.08, 0.25, 0.08 + amount * 0.06, "sawtooth", { cutoff: 1600 });
+          noise(0.00, 0.13, 0.08 + amount * 0.16, 1900);
+        } else if (kind === "check") {
+          tone(DSharp4, 0.00, 0.24, 0.16, "sawtooth", { cutoff: 1200 });
+          tone(E4, 0.00, 0.24, 0.16, "square", { cutoff: 1000 });
+          tone(A4, 0.18, 0.26, 0.12, "triangle", { cutoff: 2300 });
+          noise(0.00, 0.09, 0.14, 2600);
+        } else if (kind === "brilliant") {
+          [A3, C4, E4, A4, C5].forEach((freq, i) => {
+            tone(freq, i * 0.065, 0.34, 0.07 + i * 0.012, "triangle", { cutoff: 4200, attack: 0.006 });
+          });
+          noise(0.16, 0.28, 0.08, 6200, "highpass");
+        } else if (kind === "blunder") {
+          tone(E4, 0.00, 0.55, 0.18, "sawtooth", { bendTo: NOTE("Bb",-1), cutoff: 900 });
+          tone(A2, 0.12, 0.42, 0.16, "triangle", { bendTo: A1, cutoff: 550 });
+          noise(0.06, 0.18, 0.13, 900);
+        } else if (kind === "promotion") {
+          [C4, E4, A4, C5].forEach((freq, i) => {
+            tone(freq, i * 0.08, 0.42, 0.09, "triangle", { cutoff: 3600 });
+          });
+          tone(A2, 0.00, 0.66, 0.11, "sine", { cutoff: 800 });
+        } else if (kind === "win") {
+          [A3, C4, E4, A4].forEach((freq) => tone(freq, 0.00, 0.95, 0.09, "triangle", { cutoff: 3000 }));
+          tone(C5, 0.22, 0.65, 0.08, "triangle", { cutoff: 3800 });
+        } else if (kind === "loss") {
+          tone(G4, 0.00, 0.45, 0.13, "sawtooth", { bendTo: E4, cutoff: 900 });
+          tone(C4, 0.18, 0.58, 0.11, "triangle", { bendTo: A2, cutoff: 650 });
+          noise(0.08, 0.24, 0.09, 700);
+        }
+
+        window.setTimeout(() => {
+          try { bus.disconnect(); out.disconnect(); } catch (_) {}
+        }, 1600);
+      } catch (_) {}
+    }
+
     function _musicPushTension(delta) {
       _musicSetTension(_music.tension + delta);
       /* Start slow decay back to calm */
@@ -2445,12 +2678,32 @@
     }
 
     /* Called by game events */
+    function musicOnMove() {
+      _musicPulseVisual("move", 0.25);
+      _musicPlayReactiveStinger("move", 0.25);
+    }
+    function musicOnCastle() {
+      _musicPushTension(0.06);
+      _musicPulseVisual("castle", 0.42);
+      _musicPlayReactiveStinger("castle", 0.45);
+    }
     function musicOnCapture(pieceValue) {
       /* pieceValue: 1=pawn, 3=knight/bishop, 5=rook, 9=queen */
+      const amount = Math.min(1, Math.max(0.2, pieceValue / 9));
       _musicPushTension(pieceValue * 0.04);
+      _musicPulseVisual("capture", amount);
+      _musicPlayReactiveStinger("capture", amount);
     }
-    function musicOnCheck()     { _musicPushTension(0.18); }
-    function musicOnBrilliant() { _musicPushTension(0.25); }
+    function musicOnCheck() {
+      _musicPushTension(0.18);
+      _musicPulseVisual("check", 0.74);
+      _musicPlayReactiveStinger("check", 0.75);
+    }
+    function musicOnBrilliant() {
+      _musicPushTension(0.25);
+      _musicPulseVisual("brilliant", 0.95);
+      _musicPlayReactiveStinger("brilliant", 0.95);
+    }
     function musicOnBlunder() {
       /* Brief dip then swell */
       if (_musicGain && _audioCtx) {
@@ -2461,11 +2714,19 @@
         );
       }
       _musicPushTension(0.3);
+      _musicPulseVisual("blunder", 0.88);
+      _musicPlayReactiveStinger("blunder", 0.9);
     }
-    function musicOnPromotion() { _musicPushTension(0.22); }
+    function musicOnPromotion() {
+      _musicPushTension(0.22);
+      _musicPulseVisual("promotion", 0.82);
+      _musicPlayReactiveStinger("promotion", 0.85);
+    }
     function musicOnGameOver(won) {
       clearInterval(_music.decayTimer);
       _musicSetTension(won ? 1.0 : 0.0);
+      _musicPulseVisual(won ? "win" : "loss", 1);
+      _musicPlayReactiveStinger(won ? "win" : "loss", 1);
       /* Final swell or fade */
       if (_musicGain && _audioCtx) {
         if (won) {
@@ -3351,13 +3612,93 @@
       p2pSetStatus("Disconnected");
     }
 
+    function p2pEncodeSignal(data) {
+      const bytes = new TextEncoder().encode(JSON.stringify(data));
+      let binary = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode(...bytes.slice(i, i + chunk));
+      }
+      return btoa(binary);
+    }
+
+    function p2pDecodeSignal(code) {
+      const clean = String(code || "").replace(/\s+/g, "");
+      const binary = atob(clean);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+      return JSON.parse(new TextDecoder().decode(bytes));
+    }
+
+    async function p2pCopyText(text, button, resetLabel) {
+      let copied = false;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          copied = true;
+        }
+      } catch (_) {}
+      if (!copied) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try { copied = document.execCommand("copy"); } catch (_) { copied = false; }
+        ta.remove();
+      }
+      if (button) {
+        button.textContent = copied ? "Copied!" : "Select Code";
+        if (!copied) {
+          const input = document.getElementById("p2pCodeInput");
+          if (input) { input.value = text; input.focus(); input.select(); }
+        }
+        setTimeout(() => { button.textContent = resetLabel; }, 2000);
+      }
+      return copied;
+    }
+
+    function p2pWaitForIce(conn, timeoutMs = 10000) {
+      return new Promise((resolve) => {
+        if (conn.iceGatheringState === "complete") { resolve(); return; }
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          conn.onicegatheringstatechange = null;
+          resolve();
+        };
+        conn.onicegatheringstatechange = () => {
+          if (conn.iceGatheringState === "complete") finish();
+        };
+        setTimeout(finish, timeoutMs);
+      });
+    }
+
+    function p2pAttachConnectionStatus(conn) {
+      conn.onconnectionstatechange = () => {
+        const s = conn.connectionState;
+        if (s === "connected") p2pSetStatus("Connected", "connected");
+        else if (s === "connecting") p2pSetStatus("Connecting...", "connecting");
+        else if (s === "failed") p2pSetStatus("Connection failed. Try a new room code.", "error");
+        else if (s === "disconnected") p2pSetStatus("Disconnected", "error");
+      };
+      conn.oniceconnectionstatechange = () => {
+        if (conn.iceConnectionState === "failed") {
+          p2pSetStatus("Network route failed. Try another network or hotspot.", "error");
+        }
+      };
+    }
+
     function p2pSend(type, payload) {
       if (!p2p.channel || p2p.channel.readyState !== "open") return false;
       p2p.channel.send(JSON.stringify({ type, payload }));
       return true;
     }
 
-    function p2pOnMessage(evt) {
+    async function p2pOnMessage(evt) {
       let msg;
       try { msg = JSON.parse(evt.data); } catch(e) { return; }
       const { type, payload } = msg;
@@ -3371,7 +3712,7 @@
         state.selectedSquare = null;
         state.selectedDropPiece = null;
         renderBoard(); renderReservePanel();
-        applyAnnotatedMove(move, annotation, moverColor, "remote", actorLabel);
+        await applyAnnotatedMove(move, annotation, moverColor, "remote", actorLabel);
       } else if (type === "start") {
         // Guest receives start signal with game config
         state.variant = payload.variant || "standard";
@@ -3397,6 +3738,7 @@
 
     function p2pSetupChannel(channel) {
       p2p.channel = channel;
+      channel.onerror = () => p2pSetStatus("Data channel error. Reconnect with a new code.", "error");
       channel.onopen = () => {
         p2p.ready = true;
         const discBtn = document.getElementById("p2pDisconnectBtn");
@@ -3427,6 +3769,7 @@
       const cfg = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
       const conn = new RTCPeerConnection(cfg);
       p2p.conn = conn; p2p.role = "host";
+      p2pAttachConnectionStatus(conn);
 
       const channel = conn.createDataChannel("chess", { ordered: true });
       p2pSetupChannel(channel);
@@ -3438,16 +3781,12 @@
       await conn.setLocalDescription(offer);
 
       // Wait for ICE gathering to settle
-      await new Promise(res => {
-        if (conn.iceGatheringState === "complete") { res(); return; }
-        conn.onicegatheringstatechange = () => { if (conn.iceGatheringState === "complete") res(); };
-        setTimeout(res, 3500); // fallback timeout
-      });
+      await p2pWaitForIce(conn);
 
-      const bundle = btoa(JSON.stringify({ sdp: conn.localDescription, ice: iceCandidates }));
+      const bundle = p2pEncodeSignal({ sdp: conn.localDescription, ice: iceCandidates });
       p2p.offerSdp = bundle;
       const copyBtn = document.getElementById("p2pCopyBtn");
-      if (copyBtn) { copyBtn.style.display = ""; copyBtn.onclick = () => { navigator.clipboard.writeText(bundle).catch(() => {}); copyBtn.textContent = "✅ Copied!"; setTimeout(() => { copyBtn.textContent = "📋 Copy My Code"; }, 2000); }; }
+      if (copyBtn) { copyBtn.style.display = ""; copyBtn.textContent = "Copy My Code"; copyBtn.onclick = () => p2pCopyText(bundle, copyBtn, "Copy My Code"); }
       p2pSetStatus("Share your room code with opponent, then paste theirs below", "connecting");
       const input = document.getElementById("p2pCodeInput");
       if (input) {
@@ -3463,7 +3802,7 @@
           const code = document.getElementById("p2pCodeInput").value.trim();
           if (!code) return;
           try {
-            const data = JSON.parse(atob(code));
+            const data = p2pDecodeSignal(code);
             await conn.setRemoteDescription(new RTCSessionDescription(data.sdp));
             for (const c of (data.ice || [])) { try { await conn.addIceCandidate(new RTCIceCandidate(c)); } catch(e) {} }
             p2pSetStatus("Connecting to opponent…", "connecting");
@@ -3479,10 +3818,11 @@
       if (!code) { p2pSetStatus("Paste the host's room code first", "error"); return; }
       p2pSetStatus("Connecting…", "connecting");
       try {
-        const data = JSON.parse(atob(code));
+        const data = p2pDecodeSignal(code);
         const cfg = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
         const conn = new RTCPeerConnection(cfg);
         p2p.conn = conn; p2p.role = "guest";
+        p2pAttachConnectionStatus(conn);
 
         conn.ondatachannel = evt => p2pSetupChannel(evt.channel);
 
@@ -3495,15 +3835,11 @@
         const answer = await conn.createAnswer();
         await conn.setLocalDescription(answer);
 
-        await new Promise(res => {
-          if (conn.iceGatheringState === "complete") { res(); return; }
-          conn.onicegatheringstatechange = () => { if (conn.iceGatheringState === "complete") res(); };
-          setTimeout(res, 3500);
-        });
+        await p2pWaitForIce(conn);
 
-        const bundle = btoa(JSON.stringify({ sdp: conn.localDescription, ice: iceCandidates }));
+        const bundle = p2pEncodeSignal({ sdp: conn.localDescription, ice: iceCandidates });
         const copyBtn = document.getElementById("p2pCopyBtn");
-        if (copyBtn) { copyBtn.style.display = ""; copyBtn.textContent = "📋 Copy My Answer"; copyBtn.onclick = () => { navigator.clipboard.writeText(bundle).catch(() => {}); copyBtn.textContent = "✅ Copied!"; setTimeout(() => { copyBtn.textContent = "📋 Copy My Answer"; }, 2000); }; }
+        if (copyBtn) { copyBtn.style.display = ""; copyBtn.textContent = "Copy My Answer"; copyBtn.onclick = () => p2pCopyText(bundle, copyBtn, "Copy My Answer"); }
         p2pSetStatus("Send your answer code to the host!", "connecting");
       } catch(e) { p2pSetStatus("Failed to connect — invalid code?", "error"); console.error(e); }
     }
@@ -6589,6 +6925,11 @@
           playSfx("promotion");
         } else {
           playSfx(move.captured ? "capture" : "move", capturedPiece);
+        }
+        if (move.castleKing || move.castleQueen) {
+          musicOnCastle();
+        } else if (!move.captured && !move.promotion) {
+          musicOnMove();
         }
         /* Achievement hooks */
         if (window._achOnMove) window._achOnMove(move);

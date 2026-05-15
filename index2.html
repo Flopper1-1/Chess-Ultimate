@@ -33,6 +33,16 @@
       --card-radius: 14px;
       --gold: #f5c842;
       --red-deep: #8b0000;
+      --music-tension: 0;
+      --music-board-alpha: 0.12;
+      --music-board-size: 70px;
+      --music-board-strong-size: 90px;
+      --music-bg-opacity: 0.74;
+      --music-bg-saturation: 1;
+      --music-bg-brightness: 1;
+      --music-hue: 0deg;
+      --music-event-glow: rgba(245,200,66,0);
+      --music-event-scale: 1;
     }
 
     * { box-sizing: border-box; }
@@ -59,6 +69,12 @@
         radial-gradient(ellipse 50% 40% at 80% 10%,  rgba(140,20,5,0.3) 0%, transparent 100%),
         radial-gradient(ellipse 70% 35% at 50% 100%, rgba(100,10,5,0.25) 0%, transparent 100%);
       animation: bgBreath 5s ease-in-out infinite;
+      opacity: var(--music-bg-opacity);
+      filter:
+        saturate(var(--music-bg-saturation))
+        brightness(var(--music-bg-brightness))
+        hue-rotate(var(--music-hue));
+      transition: filter 0.25s ease, opacity 0.25s ease;
     }
 
     /* Playing card back pattern overlay */
@@ -420,10 +436,43 @@
         0 0 0 6px rgba(80,10,5,0.8),
         0 0 0 7px rgba(180,80,20,0.3),
         0 12px 50px rgba(100,5,5,0.7),
-        0 0 80px rgba(200,80,20,0.12);
+        0 0 80px rgba(200,80,20,0.12),
+        0 0 var(--music-board-size) rgba(245,200,66,var(--music-board-alpha));
       position: relative;
       transition: box-shadow 0.2s ease;
       animation: boardBeat 652ms ease-in-out infinite; /* 92 BPM */
+    }
+
+    .board::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 9;
+      pointer-events: none;
+      opacity: 0;
+      mix-blend-mode: screen;
+      background:
+        radial-gradient(circle at center, var(--music-event-glow) 0%, transparent 58%),
+        linear-gradient(135deg, transparent 0%, rgba(255,244,196,0.16) 48%, transparent 78%);
+      transform: scale(var(--music-event-scale));
+    }
+
+    .board.music-move::after,
+    .board.music-castle::after {
+      animation: musicEventFlash 0.42s ease-out forwards;
+    }
+
+    .board.music-capture::after,
+    .board.music-check::after,
+    .board.music-blunder::after {
+      animation: musicEventFlash 0.62s cubic-bezier(0.16,1,0.3,1) forwards;
+    }
+
+    .board.music-brilliant::after,
+    .board.music-promotion::after,
+    .board.music-win::after,
+    .board.music-loss::after {
+      animation: musicEventBloom 0.9s cubic-bezier(0.16,1,0.3,1) forwards;
     }
 
     /* Four-player 14×14 board */
@@ -1321,6 +1370,19 @@
       100% { opacity: 0; transform: scale(1.04); }
     }
 
+    @keyframes musicEventFlash {
+      0% { opacity: 0; transform: scale(0.96); }
+      18% { opacity: 0.88; transform: scale(var(--music-event-scale)); }
+      100% { opacity: 0; transform: scale(1.08); }
+    }
+
+    @keyframes musicEventBloom {
+      0% { opacity: 0; transform: scale(0.9); }
+      24% { opacity: 0.96; transform: scale(var(--music-event-scale)); }
+      62% { opacity: 0.44; transform: scale(1.04); }
+      100% { opacity: 0; transform: scale(1.12); }
+    }
+
     @keyframes titleGlow {
       0%, 100% { filter: brightness(0.92) drop-shadow(0 0 0px rgba(245,200,66,0)); }
       50%       { filter: brightness(1.08) drop-shadow(0 0 14px rgba(245,200,66,0.55)); }
@@ -1337,13 +1399,15 @@
         0 0 0 1px rgba(139,0,0,0.6),
         0 0 0 6px rgba(80,10,5,0.8),
         0 0 0 7px rgba(180,80,20,0.3),
-        0 12px 50px rgba(100,5,5,0.7); }
+        0 12px 50px rgba(100,5,5,0.7),
+        0 0 var(--music-board-size) rgba(245,200,66,var(--music-board-alpha)); }
       8%, 25%  { box-shadow:
         0 0 0 2px rgba(245,200,66,0.8),
         0 0 0 6px rgba(120,20,5,0.9),
         0 0 0 10px rgba(245,200,66,0.35),
         0 0 60px rgba(200,60,10,0.6),
-        0 12px 60px rgba(140,10,5,0.8); }
+        0 12px 60px rgba(140,10,5,0.8),
+        0 0 var(--music-board-strong-size) rgba(245,200,66,var(--music-board-alpha)); }
     }
 
     @keyframes moveLogRow {
@@ -1448,6 +1512,353 @@
     .legend b {
       color: var(--text);
       font-style: normal;
+    }
+
+    .balatro-table {
+      margin-top: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .card-table-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .card-table-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--gold);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+    }
+
+    .card-table-head span:last-child {
+      color: rgba(255,244,214,0.62);
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: none;
+    }
+
+    .card-zone {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      min-height: 126px;
+      align-items: stretch;
+    }
+
+    .card-zone.compact {
+      min-height: 86px;
+    }
+
+    .balatro-card {
+      --card-accent: #f5c842;
+      position: relative;
+      width: 84px;
+      min-height: 122px;
+      border-radius: 8px;
+      border: 2px solid rgba(245,200,66,0.58);
+      background:
+        linear-gradient(145deg, rgba(255,248,218,0.98), rgba(229,195,116,0.94) 46%, rgba(89,20,16,0.96) 47%, rgba(25,5,5,0.98));
+      color: #210707;
+      box-shadow:
+        0 4px 0 rgba(60,10,8,0.9),
+        0 10px 24px rgba(0,0,0,0.36),
+        inset 0 0 0 1px rgba(255,255,255,0.48);
+      cursor: pointer;
+      transform: translateY(0);
+      transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease, filter 0.14s ease;
+      overflow: visible;
+      isolation: isolate;
+    }
+
+    .balatro-card::before {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border: 1px solid rgba(45,8,8,0.28);
+      border-radius: 6px;
+      pointer-events: none;
+    }
+
+    .balatro-card:hover,
+    .balatro-card.selected {
+      transform: translateY(-7px) rotate(-1deg);
+      border-color: var(--card-accent);
+      box-shadow:
+        0 7px 0 rgba(60,10,8,0.9),
+        0 16px 34px rgba(0,0,0,0.42),
+        0 0 28px rgba(245,200,66,0.34),
+        inset 0 0 0 1px rgba(255,255,255,0.62);
+      z-index: 20;
+    }
+
+    .balatro-card.disabled {
+      cursor: not-allowed;
+      filter: saturate(0.45) brightness(0.65);
+      opacity: 0.62;
+    }
+
+    .balatro-card.back {
+      background:
+        radial-gradient(circle at 50% 28%, rgba(245,200,66,0.28), transparent 36%),
+        repeating-linear-gradient(45deg, rgba(245,200,66,0.12) 0 3px, transparent 3px 8px),
+        linear-gradient(145deg, #3a0909, #120303);
+      color: rgba(245,200,66,0.72);
+    }
+
+    .card-rank,
+    .card-corner {
+      position: absolute;
+      font-weight: 900;
+      line-height: 1;
+      text-shadow: 0 1px rgba(255,255,255,0.36);
+    }
+
+    .card-rank {
+      top: 9px;
+      left: 9px;
+      font-size: 0.95rem;
+      color: var(--card-accent);
+    }
+
+    .card-corner {
+      right: 8px;
+      bottom: 8px;
+      font-size: 0.8rem;
+      transform: rotate(180deg);
+      color: rgba(255,244,214,0.78);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 22px 8px 18px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      gap: 4px;
+    }
+
+    .card-piece {
+      font-family: "Noto Sans Symbols 2", "Segoe UI Symbol", sans-serif;
+      font-size: 2.25rem;
+      color: #160404;
+      text-shadow: 0 2px 0 rgba(255,255,255,0.38), 0 0 12px rgba(245,200,66,0.42);
+    }
+
+    .card-name {
+      font-size: 0.56rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(255,244,214,0.92);
+      text-shadow: 0 1px 0 rgba(40,5,5,0.9);
+    }
+
+    .joker-card,
+    .luck-card {
+      width: 112px;
+      min-height: 150px;
+      background:
+        radial-gradient(circle at 50% 15%, rgba(245,200,66,0.24), transparent 34%),
+        linear-gradient(160deg, rgba(45,8,8,0.98), rgba(18,3,3,0.98));
+      color: #fff7d8;
+    }
+
+    .joker-card .card-face,
+    .luck-card .card-face {
+      inset: 20px 9px 36px;
+    }
+
+    .joker-card .card-piece,
+    .luck-card .card-piece {
+      color: var(--card-accent);
+      font-size: 1.7rem;
+    }
+
+    .card-rarity {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: 24px;
+      font-size: 0.52rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-align: center;
+      text-transform: uppercase;
+      color: var(--card-accent);
+    }
+
+    .card-actions {
+      position: absolute;
+      left: 6px;
+      right: 6px;
+      bottom: 5px;
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      z-index: 3;
+    }
+
+    .card-action {
+      border: 1px solid rgba(245,200,66,0.38);
+      border-radius: 5px;
+      background: rgba(20,3,3,0.8);
+      color: #f5c842;
+      font-size: 0.56rem;
+      font-weight: 900;
+      padding: 2px 5px;
+      cursor: pointer;
+    }
+
+    .card-action:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .card-tooltip {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 10px);
+      width: 220px;
+      padding: 9px 10px;
+      border: 1px solid rgba(245,200,66,0.52);
+      border-radius: 8px;
+      background: rgba(17,3,3,0.96);
+      color: #fff7d8;
+      box-shadow: 0 12px 34px rgba(0,0,0,0.55), 0 0 24px rgba(245,200,66,0.12);
+      font-family: "Segoe UI", sans-serif;
+      font-size: 0.72rem;
+      line-height: 1.35;
+      text-align: left;
+      transform: translate(-50%, 6px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.12s ease, transform 0.12s ease;
+      z-index: 50;
+    }
+
+    .balatro-card:hover .card-tooltip {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .intel-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .intel-box,
+    .chances-box {
+      border: 1px solid rgba(245,200,66,0.26);
+      border-radius: 8px;
+      background: rgba(25,5,5,0.48);
+      padding: 8px;
+      color: rgba(255,244,214,0.78);
+      font-size: 0.76rem;
+    }
+
+    .intel-box strong,
+    .chances-box strong {
+      display: block;
+      color: #f5c842;
+      margin-bottom: 3px;
+      font-size: 0.66rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .chances-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 5px;
+      margin-top: 6px;
+    }
+
+    .chance-pill {
+      border: 1px solid rgba(245,200,66,0.22);
+      border-radius: 6px;
+      padding: 4px;
+      text-align: center;
+      background: rgba(0,0,0,0.18);
+    }
+
+    .empty-card-note {
+      min-height: 80px;
+      display: grid;
+      place-items: center;
+      color: rgba(255,244,214,0.48);
+      border: 1px dashed rgba(245,200,66,0.28);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.78rem;
+    }
+
+    #jokerRewardModal {
+      position: fixed;
+      inset: 0;
+      z-index: 10002;
+      display: none;
+      place-items: center;
+      background: rgba(12,2,2,0.82);
+      backdrop-filter: blur(8px);
+    }
+
+    #jokerRewardModal.open {
+      display: grid;
+    }
+
+    .reward-panel {
+      width: min(92vw, 520px);
+      border: 2px solid rgba(245,200,66,0.58);
+      border-radius: 12px;
+      background: linear-gradient(160deg, rgba(45,8,8,0.98), rgba(14,3,3,0.99));
+      box-shadow: 0 20px 70px rgba(0,0,0,0.68), 0 0 45px rgba(245,200,66,0.16);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      justify-items: center;
+    }
+
+    .reward-panel h2 {
+      margin: 0;
+      color: #f5c842;
+      font-size: 1rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .reward-actions,
+    .replace-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .reward-btn {
+      border: 1px solid rgba(245,200,66,0.42);
+      border-radius: 8px;
+      background: rgba(245,200,66,0.1);
+      color: #f5c842;
+      font-weight: 900;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    .reward-btn:hover {
+      background: rgba(245,200,66,0.18);
+    }
+
+    .reward-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     .danger {
@@ -1760,16 +2171,7 @@
           <select id="variantSelect" class="variant-select">
             <option value="standard">Standard Chess</option>
             <option value="chess960">Chess960</option>
-            <option value="three_check">Three-check Chess</option>
-            <option value="atomic">Atomic Chess</option>
             <option value="king_of_the_hill">King of the Hill</option>
-            <option value="fog_of_war">Fog of War Chess</option>
-            <option value="antichess">Antichess</option>
-            <option value="crazyhouse">Crazyhouse</option>
-            <option value="checkers_vs_chess">Checkers vs Chess</option>
-            <option value="four_player_teams">4-Player Chess (Teams)</option>
-            <option value="four_player_ffa">4-Player Chess (FFA)</option>
-            <option value="bughouse">Bughouse</option>
           </select>
           <div class="variant-note" id="variantNote"></div>
         </div>
@@ -1842,6 +2244,34 @@
             </section>
           </div>
         </div>
+        <div class="balatro-table" id="balatroTable">
+          <div class="intel-strip">
+            <div class="intel-box" id="ownIntelBox"></div>
+            <div class="intel-box" id="opponentIntelBox"></div>
+            <div class="chances-box" id="chanceBox"></div>
+          </div>
+          <div class="card-table-row">
+            <div class="card-table-head">
+              <span id="handTitle">Piece Hand</span>
+              <span id="handMeta">0 / 20</span>
+            </div>
+            <div class="card-zone" id="pieceHand"></div>
+          </div>
+          <div class="card-table-row">
+            <div class="card-table-head">
+              <span>Jokers</span>
+              <span id="jokerMeta">0 / 5</span>
+            </div>
+            <div class="card-zone compact" id="jokerZone"></div>
+          </div>
+          <div class="card-table-row">
+            <div class="card-table-head">
+              <span>Luck Deck</span>
+              <span id="luckMeta">0 cards</span>
+            </div>
+            <div class="card-zone compact" id="luckZone"></div>
+          </div>
+        </div>
         <div class="live-note" id="liveNote">Live annotation feed will appear here after each move.</div>
       </div>
 
@@ -1872,6 +2302,15 @@
     <div class="promo-card">
       <h2>🃏 Choose Your Card</h2>
       <div class="promo-choices" id="promoChoices"></div>
+    </div>
+  </div>
+
+  <div id="jokerRewardModal" aria-hidden="true">
+    <div class="reward-panel">
+      <h2 id="rewardTitle">Elimination Reward</h2>
+      <div id="rewardCardMount"></div>
+      <div class="reward-actions" id="rewardActions"></div>
+      <div class="replace-grid" id="rewardReplaceGrid"></div>
     </div>
   </div>
 
@@ -2003,7 +2442,23 @@
       reserveOwnHeading: document.getElementById("reserveOwnHeading"),
       reserveEnemyHeading: document.getElementById("reserveEnemyHeading"),
       reserveOwnGrid: document.getElementById("reserveOwnGrid"),
-      reserveEnemyGrid: document.getElementById("reserveEnemyGrid")
+      reserveEnemyGrid: document.getElementById("reserveEnemyGrid"),
+      balatroTable: document.getElementById("balatroTable"),
+      ownIntelBox: document.getElementById("ownIntelBox"),
+      opponentIntelBox: document.getElementById("opponentIntelBox"),
+      chanceBox: document.getElementById("chanceBox"),
+      handTitle: document.getElementById("handTitle"),
+      handMeta: document.getElementById("handMeta"),
+      pieceHand: document.getElementById("pieceHand"),
+      jokerMeta: document.getElementById("jokerMeta"),
+      jokerZone: document.getElementById("jokerZone"),
+      luckMeta: document.getElementById("luckMeta"),
+      luckZone: document.getElementById("luckZone"),
+      rewardModal: document.getElementById("jokerRewardModal"),
+      rewardTitle: document.getElementById("rewardTitle"),
+      rewardCardMount: document.getElementById("rewardCardMount"),
+      rewardActions: document.getElementById("rewardActions"),
+      rewardReplaceGrid: document.getElementById("rewardReplaceGrid")
     };
 
     /* ═══════════════════════════════════════════════════════════
@@ -2384,16 +2839,7 @@
     const VARIANT_INFO = {
       standard: { label: "Standard Chess", supported: true },
       chess960: { label: "Chess960", supported: true },
-      three_check: { label: "Three-check Chess", supported: true },
-      atomic: { label: "Atomic Chess", supported: true },
-      king_of_the_hill: { label: "King of the Hill", supported: true },
-      fog_of_war: { label: "Fog of War Chess", supported: true },
-      antichess: { label: "Antichess", supported: true },
-      crazyhouse: { label: "Crazyhouse", supported: true },
-      checkers_vs_chess: { label: "Checkers vs Chess", supported: true },
-      four_player_teams: { label: "4-Player Chess (Teams)", supported: true },
-      four_player_ffa: { label: "4-Player Chess (FFA)", supported: true },
-      bughouse: { label: "Bughouse", supported: true }
+      king_of_the_hill: { label: "King of the Hill", supported: true }
     };
 
     const PIECE_DROP_TYPES = ["p", "n", "b", "r", "q"];
@@ -2409,6 +2855,71 @@
       m: "\u26C2",
       c: "\u26C3"
     };
+
+    const CARD_HAND_LIMIT = 20;
+    const JOKER_LIMIT = 5;
+    const STARTING_HAND_SIZE = 5;
+    const PIECE_CARD_TYPES = ["p", "n", "b", "r", "q", "k"];
+    const PIECE_CARD_INFO = {
+      p: { rank: "P", name: "Pawn", piece: "P", desc: "Play to move a pawn or drop a pawn from reserve." },
+      n: { rank: "N", name: "Knight", piece: "N", desc: "Play to move a knight. Horsepower rewards this card type." },
+      b: { rank: "B", name: "Bishop", piece: "B", desc: "Play to move a bishop. Bunny Bishop can bend this rule." },
+      r: { rank: "R", name: "Rook", piece: "R", desc: "Play to move a rook. Heavy Rook unlocks push moves." },
+      q: { rank: "Q", name: "Queen", piece: "Q", desc: "Play to move a queen. Ghost Queen can phase once." },
+      k: { rank: "K", name: "King", piece: "K", desc: "Play to move or castle with your king." }
+    };
+    const RARITY_ORDER = ["common", "uncommon", "rare", "ultra", "legendary"];
+    const RARITY_LABEL = {
+      common: "Common",
+      uncommon: "Uncommon",
+      rare: "Rare",
+      ultra: "Ultra-Rare",
+      legendary: "Legendary"
+    };
+    const RARITY_COLOR = {
+      common: "#f5c842",
+      uncommon: "#67e8f9",
+      rare: "#c084fc",
+      ultra: "#fb7185",
+      legendary: "#fde047"
+    };
+    const BASE_RARITY_CHANCES = {
+      common: 50,
+      uncommon: 27,
+      rare: 15,
+      ultra: 6,
+      legendary: 2
+    };
+    const JOKER_DEFS = [
+      { id: "joker", name: "Joker", rarity: "common", icon: "J", desc: "+1 piece card every turn." },
+      { id: "anti_joker", name: "Anti-Joker", rarity: "uncommon", icon: "AJ", desc: "Opponent draws 1 fewer piece card every turn." },
+      { id: "atomic", name: "Atomic", rarity: "rare", icon: "AT", desc: "Your captures explode adjacent non-pawn pieces like atomic chess." },
+      { id: "crazyhouse", name: "Crazyhouse", rarity: "legendary", icon: "CH", desc: "Your captured pieces enter reserve and may be dropped with matching piece cards." },
+      { id: "three_check", name: "Three-Check Chess", rarity: "legendary", icon: "3C", desc: "Win by giving 3 checks in a row. The streak resets when you do not check." },
+      { id: "opening_theory", name: "Opening Theory", rarity: "uncommon", icon: "OT", desc: "The next 5 owner moves do not require piece cards." },
+      { id: "pawn_shop", name: "Pawn Shop", rarity: "common", icon: "PS", desc: "Pawn cards appear twice as often in your draws." },
+      { id: "horsepower", name: "Horsepower", rarity: "rare", icon: "HP", desc: "Knight moves draw 1 extra piece card." },
+      { id: "royal_insurance", name: "Royal Insurance", rarity: "ultra", icon: "RI", desc: "If your queen is captured, draw 3 piece cards." },
+      { id: "emergency_funds", name: "Emergency Funds", rarity: "rare", icon: "EF", desc: "When fewer than 8 of your pieces remain, draw 1 extra card per draw step." },
+      { id: "refunds", name: "Refunds", rarity: "common", icon: "RF", desc: "Playing the same piece type twice in a row refunds the second card." },
+      { id: "bunny_bishop", name: "Bunny Bishop", rarity: "legendary", icon: "BB", desc: "Your bishops may jump over exactly 1 piece." },
+      { id: "heavy_rook", name: "Heavy Rook", rarity: "ultra", icon: "HR", desc: "Your rooks can push an enemy back one square instead of capturing." },
+      { id: "black_market", name: "Black Market", rarity: "rare", icon: "BM", desc: "Use: discard 4 piece cards to draw a joker or luck card." },
+      { id: "cloning", name: "Cloning", rarity: "rare", icon: "CL", desc: "Use: select a piece card, discard 2 other cards, and copy the selected card." },
+      { id: "ghost_queen", name: "Ghost Queen", rarity: "ultra", icon: "GQ", desc: "Your queen may move through pieces once. This joker is destroyed when used." },
+      { id: "occult_joker", name: "Occult Joker", rarity: "ultra", icon: "OC", desc: "Your opponent cannot see your 2 rightmost jokers." },
+      { id: "piece_insurance", name: "Piece Insurance", rarity: "common", icon: "PI", desc: "If you lose a piece, gain a card of that piece type." },
+      { id: "checklist", name: "Checklist", rarity: "rare", icon: "CK", desc: "Each check gives +1 card per turn, stacking up to +3." },
+      { id: "terror_joker", name: "Terror Joker", rarity: "legendary", icon: "TJ", desc: "Use: discard this joker to reset opponent draw bonuses and remove 2 random jokers." }
+    ];
+    const LUCK_DEFS = [
+      { id: "clover_3", name: "3 Leaf Clover", rarity: "common", icon: "3L", desc: "Increases Uncommon chance by 10%." },
+      { id: "clover_4", name: "4 Leaf Clover", rarity: "uncommon", icon: "4L", desc: "Increases Rare chance by 9%." },
+      { id: "clover_5", name: "5 Leaf Clover", rarity: "rare", icon: "5L", desc: "Increases Ultra-Rare chance by 7%." },
+      { id: "clover_6", name: "6 Leaf Clover", rarity: "ultra", icon: "6L", desc: "Increases Legendary chance by 5%." }
+    ];
+    const JOKER_BY_ID = Object.fromEntries(JOKER_DEFS.map((def) => [def.id, def]));
+    const LUCK_BY_ID = Object.fromEntries(LUCK_DEFS.map((def) => [def.id, def]));
 
     const state = {
       game: null,
@@ -2432,6 +2943,7 @@
         w: { sum: 0, count: 0, value: 100 },
         b: { sum: 0, count: 0, value: 100 }
       },
+      cardGame: null,
       unsupportedMode: false
     };
 
@@ -2518,10 +3030,27 @@
     const _music = {
       tension: 0, decayTimer: null,
       chordFilter: null, counterGain: null, percGain: null, bpmMult: 1,
+      hitTimer: null,
     };
+    function _musicRefreshScene(t) {
+      const root = document.documentElement;
+      root.style.setProperty("--music-tension", t.toFixed(3));
+      root.style.setProperty("--music-board-alpha", (0.12 + t * 0.24).toFixed(3));
+      root.style.setProperty("--music-board-size", `${70 + t * 90}px`);
+      root.style.setProperty("--music-board-strong-size", `${90 + t * 110}px`);
+      root.style.setProperty("--music-bg-opacity", (0.74 + t * 0.26).toFixed(3));
+      root.style.setProperty("--music-bg-saturation", (1 + t * 0.58).toFixed(3));
+      root.style.setProperty("--music-bg-brightness", (1 + t * 0.16).toFixed(3));
+      root.style.setProperty("--music-hue", `${(6 * t).toFixed(2)}deg`);
+      if (document.body) {
+        document.body.classList.toggle("music-hot", t > 0.35);
+        document.body.classList.toggle("music-peak", t > 0.72);
+      }
+    }
     function _musicSetTension(val) {
       _music.tension = Math.max(0, Math.min(1, val));
       const t = _music.tension;
+      _musicRefreshScene(t);
       const ctx = _audioCtx;
       if (!ctx) return;
       const now = ctx.currentTime;
@@ -2530,6 +3059,163 @@
       if (_music.percGain) _music.percGain.gain.setTargetAtTime(t * 0.3, now, 0.2);
       _music.bpmMult = 1 + t * 0.26; /* 92 → ~116 BPM at peak */
     }
+    function _musicPulseVisual(kind, intensity = 0.5) {
+      if (!state.cinematicFx || !ui.board) return;
+      const board = ui.board;
+      const amount = Math.max(0.15, Math.min(1, Number(intensity) || 0.5));
+      const glow = {
+        move: "rgba(245,200,66,0.30)",
+        castle: "rgba(245,200,66,0.42)",
+        capture: "rgba(220,38,38,0.58)",
+        check: "rgba(255,68,68,0.64)",
+        brilliant: "rgba(252,211,77,0.66)",
+        blunder: "rgba(139,0,0,0.62)",
+        promotion: "rgba(255,107,43,0.60)",
+        win: "rgba(245,200,66,0.68)",
+        loss: "rgba(120,30,20,0.50)"
+      };
+      const classes = [
+        "music-move", "music-castle", "music-capture", "music-check",
+        "music-brilliant", "music-blunder", "music-promotion",
+        "music-win", "music-loss"
+      ];
+      classes.forEach((cls) => board.classList.remove(cls));
+      board.style.setProperty("--music-event-glow", glow[kind] || glow.move);
+      board.style.setProperty("--music-event-scale", (1 + amount * 0.26).toFixed(3));
+      void board.offsetWidth;
+      board.classList.add(`music-${kind}`);
+      clearTimeout(_music.hitTimer);
+      _music.hitTimer = window.setTimeout(() => {
+        board.classList.remove(`music-${kind}`);
+      }, 950);
+    }
+
+    function _musicPlayReactiveStinger(kind, intensity = 0.5) {
+      try {
+        if (!_musicEnabled) return;
+        resumeAudio();
+        const ctx = getAudioCtx();
+        const { master } = getMasterGain();
+        const t0 = ctx.currentTime + 0.01;
+        const amount = Math.max(0.15, Math.min(1, Number(intensity) || 0.5));
+        const bus = ctx.createGain();
+        const out = ctx.createGain();
+        out.gain.value = Math.max(0, Math.min(1, Number(document.getElementById("musicVolSlider")?.value ?? 38) / 100));
+        bus.gain.setValueAtTime(0.0001, t0);
+        bus.gain.linearRampToValueAtTime(0.58 + amount * 0.22, t0 + 0.015);
+        bus.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.35);
+        bus.connect(out);
+        out.connect(master);
+
+        function tone(freq, offset, dur, peak, type = "triangle", opts = {}) {
+          const start = t0 + offset;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const filt = ctx.createBiquadFilter();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, start);
+          if (opts.bendTo) {
+            osc.frequency.exponentialRampToValueAtTime(opts.bendTo, start + dur * 0.85);
+          }
+          if (opts.detune) osc.detune.value = opts.detune;
+          filt.type = opts.filterType || "lowpass";
+          filt.frequency.value = opts.cutoff || 2400;
+          filt.Q.value = opts.q || 0.7;
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.linearRampToValueAtTime(Math.max(0.0001, peak), start + (opts.attack || 0.012));
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+          osc.connect(filt);
+          filt.connect(gain);
+          gain.connect(bus);
+          osc.start(start);
+          osc.stop(start + dur + 0.04);
+        }
+
+        function noise(offset, dur, peak, cutoff = 1800, type = "bandpass") {
+          const start = t0 + offset;
+          const frames = Math.max(1, Math.floor(ctx.sampleRate * dur));
+          const buf = ctx.createBuffer(1, frames, ctx.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < frames; i += 1) {
+            data[i] = (Math.random() * 2 - 1) * (1 - i / frames);
+          }
+          const src = ctx.createBufferSource();
+          const filt = ctx.createBiquadFilter();
+          const gain = ctx.createGain();
+          src.buffer = buf;
+          filt.type = type;
+          filt.frequency.value = cutoff;
+          filt.Q.value = 0.9;
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.linearRampToValueAtTime(peak, start + 0.006);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+          src.connect(filt);
+          filt.connect(gain);
+          gain.connect(bus);
+          src.start(start);
+          src.stop(start + dur + 0.02);
+        }
+
+        const C2 = NOTE("C",-3);
+        const C3 = NOTE("C",-2);
+        const Eb3 = NOTE("Eb",-1);
+        const G3 = NOTE("G",-1);
+        const Bb3 = NOTE("Bb",-1);
+        const C4 = NOTE("C");
+        const Db4 = NOTE("Db");
+        const Eb4 = NOTE("Eb");
+        const Gb4 = NOTE("Gb");
+        const G4 = NOTE("G");
+        const Bb4 = NOTE("Bb");
+        const C5 = NOTE("C",1);
+        const D5 = NOTE("D",1);
+        const Eb5 = NOTE("Eb",1);
+
+        if (kind === "move") {
+          tone(C3, 0.00, 0.15, 0.045, "triangle", { cutoff: 1600 });
+          tone(G3, 0.055, 0.14, 0.034, "triangle", { cutoff: 1700 });
+        } else if (kind === "castle") {
+          [C3, Eb3, G3, Bb3].forEach((freq) => tone(freq, 0.00, 0.36, 0.055, "triangle", { cutoff: 1800 }));
+          noise(0.04, 0.10, 0.05, 2400);
+        } else if (kind === "capture") {
+          tone(C3, 0.00, 0.34, 0.15 + amount * 0.12, "sawtooth", { bendTo: C2, cutoff: 620 });
+          tone(Bb3, 0.00, 0.22, 0.08 + amount * 0.10, "square", { cutoff: 1050 });
+          if (amount > 0.52) tone(Eb4, 0.08, 0.25, 0.08 + amount * 0.05, "sawtooth", { cutoff: 1500 });
+          noise(0.00, 0.13, 0.09 + amount * 0.15, 1700);
+        } else if (kind === "check") {
+          tone(Gb4, 0.00, 0.24, 0.16, "sawtooth", { cutoff: 1150 });
+          tone(G4, 0.00, 0.24, 0.15, "square", { cutoff: 1050 });
+          tone(C5, 0.18, 0.26, 0.11, "triangle", { cutoff: 2300 });
+          noise(0.00, 0.09, 0.14, 2600);
+        } else if (kind === "brilliant") {
+          [C4, Eb4, G4, Bb4, C5, Eb5].forEach((freq, i) => {
+            tone(freq, i * 0.055, 0.34, 0.065 + i * 0.01, "triangle", { cutoff: 4300, attack: 0.006 });
+          });
+          noise(0.15, 0.30, 0.08, 6200, "highpass");
+        } else if (kind === "blunder") {
+          tone(Eb4, 0.00, 0.55, 0.17, "sawtooth", { bendTo: Bb3, cutoff: 850 });
+          tone(Db4, 0.08, 0.44, 0.12, "triangle", { bendTo: C3, cutoff: 650 });
+          noise(0.06, 0.20, 0.13, 850);
+        } else if (kind === "promotion") {
+          [Eb4, G4, Bb4, C5, Eb5].forEach((freq, i) => {
+            tone(freq, i * 0.07, 0.42, 0.08, "triangle", { cutoff: 3600 });
+          });
+          tone(C3, 0.00, 0.66, 0.10, "sine", { cutoff: 800 });
+        } else if (kind === "win") {
+          [Eb4, G4, Bb4, D5].forEach((freq) => tone(freq, 0.00, 0.95, 0.085, "triangle", { cutoff: 3100 }));
+          tone(Eb5, 0.22, 0.65, 0.08, "triangle", { cutoff: 3900 });
+        } else if (kind === "loss") {
+          tone(G4, 0.00, 0.45, 0.13, "sawtooth", { bendTo: Eb4, cutoff: 900 });
+          tone(C4, 0.18, 0.58, 0.11, "triangle", { bendTo: C3, cutoff: 650 });
+          noise(0.08, 0.24, 0.09, 720);
+        }
+
+        window.setTimeout(() => {
+          try { bus.disconnect(); out.disconnect(); } catch (_) {}
+        }, 1600);
+      } catch (_) {}
+    }
+
     function _musicPushTension(delta) {
       _musicSetTension(_music.tension + delta);
       clearInterval(_music.decayTimer);
@@ -2538,9 +3224,31 @@
         _musicSetTension(_music.tension - 0.010);
       }, 400);
     }
-    function musicOnCapture(pieceValue) { _musicPushTension(pieceValue * 0.035); }
-    function musicOnCheck()     { _musicPushTension(0.16); }
-    function musicOnBrilliant() { _musicPushTension(0.22); }
+    function musicOnMove() {
+      _musicPulseVisual("move", 0.25);
+      _musicPlayReactiveStinger("move", 0.25);
+    }
+    function musicOnCastle() {
+      _musicPushTension(0.06);
+      _musicPulseVisual("castle", 0.42);
+      _musicPlayReactiveStinger("castle", 0.45);
+    }
+    function musicOnCapture(pieceValue) {
+      const amount = Math.min(1, Math.max(0.2, pieceValue / 9));
+      _musicPushTension(pieceValue * 0.035);
+      _musicPulseVisual("capture", amount);
+      _musicPlayReactiveStinger("capture", amount);
+    }
+    function musicOnCheck() {
+      _musicPushTension(0.16);
+      _musicPulseVisual("check", 0.74);
+      _musicPlayReactiveStinger("check", 0.75);
+    }
+    function musicOnBrilliant() {
+      _musicPushTension(0.22);
+      _musicPulseVisual("brilliant", 0.95);
+      _musicPlayReactiveStinger("brilliant", 0.95);
+    }
     function musicOnBlunder() {
       if (_musicGain && _audioCtx) {
         _musicGain.gain.setTargetAtTime(0.04, _audioCtx.currentTime, 0.1);
@@ -2550,11 +3258,19 @@
         );
       }
       _musicPushTension(0.28);
+      _musicPulseVisual("blunder", 0.88);
+      _musicPlayReactiveStinger("blunder", 0.9);
     }
-    function musicOnPromotion() { _musicPushTension(0.20); }
+    function musicOnPromotion() {
+      _musicPushTension(0.20);
+      _musicPulseVisual("promotion", 0.82);
+      _musicPlayReactiveStinger("promotion", 0.85);
+    }
     function musicOnGameOver(won) {
       clearInterval(_music.decayTimer);
       _musicSetTension(won ? 1.0 : 0.0);
+      _musicPulseVisual(won ? "win" : "loss", 1);
+      _musicPlayReactiveStinger(won ? "win" : "loss", 1);
       if (_musicGain && _audioCtx) {
         if (won) {
           _musicGain.gain.setTargetAtTime(0.85, _audioCtx.currentTime, 0.2);
@@ -3476,30 +4192,137 @@
       p2pSetStatus("Disconnected");
     }
 
+    function p2pEncodeSignal(data) {
+      const bytes = new TextEncoder().encode(JSON.stringify(data));
+      let binary = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode(...bytes.slice(i, i + chunk));
+      }
+      return btoa(binary);
+    }
+
+    function p2pDecodeSignal(code) {
+      const clean = String(code || "").replace(/\s+/g, "");
+      const binary = atob(clean);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+      return JSON.parse(new TextDecoder().decode(bytes));
+    }
+
+    async function p2pCopyText(text, button, resetLabel) {
+      let copied = false;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          copied = true;
+        }
+      } catch (_) {}
+      if (!copied) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try { copied = document.execCommand("copy"); } catch (_) { copied = false; }
+        ta.remove();
+      }
+      if (button) {
+        button.textContent = copied ? "Copied!" : "Select Code";
+        if (!copied) {
+          const input = document.getElementById("p2pCodeInput");
+          if (input) { input.value = text; input.focus(); input.select(); }
+        }
+        setTimeout(() => { button.textContent = resetLabel; }, 2000);
+      }
+      return copied;
+    }
+
+    function p2pWaitForIce(conn, timeoutMs = 10000) {
+      return new Promise((resolve) => {
+        if (conn.iceGatheringState === "complete") { resolve(); return; }
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          conn.onicegatheringstatechange = null;
+          resolve();
+        };
+        conn.onicegatheringstatechange = () => {
+          if (conn.iceGatheringState === "complete") finish();
+        };
+        setTimeout(finish, timeoutMs);
+      });
+    }
+
+    function p2pAttachConnectionStatus(conn) {
+      conn.onconnectionstatechange = () => {
+        const s = conn.connectionState;
+        if (s === "connected") p2pSetStatus("Connected", "connected");
+        else if (s === "connecting") p2pSetStatus("Connecting...", "connecting");
+        else if (s === "failed") p2pSetStatus("Connection failed. Try a new room code.", "error");
+        else if (s === "disconnected") p2pSetStatus("Disconnected", "error");
+      };
+      conn.oniceconnectionstatechange = () => {
+        if (conn.iceConnectionState === "failed") {
+          p2pSetStatus("Network route failed. Try another network or hotspot.", "error");
+        }
+      };
+    }
+
+    function p2pSerializableCardGame() {
+      if (!state.cardGame) return null;
+      const copy = JSON.parse(JSON.stringify(state.cardGame));
+      copy.pendingReward = null;
+      copy.rewardQueue = [];
+      copy.cloneMode = false;
+      copy.selectedCardId = null;
+      return copy;
+    }
+
+    function p2pApplyCardGameSnapshot(snapshot) {
+      if (!snapshot) return;
+      state.cardGame = JSON.parse(JSON.stringify(snapshot));
+    }
+
     function p2pSend(type, payload) {
       if (!p2p.channel || p2p.channel.readyState !== "open") return false;
       p2p.channel.send(JSON.stringify({ type, payload }));
       return true;
     }
 
-    function p2pOnMessage(evt) {
+    function p2pSendCardSync() {
+      if (isP2PMode() && p2p.ready) {
+        p2pSend("card-sync", { cardGame: p2pSerializableCardGame() });
+      }
+    }
+
+    async function p2pOnMessage(evt) {
       let msg;
       try { msg = JSON.parse(evt.data); } catch(e) { return; }
       const { type, payload } = msg;
       if (type === "move") {
         if (!state.game || state.game.isGameOver()) return;
         if (state.game.position.turn === p2p.localColor) return; // shouldn't happen
-        const move = payload;
+        const move = payload && payload.move ? payload.move : payload;
         const annotation = { symbol: "", label: "", cpLoss: 0 };
         const moverColor = state.game.position.turn;
+        consumeCardForMove(moverColor, move);
         const actorLabel = moverColor === "w" ? "White:" : "Black:";
         state.selectedSquare = null;
         state.selectedDropPiece = null;
         renderBoard(); renderReservePanel();
-        applyAnnotatedMove(move, annotation, moverColor, "remote", actorLabel);
+        await applyAnnotatedMove(move, annotation, moverColor, "remote", actorLabel);
+        if (payload && payload.cardGame) p2pApplyCardGameSnapshot(payload.cardGame);
+        renderAll();
+      } else if (type === "card-sync") {
+        p2pApplyCardGameSnapshot(payload && payload.cardGame);
+        renderAll();
       } else if (type === "start") {
         // Guest receives start signal with game config
-        state.variant = payload.variant || "standard";
+        state.variant = ["standard", "chess960", "king_of_the_hill"].includes(payload.variant) ? payload.variant : "standard";
         p2p.localColor = payload.guestColor || "b";
         state.playerColor = p2p.localColor;
         state.botColor = p2p.localColor === "w" ? "b" : "w";
@@ -3509,6 +4332,8 @@
         state.gameOverSoundPlayed = false;
         state.accuracy.w = { sum: 0, count: 0, value: 100 };
         state.accuracy.b = { sum: 0, count: 0, value: 100 };
+        if (payload.cardGame) p2pApplyCardGameSnapshot(payload.cardGame);
+        else initCardGame();
         renderAll();
         p2pSetStatus("Connected — playing as " + (p2p.localColor === "w" ? "White ♔" : "Black ♚"), "connected");
       } else if (type === "chat") {
@@ -3522,6 +4347,7 @@
 
     function p2pSetupChannel(channel) {
       p2p.channel = channel;
+      channel.onerror = () => p2pSetStatus("Data channel error. Reconnect with a new code.", "error");
       channel.onopen = () => {
         p2p.ready = true;
         const discBtn = document.getElementById("p2pDisconnectBtn");
@@ -3537,8 +4363,9 @@
           state.gameOverSoundPlayed = false;
           state.accuracy.w = { sum: 0, count: 0, value: 100 };
           state.accuracy.b = { sum: 0, count: 0, value: 100 };
+          initCardGame();
           renderAll();
-          p2pSend("start", { variant: state.variant, guestColor: "b" });
+          p2pSend("start", { variant: state.variant, guestColor: "b", cardGame: p2pSerializableCardGame() });
           p2pSetStatus("Connected — playing as White ♔", "connected");
         }
       };
@@ -3552,6 +4379,7 @@
       const cfg = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
       const conn = new RTCPeerConnection(cfg);
       p2p.conn = conn; p2p.role = "host";
+      p2pAttachConnectionStatus(conn);
 
       const channel = conn.createDataChannel("chess", { ordered: true });
       p2pSetupChannel(channel);
@@ -3563,16 +4391,12 @@
       await conn.setLocalDescription(offer);
 
       // Wait for ICE gathering to settle
-      await new Promise(res => {
-        if (conn.iceGatheringState === "complete") { res(); return; }
-        conn.onicegatheringstatechange = () => { if (conn.iceGatheringState === "complete") res(); };
-        setTimeout(res, 3500); // fallback timeout
-      });
+      await p2pWaitForIce(conn);
 
-      const bundle = btoa(JSON.stringify({ sdp: conn.localDescription, ice: iceCandidates }));
+      const bundle = p2pEncodeSignal({ sdp: conn.localDescription, ice: iceCandidates });
       p2p.offerSdp = bundle;
       const copyBtn = document.getElementById("p2pCopyBtn");
-      if (copyBtn) { copyBtn.style.display = ""; copyBtn.onclick = () => { navigator.clipboard.writeText(bundle).catch(() => {}); copyBtn.textContent = "✅ Copied!"; setTimeout(() => { copyBtn.textContent = "📋 Copy My Code"; }, 2000); }; }
+      if (copyBtn) { copyBtn.style.display = ""; copyBtn.textContent = "Copy My Code"; copyBtn.onclick = () => p2pCopyText(bundle, copyBtn, "Copy My Code"); }
       p2pSetStatus("Share your room code with opponent, then paste theirs below", "connecting");
       const input = document.getElementById("p2pCodeInput");
       if (input) {
@@ -3588,7 +4412,7 @@
           const code = document.getElementById("p2pCodeInput").value.trim();
           if (!code) return;
           try {
-            const data = JSON.parse(atob(code));
+            const data = p2pDecodeSignal(code);
             await conn.setRemoteDescription(new RTCSessionDescription(data.sdp));
             for (const c of (data.ice || [])) { try { await conn.addIceCandidate(new RTCIceCandidate(c)); } catch(e) {} }
             p2pSetStatus("Connecting to opponent…", "connecting");
@@ -3604,10 +4428,11 @@
       if (!code) { p2pSetStatus("Paste the host's room code first", "error"); return; }
       p2pSetStatus("Connecting…", "connecting");
       try {
-        const data = JSON.parse(atob(code));
+        const data = p2pDecodeSignal(code);
         const cfg = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }] };
         const conn = new RTCPeerConnection(cfg);
         p2p.conn = conn; p2p.role = "guest";
+        p2pAttachConnectionStatus(conn);
 
         conn.ondatachannel = evt => p2pSetupChannel(evt.channel);
 
@@ -3620,15 +4445,11 @@
         const answer = await conn.createAnswer();
         await conn.setLocalDescription(answer);
 
-        await new Promise(res => {
-          if (conn.iceGatheringState === "complete") { res(); return; }
-          conn.onicegatheringstatechange = () => { if (conn.iceGatheringState === "complete") res(); };
-          setTimeout(res, 3500);
-        });
+        await p2pWaitForIce(conn);
 
-        const bundle = btoa(JSON.stringify({ sdp: conn.localDescription, ice: iceCandidates }));
+        const bundle = p2pEncodeSignal({ sdp: conn.localDescription, ice: iceCandidates });
         const copyBtn = document.getElementById("p2pCopyBtn");
-        if (copyBtn) { copyBtn.style.display = ""; copyBtn.textContent = "📋 Copy My Answer"; copyBtn.onclick = () => { navigator.clipboard.writeText(bundle).catch(() => {}); copyBtn.textContent = "✅ Copied!"; setTimeout(() => { copyBtn.textContent = "📋 Copy My Answer"; }, 2000); }; }
+        if (copyBtn) { copyBtn.style.display = ""; copyBtn.textContent = "Copy My Answer"; copyBtn.onclick = () => p2pCopyText(bundle, copyBtn, "Copy My Answer"); }
         p2pSetStatus("Send your answer code to the host!", "connecting");
       } catch(e) { p2pSetStatus("Failed to connect — invalid code?", "error"); console.error(e); }
     }
@@ -3652,7 +4473,8 @@
     }
 
     function selectedVariantOption() {
-      return ui.variantSelect.value || "standard";
+      const allowed = new Set(["standard", "chess960", "king_of_the_hill"]);
+      return allowed.has(ui.variantSelect.value) ? ui.variantSelect.value : "standard";
     }
 
     function selectedGameModeOption() {
@@ -3877,6 +4699,15 @@
       }
 
       getGameStatus() {
+        if (this.cardResult) {
+          return { over: true, result: this.cardResult };
+        }
+
+        const whiteKingNow = findKingSquare(this.position.board, "w");
+        const blackKingNow = findKingSquare(this.position.board, "b");
+        if (whiteKingNow === -1) return { over: true, result: "Black wins by king elimination." };
+        if (blackKingNow === -1) return { over: true, result: "White wins by king elimination." };
+
         if (this.variant === "king_of_the_hill") {
           const whiteKing = findKingSquare(this.position.board, "w");
           const blackKing = findKingSquare(this.position.board, "b");
@@ -4011,6 +4842,7 @@
             b: { ...pos.reserves.b }
           },
           capturedPiece: move.captured ? board[move.capturedSquare ?? move.to] : null,
+          pushedPiece: move.heavyPush ? board[move.to] : null,
           exploded: []
         };
 
@@ -4027,6 +4859,10 @@
             board[move.capturedSquare] = null;
           } else if (move.captured && Number.isInteger(move.capturedSquare) && move.capturedSquare !== move.to) {
             board[move.capturedSquare] = null;
+          }
+
+          if (move.heavyPush && Number.isInteger(move.pushTo)) {
+            board[move.pushTo] = board[move.to];
           }
 
           if (move.castleKing) {
@@ -4156,6 +4992,11 @@
           board[move.to] = undo.capturedPiece;
         }
 
+        if (move.heavyPush && Number.isInteger(move.pushTo)) {
+          board[move.pushTo] = null;
+          board[move.to] = undo.pushedPiece;
+        }
+
         if (move.castleKing) {
           const rookTo = move.rookTo ?? (pos.turn === "w" ? 61 : 5);
           const rookFrom = move.rookFrom ?? (pos.turn === "w" ? 63 : 7);
@@ -4251,6 +5092,685 @@
       }
 
       return span;
+    }
+
+    function nextCardId(prefix = "card") {
+      if (!state.cardGame) return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      state.cardGame.nextId += 1;
+      return `${prefix}_${state.cardGame.nextId}`;
+    }
+
+    function makePieceCard(type) {
+      return { id: nextCardId("piece"), kind: "piece", type };
+    }
+
+    function makeJokerInstance(def) {
+      return { id: nextCardId("joker"), kind: "joker", defId: def.id };
+    }
+
+    function makeLuckInstance(def) {
+      return { id: nextCardId("luck"), kind: "luck", defId: def.id };
+    }
+
+    function createCardPlayer() {
+      return {
+        hand: [],
+        jokers: [],
+        luck: [],
+        openingFree: 0,
+        checklistStacks: 0,
+        lastPiecePlayed: null
+      };
+    }
+
+    function initCardGame() {
+      state.cardGame = {
+        nextId: 0,
+        selectedCardId: null,
+        pendingReward: null,
+        rewardQueue: [],
+        cloneMode: false,
+        checkStreak: { w: 0, b: 0 },
+        players: { w: createCardPlayer(), b: createCardPlayer() }
+      };
+      drawPieceCards("w", STARTING_HAND_SIZE);
+      drawPieceCards("b", STARTING_HAND_SIZE);
+    }
+
+    function cardPlayer(color) {
+      return state.cardGame && state.cardGame.players[color] ? state.cardGame.players[color] : null;
+    }
+
+    function hasJoker(color, defId) {
+      const player = cardPlayer(color);
+      return Boolean(player && player.jokers.some((joker) => joker.defId === defId));
+    }
+
+    function countJoker(color, defId) {
+      const player = cardPlayer(color);
+      if (!player) return 0;
+      return player.jokers.filter((joker) => joker.defId === defId).length;
+    }
+
+    function removeOneJoker(color, defId) {
+      const player = cardPlayer(color);
+      if (!player) return false;
+      const idx = player.jokers.findIndex((joker) => joker.defId === defId);
+      if (idx < 0) return false;
+      player.jokers.splice(idx, 1);
+      return true;
+    }
+
+    function colorName(color) {
+      return color === "w" ? "White" : "Black";
+    }
+
+    function viewedCardColor() {
+      if (!state.game) return state.playerColor;
+      if (isBotMode()) return state.playerColor;
+      if (isP2PMode()) return p2p.localColor || state.playerColor;
+      return state.game.position.turn;
+    }
+
+    function canManageCards(color) {
+      if (!state.game || state.moveInFlight || state.botThinking) return false;
+      if (isBotMode()) return color === state.playerColor && state.game.position.turn === state.playerColor;
+      if (isP2PMode()) return p2p.ready && color === p2p.localColor && state.game.position.turn === p2p.localColor;
+      return color === state.game.position.turn;
+    }
+
+    function canUseJokerActions(color) {
+      if (!state.game || state.moveInFlight) return false;
+      if (isBotMode()) return color === state.playerColor;
+      if (isP2PMode()) return p2p.ready && color === p2p.localColor;
+      return color === state.game.position.turn;
+    }
+
+    function pieceCount(color) {
+      if (!state.game || !state.game.position) return 16;
+      return state.game.position.board.reduce((sum, piece) => {
+        return piece && colorOf(piece) === color ? sum + 1 : sum;
+      }, 0);
+    }
+
+    function pieceCardWeights(color) {
+      const pawnWeight = hasJoker(color, "pawn_shop") ? 16 : 8;
+      return [
+        ["p", pawnWeight],
+        ["n", 3],
+        ["b", 3],
+        ["r", 2],
+        ["q", 1],
+        ["k", 1]
+      ];
+    }
+
+    function weightedPick(entries) {
+      const total = entries.reduce((sum, entry) => sum + entry[1], 0);
+      let roll = Math.random() * total;
+      for (const [value, weight] of entries) {
+        roll -= weight;
+        if (roll <= 0) return value;
+      }
+      return entries[entries.length - 1][0];
+    }
+
+    function addPieceCard(color, type) {
+      const player = cardPlayer(color);
+      if (!player || player.hand.length >= CARD_HAND_LIMIT) return false;
+      player.hand.push(makePieceCard(type));
+      return true;
+    }
+
+    function drawPieceCards(color, count) {
+      const player = cardPlayer(color);
+      if (!player) return 0;
+      let drawn = 0;
+      for (let i = 0; i < count && player.hand.length < CARD_HAND_LIMIT; i += 1) {
+        player.hand.push(makePieceCard(weightedPick(pieceCardWeights(color))));
+        drawn += 1;
+      }
+      return drawn;
+    }
+
+    function drawPerTurn(color) {
+      const opponent = oppositeColor(color);
+      const player = cardPlayer(color);
+      if (!player) return 1;
+      let amount = 1;
+      amount += countJoker(color, "joker");
+      amount += player.checklistStacks || 0;
+      if (hasJoker(color, "emergency_funds") && pieceCount(color) < 8) amount += 1;
+      amount -= countJoker(opponent, "anti_joker");
+      return Math.max(0, amount);
+    }
+
+    function drawForTurn(color) {
+      return drawPieceCards(color, drawPerTurn(color));
+    }
+
+    function cardById(color, cardId) {
+      const player = cardPlayer(color);
+      if (!player) return null;
+      return player.hand.find((card) => card.id === cardId) || null;
+    }
+
+    function moveCardType(move) {
+      if (move.dropPiece) return move.dropPiece;
+      return move.piece ? pieceType(move.piece) : null;
+    }
+
+    function cardMatchesMove(card, move) {
+      return Boolean(card && card.kind === "piece" && card.type === moveCardType(move));
+    }
+
+    function hasOpeningFreeMove(color) {
+      const player = cardPlayer(color);
+      return Boolean(player && player.openingFree > 0);
+    }
+
+    function hasPlayableCardForMoves(color, moves) {
+      const player = cardPlayer(color);
+      if (!player) return false;
+      return player.hand.some((card) => moves.some((move) => cardMatchesMove(card, move)));
+    }
+
+    function noPlayableCardEmergency(color, moves) {
+      const player = cardPlayer(color);
+      return Boolean(player && moves.length > 0 && !hasOpeningFreeMove(color) && !hasPlayableCardForMoves(color, moves));
+    }
+
+    function filterMovesBySelectedCard(color, moves) {
+      if (!state.cardGame || !state.game || state.game.position.turn !== color) return moves;
+      if (hasOpeningFreeMove(color)) return moves.map((move) => ({ ...move, cardFree: true }));
+      if (noPlayableCardEmergency(color, moves)) return moves.map((move) => ({ ...move, cardEmergency: true, cardFree: true }));
+      const selected = cardById(color, state.cardGame.selectedCardId);
+      if (!selected) return [];
+      return moves
+        .filter((move) => cardMatchesMove(selected, move))
+        .map((move) => ({ ...move, cardId: selected.id }));
+    }
+
+    function playableMovesForHand(color, moves) {
+      const player = cardPlayer(color);
+      if (!player) return moves;
+      if (hasOpeningFreeMove(color)) return moves.map((move) => ({ ...move, cardFree: true }));
+      if (noPlayableCardEmergency(color, moves)) return moves.map((move) => ({ ...move, cardEmergency: true, cardFree: true }));
+      const playable = [];
+      for (const move of moves) {
+        const card = player.hand.find((entry) => cardMatchesMove(entry, move));
+        if (card) playable.push({ ...move, cardId: card.id });
+      }
+      return playable;
+    }
+
+    function selectPieceCard(color, cardId) {
+      if (!state.cardGame) return;
+      if (state.cardGame.cloneMode) {
+        if (!canUseJokerActions(color)) return;
+        cloneSelectedPieceCard(color, cardId);
+        return;
+      }
+      if (!canManageCards(color)) return;
+      state.cardGame.selectedCardId = state.cardGame.selectedCardId === cardId ? null : cardId;
+      renderAll();
+    }
+
+    function consumeCardForMove(color, move) {
+      const player = cardPlayer(color);
+      if (!player) return true;
+      const type = moveCardType(move);
+      if (!type) return true;
+      const refunded = hasJoker(color, "refunds") && player.lastPiecePlayed === type;
+      if (player.openingFree > 0) {
+        player.openingFree -= 1;
+        move.cardFree = true;
+      } else if (!move.cardEmergency && !refunded) {
+        const cardId = move.cardId || state.cardGame.selectedCardId;
+        let idx = player.hand.findIndex((card) => card.id === cardId && cardMatchesMove(card, move));
+        if (idx < 0) idx = player.hand.findIndex((card) => cardMatchesMove(card, move));
+        if (idx < 0) return false;
+        player.hand.splice(idx, 1);
+      } else if (refunded) {
+        move.cardRefunded = true;
+      }
+      player.lastPiecePlayed = type;
+      state.cardGame.selectedCardId = null;
+      return true;
+    }
+
+    function rarityChances(color) {
+      const chances = { ...BASE_RARITY_CHANCES };
+      const player = cardPlayer(color);
+      if (player) {
+        for (const luck of player.luck) {
+          if (luck.defId === "clover_3") chances.uncommon += 10;
+          if (luck.defId === "clover_4") chances.rare += 9;
+          if (luck.defId === "clover_5") chances.ultra += 7;
+          if (luck.defId === "clover_6") chances.legendary += 5;
+        }
+      }
+      const total = RARITY_ORDER.reduce((sum, rarity) => sum + chances[rarity], 0);
+      const normalized = {};
+      RARITY_ORDER.forEach((rarity) => {
+        normalized[rarity] = chances[rarity] / total;
+      });
+      return normalized;
+    }
+
+    function rollRarity(color) {
+      const chances = rarityChances(color);
+      let roll = Math.random();
+      for (const rarity of RARITY_ORDER) {
+        roll -= chances[rarity];
+        if (roll <= 0) return rarity;
+      }
+      return "common";
+    }
+
+    function randomDefByRarity(defs, rarity) {
+      const pool = defs.filter((def) => def.rarity === rarity);
+      const fallback = defs.filter((def) => def.rarity === "common");
+      const chosenPool = pool.length ? pool : fallback;
+      return chosenPool[Math.floor(Math.random() * chosenPool.length)];
+    }
+
+    function rollReward(color, forceJoker = false) {
+      const rarity = rollRarity(color);
+      const luckPool = LUCK_DEFS.filter((def) => def.rarity === rarity);
+      const makeLuck = !forceJoker && luckPool.length > 0 && Math.random() < 0.2;
+      if (makeLuck) return makeLuckInstance(randomDefByRarity(LUCK_DEFS, rarity));
+      return makeJokerInstance(randomDefByRarity(JOKER_DEFS, rarity));
+    }
+
+    function applyKeptJoker(color, joker) {
+      const player = cardPlayer(color);
+      if (!player) return;
+      if (joker.defId === "opening_theory") {
+        player.openingFree += 5;
+      }
+    }
+
+    function keepReward(color, reward, replaceIndex = -1) {
+      const player = cardPlayer(color);
+      if (!player || !reward) return false;
+      if (reward.kind === "luck") {
+        player.luck.push(reward);
+        return true;
+      }
+      if (replaceIndex >= 0 && replaceIndex < player.jokers.length) {
+        player.jokers.splice(replaceIndex, 1, reward);
+        applyKeptJoker(color, reward);
+        return true;
+      }
+      if (player.jokers.length >= JOKER_LIMIT) return false;
+      player.jokers.push(reward);
+      applyKeptJoker(color, reward);
+      return true;
+    }
+
+    function queueReward(color, forceJoker = false) {
+      if (!state.cardGame) return;
+      const reward = rollReward(color, forceJoker);
+      const canChoose = (isBotMode() && color === state.playerColor)
+        || isLocalMultiplayerMode()
+        || (isP2PMode() && color === p2p.localColor);
+      if (canChoose) {
+        state.cardGame.rewardQueue.push({ color, reward });
+        showNextReward();
+      } else {
+        autoKeepReward(color, reward);
+      }
+    }
+
+    function autoKeepReward(color, reward) {
+      const player = cardPlayer(color);
+      if (!player) return;
+      if (reward.kind === "luck") {
+        keepReward(color, reward);
+      } else if (player.jokers.length < JOKER_LIMIT) {
+        keepReward(color, reward);
+      } else {
+        const weakest = player.jokers.findIndex((joker) => (JOKER_BY_ID[joker.defId]?.rarity || "common") === "common");
+        if (weakest >= 0 && RARITY_ORDER.indexOf(JOKER_BY_ID[reward.defId].rarity) > 0) keepReward(color, reward, weakest);
+      }
+    }
+
+    function showNextReward() {
+      if (!state.cardGame || state.cardGame.pendingReward || state.cardGame.rewardQueue.length === 0) return;
+      state.cardGame.pendingReward = state.cardGame.rewardQueue.shift();
+      renderRewardModal();
+    }
+
+    function closeRewardModal() {
+      if (!ui.rewardModal) return;
+      ui.rewardModal.classList.remove("open");
+      ui.rewardModal.setAttribute("aria-hidden", "true");
+      if (state.cardGame) state.cardGame.pendingReward = null;
+      renderAll();
+      p2pSendCardSync();
+      showNextReward();
+    }
+
+    function rewardDef(card) {
+      return card.kind === "luck" ? LUCK_BY_ID[card.defId] : JOKER_BY_ID[card.defId];
+    }
+
+    function renderRewardModal() {
+      if (!ui.rewardModal || !state.cardGame || !state.cardGame.pendingReward) return;
+      const { color, reward } = state.cardGame.pendingReward;
+      const player = cardPlayer(color);
+      const def = rewardDef(reward);
+      ui.rewardTitle.textContent = `${colorName(color)} Elimination Reward`;
+      ui.rewardCardMount.innerHTML = "";
+      ui.rewardCardMount.appendChild(renderPowerCard(reward, color, { staticOnly: true }));
+      ui.rewardActions.innerHTML = "";
+      ui.rewardReplaceGrid.innerHTML = "";
+
+      const keepBtn = document.createElement("button");
+      keepBtn.className = "reward-btn";
+      keepBtn.textContent = reward.kind === "luck" ? "Keep Luck" : "Keep Joker";
+      keepBtn.disabled = reward.kind === "joker" && player.jokers.length >= JOKER_LIMIT;
+      keepBtn.addEventListener("click", () => {
+        if (keepReward(color, reward)) closeRewardModal();
+      });
+      ui.rewardActions.appendChild(keepBtn);
+
+      const discardBtn = document.createElement("button");
+      discardBtn.className = "reward-btn";
+      discardBtn.textContent = "Discard";
+      discardBtn.addEventListener("click", closeRewardModal);
+      ui.rewardActions.appendChild(discardBtn);
+
+      if (reward.kind === "joker" && player.jokers.length >= JOKER_LIMIT) {
+        player.jokers.forEach((joker, idx) => {
+          const oldDef = JOKER_BY_ID[joker.defId];
+          const btn = document.createElement("button");
+          btn.className = "reward-btn";
+          btn.textContent = `Replace ${oldDef ? oldDef.name : "Joker"}`;
+          btn.addEventListener("click", () => {
+            keepReward(color, reward, idx);
+            closeRewardModal();
+          });
+          ui.rewardReplaceGrid.appendChild(btn);
+        });
+      }
+
+      const note = document.createElement("div");
+      note.className = "empty-card-note";
+      note.textContent = def ? def.desc : "";
+      ui.rewardReplaceGrid.appendChild(note);
+      ui.rewardModal.classList.add("open");
+      ui.rewardModal.setAttribute("aria-hidden", "false");
+    }
+
+    function renderPieceCard(card, color, playable) {
+      const info = PIECE_CARD_INFO[card.type] || PIECE_CARD_INFO.p;
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = "balatro-card";
+      el.style.setProperty("--card-accent", card.type === "p" ? "#86efac" : card.type === "n" ? "#67e8f9" : card.type === "b" ? "#c084fc" : card.type === "r" ? "#fb7185" : card.type === "q" ? "#f472b6" : "#fde047");
+      if (state.cardGame && state.cardGame.selectedCardId === card.id) el.classList.add("selected");
+      if (!playable) el.classList.add("disabled");
+      el.innerHTML = `
+        <span class="card-rank">${info.rank}</span>
+        <span class="card-corner">${info.rank}</span>
+        <span class="card-face"><span class="card-piece">${pieceGlyph(color === "w" ? info.piece : info.piece.toLowerCase())}</span><span class="card-name">${info.name}</span></span>
+        <span class="card-tooltip"><strong>${info.name} Card</strong><br>${info.desc}</span>
+      `;
+      el.addEventListener("click", () => selectPieceCard(color, card.id));
+      return el;
+    }
+
+    function renderPowerCard(card, ownerColor, opts = {}) {
+      const def = rewardDef(card);
+      const isLuck = card.kind === "luck";
+      const el = document.createElement("div");
+      el.className = `balatro-card ${isLuck ? "luck-card" : "joker-card"}`;
+      const rarity = def ? def.rarity : "common";
+      el.style.setProperty("--card-accent", RARITY_COLOR[rarity] || "#f5c842");
+      el.innerHTML = `
+        <span class="card-rank">${isLuck ? "L" : "J"}</span>
+        <span class="card-corner">${isLuck ? "L" : "J"}</span>
+        <span class="card-face"><span class="card-piece">${def ? def.icon : "?"}</span><span class="card-name">${def ? def.name : "Unknown"}</span></span>
+        <span class="card-rarity">${RARITY_LABEL[rarity] || rarity}</span>
+        <span class="card-tooltip"><strong>${def ? def.name : "Unknown"}</strong><br>${def ? def.desc : ""}</span>
+      `;
+      if (!opts.staticOnly && !isLuck && canUseJokerActions(ownerColor)) {
+        const actions = document.createElement("div");
+        actions.className = "card-actions";
+        const left = document.createElement("button");
+        left.className = "card-action";
+        left.textContent = "<";
+        left.addEventListener("click", (e) => { e.stopPropagation(); moveJoker(ownerColor, card.id, -1); });
+        const right = document.createElement("button");
+        right.className = "card-action";
+        right.textContent = ">";
+        right.addEventListener("click", (e) => { e.stopPropagation(); moveJoker(ownerColor, card.id, 1); });
+        const discard = document.createElement("button");
+        discard.className = "card-action";
+        discard.textContent = "X";
+        discard.addEventListener("click", (e) => { e.stopPropagation(); discardJoker(ownerColor, card.id); });
+        actions.append(left, right, discard);
+        if (["black_market", "cloning", "terror_joker"].includes(card.defId)) {
+          const use = document.createElement("button");
+          use.className = "card-action";
+          use.textContent = "Use";
+          use.addEventListener("click", (e) => { e.stopPropagation(); useJokerAbility(ownerColor, card.id); });
+          actions.appendChild(use);
+        }
+        el.appendChild(actions);
+      }
+      return el;
+    }
+
+    function renderHiddenJokerCard() {
+      const el = document.createElement("div");
+      el.className = "balatro-card joker-card back";
+      el.innerHTML = `<span class="card-face"><span class="card-piece">?</span><span class="card-name">Hidden</span></span><span class="card-tooltip">Occult Joker hides this slot.</span>`;
+      return el;
+    }
+
+    function renderEmptyNote(text) {
+      const el = document.createElement("div");
+      el.className = "empty-card-note";
+      el.textContent = text;
+      return el;
+    }
+
+    function renderCardGame() {
+      if (!ui.balatroTable) return;
+      if (!state.cardGame || !state.game) {
+        ui.balatroTable.style.display = "none";
+        return;
+      }
+      ui.balatroTable.style.display = "grid";
+      const viewColor = viewedCardColor();
+      const opponent = oppositeColor(viewColor);
+      const player = cardPlayer(viewColor);
+      const enemy = cardPlayer(opponent);
+      const playable = canManageCards(viewColor);
+      const activeText = state.game.position.turn === viewColor ? "to move" : "waiting";
+
+      ui.handTitle.textContent = `${colorName(viewColor)} Piece Hand`;
+      ui.handMeta.textContent = `${player.hand.length} / ${CARD_HAND_LIMIT} (${activeText})`;
+      ui.jokerMeta.textContent = `${player.jokers.length} / ${JOKER_LIMIT}`;
+      ui.luckMeta.textContent = `${player.luck.length} cards`;
+      ui.ownIntelBox.innerHTML = `<strong>${colorName(viewColor)} Intel</strong>Hand ${player.hand.length}/${CARD_HAND_LIMIT}<br>Draw ${drawPerTurn(viewColor)} per turn<br>Opening free ${player.openingFree}`;
+      const visibleEnemyJokers = enemy.jokers.map((joker, idx) => {
+        const hidden = hasJoker(opponent, "occult_joker") && idx >= Math.max(0, enemy.jokers.length - 2);
+        if (hidden) return "Hidden";
+        const def = JOKER_BY_ID[joker.defId];
+        return def ? def.name : "Joker";
+      });
+      ui.opponentIntelBox.innerHTML = `<strong>${colorName(opponent)} Visible Intel</strong>Hand size ${enemy.hand.length}/${CARD_HAND_LIMIT}<br>Draw ${drawPerTurn(opponent)} per turn<br>Luck cards ${enemy.luck.length}<br>Jokers: ${visibleEnemyJokers.length ? visibleEnemyJokers.join(", ") : "None"}`;
+
+      const chances = rarityChances(viewColor);
+      ui.chanceBox.innerHTML = `<strong>Reward Chances</strong><div class="chances-grid">${RARITY_ORDER.map((rarity) => `<div class="chance-pill">${RARITY_LABEL[rarity]}<br>${Math.round(chances[rarity] * 100)}%</div>`).join("")}</div>`;
+
+      ui.pieceHand.innerHTML = "";
+      if (player.hand.length === 0) ui.pieceHand.appendChild(renderEmptyNote("No piece cards. If no card can move, the turn becomes an emergency free move."));
+      player.hand.forEach((card) => ui.pieceHand.appendChild(renderPieceCard(card, viewColor, playable || (state.cardGame.cloneMode && canUseJokerActions(viewColor)))));
+
+      ui.jokerZone.innerHTML = "";
+      if (player.jokers.length === 0) ui.jokerZone.appendChild(renderEmptyNote("No jokers yet. Capture a piece to earn rewards."));
+      player.jokers.forEach((joker) => ui.jokerZone.appendChild(renderPowerCard(joker, viewColor)));
+
+      ui.luckZone.innerHTML = "";
+      if (player.luck.length === 0) ui.luckZone.appendChild(renderEmptyNote("No luck cards yet."));
+      player.luck.forEach((luck) => ui.luckZone.appendChild(renderPowerCard(luck, viewColor)));
+    }
+
+    function moveJoker(color, jokerId, dir) {
+      const player = cardPlayer(color);
+      if (!player) return;
+      const idx = player.jokers.findIndex((joker) => joker.id === jokerId);
+      const next = idx + dir;
+      if (idx < 0 || next < 0 || next >= player.jokers.length) return;
+      const [joker] = player.jokers.splice(idx, 1);
+      player.jokers.splice(next, 0, joker);
+      renderAll();
+      p2pSendCardSync();
+    }
+
+    function discardJoker(color, jokerId) {
+      const player = cardPlayer(color);
+      if (!player) return;
+      const idx = player.jokers.findIndex((joker) => joker.id === jokerId);
+      if (idx < 0) return;
+      player.jokers.splice(idx, 1);
+      renderAll();
+      p2pSendCardSync();
+    }
+
+    function useJokerAbility(color, jokerId) {
+      const player = cardPlayer(color);
+      if (!player || !canUseJokerActions(color)) return;
+      const joker = player.jokers.find((entry) => entry.id === jokerId);
+      if (!joker) return;
+      if (joker.defId === "black_market") {
+        if (player.hand.length < 4) return;
+        player.hand.splice(0, 4);
+        queueReward(color, true);
+      } else if (joker.defId === "cloning") {
+        state.cardGame.cloneMode = true;
+      } else if (joker.defId === "terror_joker") {
+        const opponent = oppositeColor(color);
+        const enemy = cardPlayer(opponent);
+        discardJoker(color, jokerId);
+        if (enemy) {
+          enemy.checklistStacks = 0;
+          for (let i = 0; i < 2 && enemy.jokers.length > 0; i += 1) {
+            enemy.jokers.splice(Math.floor(Math.random() * enemy.jokers.length), 1);
+          }
+        }
+      }
+      renderAll();
+      p2pSendCardSync();
+    }
+
+    function cloneSelectedPieceCard(color, cardId) {
+      const player = cardPlayer(color);
+      if (!player) return;
+      const idx = player.hand.findIndex((card) => card.id === cardId);
+      if (idx < 0 || player.hand.length < 3 || player.hand.length >= CARD_HAND_LIMIT) {
+        state.cardGame.cloneMode = false;
+        renderAll();
+        p2pSendCardSync();
+        return;
+      }
+      const source = player.hand[idx];
+      let removed = 0;
+      for (let i = player.hand.length - 1; i >= 0 && removed < 2; i -= 1) {
+        if (i === idx) continue;
+        player.hand.splice(i, 1);
+        removed += 1;
+      }
+      player.hand.push(makePieceCard(source.type));
+      state.cardGame.cloneMode = false;
+      renderAll();
+      p2pSendCardSync();
+    }
+
+    function capturedPieceFromUndo(move, undo) {
+      return undo && undo.capturedPiece ? undo.capturedPiece : (move.captured || null);
+    }
+
+    function addReservePiece(color, capturedPiece) {
+      if (!state.game || !capturedPiece) return;
+      const type = pieceType(capturedPiece);
+      if (!PIECE_DROP_TYPES.includes(type)) return;
+      state.game.position.reserves[color][type] = (state.game.position.reserves[color][type] || 0) + 1;
+    }
+
+    function applyBalatroAtomicExplosion(move, moverColor, undo) {
+      if (!hasJoker(moverColor, "atomic") || !move.captured || !state.game) return [];
+      const board = state.game.position.board;
+      const center = move.enPassant ? move.capturedSquare : move.to;
+      const blast = [center, ...adjacentSquares(center)];
+      const exploded = [];
+      for (const sq of blast) {
+        const piece = board[sq];
+        if (!piece) continue;
+        if (sq !== center && pieceType(piece) === "p") continue;
+        exploded.push({ square: sq, piece });
+        board[sq] = null;
+      }
+      if (undo) undo.balatroExploded = exploded;
+      move.balatroAtomic = exploded.length > 0;
+      return exploded;
+    }
+
+    function applyCaptureCardEffects(move, moverColor, undo) {
+      const capturedPiece = capturedPieceFromUndo(move, undo);
+      if (!capturedPiece) return;
+      const victimColor = oppositeColor(moverColor);
+      if (hasJoker(moverColor, "crazyhouse")) {
+        addReservePiece(moverColor, capturedPiece);
+      }
+      if (hasJoker(victimColor, "piece_insurance")) {
+        addPieceCard(victimColor, pieceType(capturedPiece));
+      }
+      if (pieceType(capturedPiece) === "q" && hasJoker(victimColor, "royal_insurance")) {
+        drawPieceCards(victimColor, 3);
+      }
+      queueReward(moverColor);
+    }
+
+    function applyPostMoveCardEffects(move, moverColor, checkNow, statusAfterMove) {
+      if (!state.cardGame || !state.game) return statusAfterMove;
+      const player = cardPlayer(moverColor);
+      const opponent = oppositeColor(moverColor);
+      if (!player) return statusAfterMove;
+
+      if (move.ghostQueen) {
+        removeOneJoker(moverColor, "ghost_queen");
+      }
+
+      if (moveCardType(move) === "n" && hasJoker(moverColor, "horsepower")) {
+        drawPieceCards(moverColor, 1);
+      }
+
+      if (checkNow) {
+        if (hasJoker(moverColor, "checklist")) {
+          player.checklistStacks = Math.min(3, (player.checklistStacks || 0) + 1);
+        }
+        if (hasJoker(moverColor, "three_check")) {
+          state.cardGame.checkStreak[moverColor] = (state.cardGame.checkStreak[moverColor] || 0) + 1;
+          state.cardGame.checkStreak[opponent] = 0;
+          if (state.cardGame.checkStreak[moverColor] >= 3) {
+            state.game.cardResult = `${colorName(moverColor)} wins by Three-Check Joker.`;
+            statusAfterMove = state.game.getGameStatus();
+          }
+        }
+      } else {
+        state.cardGame.checkStreak[moverColor] = 0;
+      }
+
+      if (!statusAfterMove.over) {
+        drawForTurn(state.game.position.turn);
+      }
+      return statusAfterMove;
     }
 
     function promotePiece(piece, promotion) {
@@ -4747,6 +6267,184 @@
       return moves;
     }
 
+    function moveKey(move) {
+      return [
+        move.from ?? -1,
+        move.to ?? -1,
+        move.dropPiece || "",
+        move.promotion || "",
+        move.castleKing ? "ck" : "",
+        move.castleQueen ? "cq" : "",
+        move.bunnyBishop ? "bb" : "",
+        move.ghostQueen ? "gq" : "",
+        move.heavyPush ? `hr${move.pushTo}` : ""
+      ].join(":");
+    }
+
+    function moveLeavesOwnKingSafe(game, move) {
+      const mover = game.position.turn;
+      const undo = game.applyMove(move);
+      const safe = !game.isInCheck(mover);
+      game.undoMove(undo);
+      return safe;
+    }
+
+    function pushBalatroMove(game, moves, seen, move) {
+      const key = moveKey(move);
+      if (seen.has(key)) return;
+      if (!moveLeavesOwnKingSafe(game, move)) return;
+      seen.add(key);
+      moves.push(move);
+    }
+
+    function addBalatroDropMoves(game, moves, seen, color) {
+      if (!hasJoker(color, "crazyhouse")) return;
+      const reserves = game.position.reserves[color];
+      for (const type of PIECE_DROP_TYPES) {
+        if (!reserves[type]) continue;
+        for (let to = 0; to < 64; to += 1) {
+          if (game.position.board[to]) continue;
+          const rank = rankOf(to);
+          if (type === "p" && (rank === 0 || rank === 7)) continue;
+          pushBalatroMove(game, moves, seen, {
+            from: -1,
+            to,
+            piece: color === "w" ? type.toUpperCase() : type,
+            dropPiece: type,
+            captured: false
+          });
+        }
+      }
+    }
+
+    function addBunnyBishopMoves(game, moves, seen, color) {
+      if (!hasJoker(color, "bunny_bishop")) return;
+      const board = game.position.board;
+      for (let from = 0; from < 64; from += 1) {
+        const piece = board[from];
+        if (!piece || colorOf(piece) !== color || pieceType(piece) !== "b") continue;
+        const startRank = rankOf(from);
+        const startFile = fileOf(from);
+        for (const [dr, df] of BISHOP_DIRS) {
+          let jumped = false;
+          let r = startRank + dr;
+          let f = startFile + df;
+          while (inBounds(f, r)) {
+            const to = r * 8 + f;
+            const target = board[to];
+            if (!jumped) {
+              if (target) jumped = true;
+            } else {
+              if (!target) {
+                pushBalatroMove(game, moves, seen, { from, to, piece, captured: false, bunnyBishop: true });
+              } else {
+                if (colorOf(target) !== color) {
+                  pushBalatroMove(game, moves, seen, { from, to, piece, captured: true, bunnyBishop: true });
+                }
+                break;
+              }
+            }
+            r += dr;
+            f += df;
+          }
+        }
+      }
+    }
+
+    function addGhostQueenMoves(game, moves, seen, color) {
+      if (!hasJoker(color, "ghost_queen")) return;
+      const board = game.position.board;
+      for (let from = 0; from < 64; from += 1) {
+        const piece = board[from];
+        if (!piece || colorOf(piece) !== color || pieceType(piece) !== "q") continue;
+        const startRank = rankOf(from);
+        const startFile = fileOf(from);
+        for (const [dr, df] of [...BISHOP_DIRS, ...ROOK_DIRS]) {
+          let passedBlocker = false;
+          let r = startRank + dr;
+          let f = startFile + df;
+          while (inBounds(f, r)) {
+            const to = r * 8 + f;
+            const target = board[to];
+            if (!passedBlocker) {
+              if (target) passedBlocker = true;
+            } else {
+              if (!target) {
+                pushBalatroMove(game, moves, seen, { from, to, piece, captured: false, ghostQueen: true });
+              } else {
+                if (colorOf(target) !== color) {
+                  pushBalatroMove(game, moves, seen, { from, to, piece, captured: true, ghostQueen: true });
+                }
+                break;
+              }
+            }
+            r += dr;
+            f += df;
+          }
+        }
+      }
+    }
+
+    function addHeavyRookMoves(game, moves, seen, color) {
+      if (!hasJoker(color, "heavy_rook")) return;
+      const board = game.position.board;
+      for (let from = 0; from < 64; from += 1) {
+        const piece = board[from];
+        if (!piece || colorOf(piece) !== color || pieceType(piece) !== "r") continue;
+        const startRank = rankOf(from);
+        const startFile = fileOf(from);
+        for (const [dr, df] of ROOK_DIRS) {
+          let r = startRank + dr;
+          let f = startFile + df;
+          while (inBounds(f, r)) {
+            const to = r * 8 + f;
+            const target = board[to];
+            if (!target) {
+              r += dr;
+              f += df;
+              continue;
+            }
+            if (colorOf(target) !== color && pieceType(target) !== "k") {
+              const pushRank = r + dr;
+              const pushFile = f + df;
+              if (inBounds(pushFile, pushRank)) {
+                const pushTo = pushRank * 8 + pushFile;
+                if (!board[pushTo]) {
+                  pushBalatroMove(game, moves, seen, {
+                    from,
+                    to,
+                    piece,
+                    captured: false,
+                    heavyPush: true,
+                    pushTo
+                  });
+                }
+              }
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    function generateBalatroLegalMoves(game) {
+      const color = game.position.turn;
+      const base = game.generateLegalMoves();
+      if (!state.cardGame || isFourPlayerVariant() || isBughouseVariant()) return base;
+      const moves = base.slice();
+      const seen = new Set(moves.map(moveKey));
+      addBalatroDropMoves(game, moves, seen, color);
+      addBunnyBishopMoves(game, moves, seen, color);
+      addGhostQueenMoves(game, moves, seen, color);
+      addHeavyRookMoves(game, moves, seen, color);
+      return moves;
+    }
+
+    function generatePlayableBalatroMoves(game, color = game.position.turn) {
+      const moves = generateBalatroLegalMoves(game);
+      return filterMovesBySelectedCard(color, moves);
+    }
+
     function evaluatePosition(game) {
       const board = game.position.board;
         let score = 0;
@@ -4807,7 +6505,7 @@
     }
 
     function minimax(game, depth, alpha, beta, maximizing) {
-      const legalMoves = game.generateLegalMoves();
+      const legalMoves = generateBalatroLegalMoves(game);
       const status = game.getGameStatus();
 
       if (depth === 0 || status.over) {
@@ -4850,7 +6548,8 @@
     }
 
     function chooseBotMove(game, elo) {
-      const legalMoves = game.generateLegalMoves();
+      const botColor = game.position.turn;
+      const legalMoves = playableMovesForHand(botColor, generateBalatroLegalMoves(game));
       if (legalMoves.length === 0) {
         return null;
       }
@@ -4858,7 +6557,6 @@
       const depth = ["crazyhouse", "atomic", "antichess", "checkers_vs_chess"].includes(game.variant)
         ? 1
         : eloToSearchDepth(elo);
-      const botColor = game.position.turn;
       const scoredMoves = [];
 
       for (const move of orderMoves(game, legalMoves)) {
@@ -4898,7 +6596,7 @@
       if (["crazyhouse", "atomic", "antichess", "checkers_vs_chess", "fog_of_war"].includes(game.variant)) {
         return { symbol: "", label: "", cpLoss: 0 };
       }
-      const legalMoves = game.generateLegalMoves();
+      const legalMoves = generateBalatroLegalMoves(game);
       if (legalMoves.length === 0) {
         return { symbol: "", label: "", cpLoss: 0 };
       }
@@ -5916,7 +7614,7 @@
       document.getElementById("bughouseWrap").style.display = "none";
       ui.board.style.display = "grid";
       ui.board.innerHTML = "";
-      const legalMoves = game.generateLegalMoves();
+      const legalMoves = generatePlayableBalatroMoves(game, game.position.turn);
       state.lastLegalMoves = legalMoves;
       const selected = state.selectedSquare;
       const targets = selected == null ? [] : legalMoves.filter(m => m.from === selected);
@@ -6412,6 +8110,18 @@
         } else {
           ui.statusText.textContent = status.result || "Game in progress.";
         }
+        if (state.cardGame && !isFourPlayerVariant() && !isBughouseVariant()) {
+          const turn = game.position.turn;
+          const rawMoves = generateBalatroLegalMoves(game);
+          const player = cardPlayer(turn);
+          if (hasOpeningFreeMove(turn)) {
+            ui.statusText.textContent += ` Opening Theory: ${player.openingFree} free moves left.`;
+          } else if (noPlayableCardEmergency(turn, rawMoves)) {
+            ui.statusText.textContent += " No playable card: emergency free move unlocked.";
+          } else if (!cardById(turn, state.cardGame.selectedCardId)) {
+            ui.statusText.textContent += " Choose a piece card to reveal legal moves.";
+          }
+        }
         ui.statusText.classList.remove("danger");
       }
     }
@@ -6438,22 +8148,14 @@
         return;
       }
       if (state.variant === "chess960") ui.variantNote.textContent = "Randomized back rank with Chess960 castling rules.";
-      else if (state.variant === "three_check") ui.variantNote.textContent = "First side to give 3 checks wins. Check counter shown in status.";
-      else if (state.variant === "atomic") ui.variantNote.textContent = "Captures explode adjacent non-pawn pieces. Boom! 💥";
       else if (state.variant === "king_of_the_hill") ui.variantNote.textContent = "Move your king to d4/e4/d5/e5 to win instantly. 👑";
-      else if (state.variant === "fog_of_war") ui.variantNote.textContent = "Enemy pieces are hidden unless your pieces can see them.";
-      else if (state.variant === "antichess") ui.variantNote.textContent = "Captures are mandatory. Lose ALL pieces to win!";
-      else if (state.variant === "crazyhouse") ui.variantNote.textContent = "Captured pieces go to reserve and can be dropped anywhere.";
-      else if (state.variant === "checkers_vs_chess") ui.variantNote.textContent = "White plays chess pieces, Black plays checkers. Reach the back rank to king!";
-      else if (state.variant === "four_player_teams") ui.variantNote.textContent = "4-Player Chess (Teams) — pass-and-play on a 14×14 board. Red+Green vs Blue+Yellow. Last team standing wins!";
-      else if (state.variant === "four_player_ffa") ui.variantNote.textContent = "4-Player Chess FFA — 14×14 board. Capture a king to eliminate that player. Last one standing wins!";
-      else if (state.variant === "bughouse") ui.variantNote.textContent = "Bughouse — Two boards. Captures go to your partner's reserve. Drops allowed from reserve. Pass-and-play!";
-      else ui.variantNote.textContent = "";
+      else ui.variantNote.textContent = "Piece cards gate movement; joker powers add the wild rules.";
     }
 
     function renderReservePanel() {
       const game = state.game;
-      const show = Boolean(game && state.variant === "crazyhouse" && !isFourPlayerVariant() && !isBughouseVariant());
+      const show = Boolean(game && !isFourPlayerVariant() && !isBughouseVariant()
+        && (state.variant === "crazyhouse" || hasJoker("w", "crazyhouse") || hasJoker("b", "crazyhouse")));
       ui.reservePanel.classList.toggle("hidden", !show);
       if (!show) {
         ui.reserveOwnGrid.innerHTML = "";
@@ -6530,6 +8232,7 @@
       renderBoard();
       renderMoveLog();
       renderReservePanel();
+      renderCardGame();
       renderLiveFeed();
       renderAccuracyMeter();
       ui.eloValue.textContent = ui.eloSlider.value;
@@ -6584,6 +8287,7 @@
       state.gameOverSoundPlayed = false;
       state.accuracy.w = { sum: 0, count: 0, value: 100 };
       state.accuracy.b = { sum: 0, count: 0, value: 100 };
+      initCardGame();
       setPlayersFromSelection(selectedSideOption());
       if (isLocalMultiplayerMode()) {
         state.playerColor = state.orientation;
@@ -6741,6 +8445,7 @@
         const undo = game.applyMove(move);
         undo.annotation = annotation;
         undo.annotatedText = formatAnnotated(move, annotation);
+        applyBalatroAtomicExplosion(move, color, undo);
 
         setMoveBadge(move, annotation, color, actor);
         state.lastMoveTrail = move.from >= 0
@@ -6753,7 +8458,7 @@
         updateAccuracy(color, annotation);
         pushLiveAnnotation(liveLabel, move, annotation);
 
-        const capturedPiece = move.captured || null;
+        const capturedPiece = capturedPieceFromUndo(move, undo);
         if (move.castleKing || move.castleQueen) {
           playSfx("castle");
         } else if (move.promotion) {
@@ -6761,21 +8466,28 @@
         } else {
           playSfx(move.captured ? "capture" : "move", capturedPiece);
         }
+        if (move.castleKing || move.castleQueen) {
+          musicOnCastle();
+        } else if (!move.captured && !move.promotion) {
+          musicOnMove();
+        }
         /* Achievement hooks */
         if (window._achOnMove) window._achOnMove(move);
         if (window._achOnAnnotation && annotation) window._achOnAnnotation(annotation);
         /* Dynamic music tension hooks */
         if (move.captured) {
           const pieceValues = { p:1, n:3, b:3, r:5, q:9, k:0, P:1, N:3, B:3, R:5, Q:9, K:0 };
-          musicOnCapture(pieceValues[move.captured] || 1);
+          musicOnCapture(pieceValues[capturedPiece] || pieceValues[move.captured] || 1);
+          applyCaptureCardEffects(move, color, undo);
         }
         if (move.promotion) musicOnPromotion();
-        maybePlayGameOverSfx();
-        const statusAfterMove = game.getGameStatus();
+        let statusAfterMove = game.getGameStatus();
         const defender = game.position.turn;
         const checkNow = !statusAfterMove.over
           && !["antichess", "checkers_vs_chess"].includes(game.variant)
           && game.isInCheck(defender);
+        statusAfterMove = applyPostMoveCardEffects(move, color, checkNow, statusAfterMove);
+        maybePlayGameOverSfx();
         if (checkNow && window._achOnCheck) window._achOnCheck();
         if (isLocalMultiplayerMode() && state.autoRotateMultiplayer) {
           state.orientation = game.position.turn;
@@ -6785,8 +8497,9 @@
           const burstSquare = move.enPassant
             ? move.capturedSquare
             : (Number.isInteger(move.capturedSquare) ? move.capturedSquare : move.to);
-          if (game.variant === "atomic" && undo.exploded && undo.exploded.length > 0) {
-            playAtomicExplosionFx(burstSquare, undo.exploded.map(e => e.square));
+          if ((game.variant === "atomic" && undo.exploded && undo.exploded.length > 0) || (move.balatroAtomic && undo.balatroExploded && undo.balatroExploded.length > 0)) {
+            const exploded = (undo.exploded && undo.exploded.length > 0) ? undo.exploded : undo.balatroExploded;
+            playAtomicExplosionFx(burstSquare, exploded.map(e => e.square));
             synthExplosion();
           } else {
             playCaptureBurst(burstSquare, capturedPiece);
@@ -6796,7 +8509,7 @@
         if (game.variant === "antichess" && move.captured && state.cinematicFx) {
           playAntichessCaptureFx(move.to);
         }
-        if (move.dropPiece && game.variant === "crazyhouse" && state.cinematicFx) {
+        if (move.dropPiece && (game.variant === "crazyhouse" || hasJoker(color, "crazyhouse")) && state.cinematicFx) {
           playCrazyhouseDropFx(move.to);
         }
         if (game.variant === "king_of_the_hill" && state.cinematicFx) {
@@ -6824,6 +8537,9 @@
             const count = color === "w" ? checksW : checksB;
             if (count > 0) playThreeCheckFx(count);
           }
+        }
+        if (hasJoker(color, "three_check") && checkNow && state.cardGame) {
+          playThreeCheckFx(state.cardGame.checkStreak[color] || 1);
         }
         if (game.variant === "checkers_vs_chess") {
           const movedTo = move.to;
@@ -6866,6 +8582,11 @@
       const analysisDepth = 2;
       const annotation = analyzeMoveQuality(game, move, analysisDepth);
       const moverColor = game.position.turn;
+      if (!consumeCardForMove(moverColor, move)) {
+        ui.statusText.textContent = "Choose a matching piece card before moving.";
+        ui.statusText.classList.add("danger");
+        return;
+      }
       const actorLabel = isBotMode() ? "You:" : `${moverColor === "w" ? "White" : "Black"}:`;
       state.selectedSquare = null;
       state.selectedDropPiece = null;
@@ -6874,7 +8595,7 @@
 
       await applyAnnotatedMove(move, annotation, moverColor, "human", actorLabel);
       if (isP2PMode() && p2p.ready) {
-        p2pSend("move", move);
+        p2pSend("move", { move, cardGame: p2pSerializableCardGame() });
       }
       if (!game.isGameOver() && isBotMode()) {
         await delay(MOVE_GAP_MS);
@@ -6915,6 +8636,7 @@
 
       const annotationDepth = Math.max(2, picked.depth - 1);
       const annotation = analyzeMoveQuality(game, picked.move, annotationDepth);
+      consumeCardForMove(state.botColor, picked.move);
       await delay(MOVE_GAP_MS);
       await applyAnnotatedMove(picked.move, annotation, state.botColor, "bot", "Bot:");
 

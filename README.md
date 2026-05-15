@@ -1,38 +1,39 @@
 # Chess Ultimate
 
-A feature-rich chess game packaged as a desktop app with two distinct modes, original procedural soundtracks, and dynamic music that responds to gameplay.
+A feature-rich chess desktop app with two distinct modes, original procedural soundtracks, dynamic music that reacts to gameplay, and a full Balatro-style card game layered on top of chess.
 
 ## Modes
 
-### Battle Edition (`index.html`)
-Classic chess with a cinematic war theme. Original "Iron Throne" procedural march (A minor modal, 108–132 BPM) with timpani, string melody, horn counter-melody, and layered bass. Fullscreen borderless window.
+### Battle Edition
+Classic chess with a cinematic war theme. Original "Iron Throne" procedural march (A minor modal, 108–132 BPM) with timpani, string melody, horn counter-melody, and layered bass.
 
-### Joker's Gambit (`index2.html`)
-Balatro-inspired chess with a jazz theme. Original procedural jazz (Cm7–Fm7–Bb7–Ebmaj7, 92–116 BPM) with swung hi-hats, walking bass, chord pads, counter-melody, and convolution reverb.
+### Joker's Gambit
+Balatro-inspired chess with a full card game system. Earn piece cards and jokers as you play, use them to unlock moves, and activate special abilities. Original procedural jazz soundtrack (Cm7–Fm7–Bb7–Ebmaj7, 92–116 BPM) with swung hi-hats, walking bass, and convolution reverb.
 
 ## Features
 
-- **Dynamic Music System** — The soundtrack reacts to what's happening on the board:
-  - Captures: tension rises proportional to piece value (pawn < knight/bishop < rook < queen)
-  - Check: sharp tension spike + chord filter opens
-  - Blunder (`??` / `?`): brief volume dip then tension surge
-  - Brilliant move (`!!`): tension peak with filter sweep
-  - Promotion: tension spike
-  - Game over (win): music swells then fades; (loss): music fades out
-  - Tension decays slowly back to baseline between events
-  - BPM, filter cutoff, counter-melody volume, and percussion density all scale with tension
+- **Balatro Card System** (Joker's Gambit) — Draw piece cards each turn to unlock moves. Earn jokers with passive effects and active abilities. Roll rewards after captures. Rarity system (Common → Rare → Legendary). P2P multiplayer via WebRTC.
 
-- **Achievements** — 12 unlockable achievements per mode, stored in localStorage, with toast popups and a gallery modal. Battle and Balatro have separate achievement sets.
+- **Dynamic Music** — The soundtrack reacts to the board in real time:
+  - Captures → tension rises by piece value (pawn < minor < rook < queen)
+  - Check → sharp filter sweep and tension spike
+  - Blunder (`??`/`?`) → volume dip + tension surge
+  - Brilliant (`!!`) → tension peak with bloom effect
+  - Promotion → tension spike
+  - Win/Loss → swell-and-fade or fade-out
+  - Tension decays slowly to baseline; BPM, filter, counter-melody, and percussion density all scale with it
 
-- **Annotation Engine** — Moves are annotated in real-time (Brilliant `!!`, Good `!`, Inaccuracy `?!`, Mistake `?`, Blunder `??`) with accuracy tracking per side.
+- **Visual Music Reactivity** — Board glow, background saturation/brightness, and CSS event flashes all respond to tension in real time via CSS custom properties.
 
-- **Multiple Variants** — Standard chess plus Antichess, Atomic, Fog of War, Three-Check, King of the Hill, Crazyhouse, Checkers vs Chess, and more.
+- **Achievements** — 12 unlockable achievements per mode, stored in localStorage, with animated toast popups and a gallery modal.
 
-- **Cinematic FX** — Capture bursts, check pulses, explosion effects (Atomic), hill approach effects (KOTH), fog reveals, promotion fanfare.
+- **Annotation Engine** — Real-time move quality: Brilliant `!!`, Good `!`, Inaccuracy `?!`, Mistake `?`, Blunder `??` with per-side accuracy tracking.
 
-- **Back to Menu** — Return to the launcher mid-game without restarting the app.
+- **Chess Variants** — Standard, Antichess, Atomic, Fog of War, Three-Check, King of the Hill, Crazyhouse, Checkers vs Chess, and more.
 
-- **Launcher** — Frameless launcher window to choose your mode.
+- **Cinematic FX** — Capture bursts, check pulses, Atomic explosions, KOTH hill approach, fog reveals, promotion fanfare.
+
+- **Launcher** — Frameless mode-selection screen. Back-to-menu from any game with crossfade transition.
 
 ## Running from Source
 
@@ -43,41 +44,45 @@ npm install
 npx electron .
 ```
 
-## Building an Executable
+## Building the Executable
 
 ```bash
 npm install
-npx @electron/packager . ChessUltimate --platform=win32 --arch=x64 --out=dist-pkg --overwrite --icon=icon.ico
+npx @electron/packager . ChessUltimate --platform=win32 --arch=x64 --out=dist-pkg --overwrite
 ```
 
-The built exe will be at `dist-pkg/ChessUltimate-win32-x64/ChessUltimate.exe`.
+Output: `dist-pkg/ChessUltimate-win32-x64/ChessUltimate.exe`
 
 ## Project Structure
 
 ```
 Chess Ultimate/
 ├── main.js          — Electron main process (window management, IPC)
-├── preload.js       — Context bridge (exposes electronAPI to renderer)
+├── preload.js       — Context bridge (exposes window.electronAPI)
 ├── launcher.html    — Mode selection launcher
-├── index.html       — Battle Edition
-├── index2.html      — Joker's Gambit (Balatro mode)
+├── index.html       — Battle Edition (~7000 lines)
+├── index2.html      — Joker's Gambit (~9000 lines)
 ├── package.json
 └── README.md
 ```
 
 ## Controls
 
-- Click a piece to select, click a destination to move
-- Promotion picker appears automatically on pawn promotion
-- ESC — opens in-game menu (Back to Menu, settings)
-- Settings panel: music volume, SFX volume, cinematic FX toggle, bot difficulty
+- Click a piece to select, click destination to move
+- Promotion picker appears automatically
+- ESC — in-game menu (Back to Menu, settings)
+- Settings: music volume, SFX volume, cinematic FX toggle, bot difficulty
 
 ## Music Architecture
 
-Both modes use the Web Audio API with fully procedural synthesis — no audio files. Music loops schedule 1 beat ahead using absolute `AudioContext` time to prevent drift. A persistent `_music` tension object (0–1) is updated on game events and decays at ~0.012/400ms back to 0. Tension drives:
+All sound is procedurally synthesized via Web Audio API — no audio files. Loops schedule 1 beat ahead using absolute `AudioContext` time to prevent drift. A `_music` tension object (0–1) is updated on game events and decays ~0.010–0.012 per 400ms tick. Tension drives:
 
-- Low-pass filter cutoff on chord pads (opens with tension)
-- Counter-melody gain bus (louder with tension)
-- Off-beat percussion fill gain bus (appears above 0.3 tension)
-- Ominous low drone (appears above 0.7 tension)
-- BPM multiplier (Battle: 108→132, Balatro: 92→116 at peak tension)
+| Parameter | Calm | Peak |
+|-----------|------|------|
+| BPM | 108 / 92 | 132 / 116 |
+| Chord filter cutoff | 700–800 Hz | 2500 Hz |
+| Counter-melody gain | 0.04–0.05 | 0.10–0.13 |
+| Perc fill bus | silent | active above 0.3 |
+| Ominous drone | silent | active above 0.7 |
+| Board glow radius | 70px | 160px |
+| Background saturation | 1× | 1.55× |
