@@ -2949,11 +2949,21 @@
     function startBackgroundMusic() {
       if (_bgMusic && _bgMusic.running) return;
       const ctx = getAudioCtx();
-      const { music } = getMasterGain();
+      getMasterGain(); // ensure _masterGain exists
+      // Each session gets its own gain node so stopping disconnects ALL
+      // scheduled nodes from that session without affecting new ones.
+      const sessionGain = ctx.createGain();
+      sessionGain.gain.value = 0;
+      sessionGain.connect(_masterGain);
+      // Fade in to the slider's current volume
+      const targetVol = Number(document.getElementById("musicVolSlider")?.value ?? 40) / 100 * 0.40;
+      sessionGain.gain.setTargetAtTime(targetVol, ctx.currentTime, 0.5);
+
+      const music = sessionGain; // all loop nodes route here instead of _musicGain
       const BASE_BPM = 108;
       const BARS = 8;
       const BPB = 4;
-      const running = { running: true };
+      const running = { running: true, gain: sessionGain };
       _bgMusic = running;
       let nextT = ctx.currentTime + 0.05;
       let cycle = 0;
@@ -3203,31 +3213,29 @@
     }
 
     function stopBackgroundMusic() {
-      if (_bgMusic) { _bgMusic.running = false; _bgMusic = null; }
-      if (_musicGain) {
-        const ctx = getAudioCtx();
-        // Cancel any in-flight ramps then fade to silence quickly
-        _musicGain.gain.cancelScheduledValues(ctx.currentTime);
-        _musicGain.gain.setTargetAtTime(0, ctx.currentTime, 0.18);
+      if (_bgMusic) {
+        _bgMusic.running = false;
+        // Disconnect this session's gain node so all its scheduled nodes
+        // output to nothing — no stacking when a new session starts.
+        if (_bgMusic.gain) {
+          try {
+            const ctx = getAudioCtx();
+            _bgMusic.gain.gain.cancelScheduledValues(ctx.currentTime);
+            _bgMusic.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.12);
+            const g = _bgMusic.gain;
+            setTimeout(() => { try { g.disconnect(); } catch(e) {} }, 400);
+          } catch(e) {}
+        }
+        _bgMusic = null;
       }
     }
 
     function _musicFadeIn() {
-      if (_musicGain) {
-        const ctx = getAudioCtx();
-        const v = Number(document.getElementById("musicVolSlider")?.value ?? 40) / 100;
-        _musicGain.gain.cancelScheduledValues(ctx.currentTime);
-        _musicGain.gain.setTargetAtTime(v, ctx.currentTime, 0.5);
-      }
+      // No-op now: fade-in is handled inside startBackgroundMusic via sessionGain
     }
 
     let _musicEnabled = true;
-    let _toggleDebounce = null;
     function toggleMusic(force) {
-      // Debounce: ignore rapid clicks within 350ms to prevent loop stacking
-      if (_toggleDebounce) return;
-      _toggleDebounce = setTimeout(() => { _toggleDebounce = null; }, 350);
-
       if (force === undefined) _musicEnabled = !_musicEnabled;
       else _musicEnabled = force;
       const btn = document.getElementById("musicToggleBtn");
@@ -3235,13 +3243,7 @@
         stopBackgroundMusic();
         resumeAudio();
         getMasterGain();
-        // Delay start slightly so the fade-out has time to silence old nodes
-        setTimeout(() => {
-          if (_musicEnabled && (!_bgMusic || !_bgMusic.running)) {
-            startBackgroundMusic();
-            _musicFadeIn();
-          }
-        }, 200);
+        startBackgroundMusic();
         if (btn) { btn.textContent = "♪ Music"; btn.classList.remove("music-off"); }
       } else {
         stopBackgroundMusic();
@@ -7709,7 +7711,6 @@
         // Only auto-start if music is enabled and not already running
         if (_musicEnabled && (!_bgMusic || !_bgMusic.running)) {
           startBackgroundMusic();
-          _musicFadeIn();
         }
       }
       document.removeEventListener("click", onFirstInteraction, true);
