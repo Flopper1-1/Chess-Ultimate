@@ -1,33 +1,64 @@
-# Chess Ultimate
+<h1 align="center">Chess Ultimate</h1>
 
-A chess desktop app with two distinct modes, original procedural soundtracks, dynamic music that reacts to gameplay, and a full Balatro-style card game layered on top of chess.
+<p align="center"><strong>Three cinematic chess editions with reactive procedural soundtracks.</strong></p>
 
-## Modes
+<p align="center">
+  <a href="https://github.com/Flopper1-1/Chess-Ultimate/releases">
+    <img alt="Download latest release" src="https://img.shields.io/badge/Download-Latest%20Release-2ea44f?style=for-the-badge&logo=github">
+  </a>
+</p>
 
-### ⚔️ Battle Edition
-Classic chess with a cinematic war theme. Original "Iron Throne" procedural march (A minor modal, 108–132 BPM) with timpani, string melody, horn counter-melody, layered bass, and screen shake on captures.
+<p align="center">
+  <img src="screenshots/launcher.png" alt="Chess Ultimate launcher showing Battle Edition, Joker's Gambit, and Wilderness">
+</p>
 
-### 🃏 Joker's Gambit
-Balatro-inspired chess with a full card game system. Draw piece cards each turn, earn jokers with passive and active abilities, roll rewards after captures. Original procedural jazz soundtrack (Cm7–Fm7–Bb7–Ebmaj7, 92–116 BPM).
+## ⚔️ Three Editions
 
-## Features
+### **Battle Edition**
 
-- **Dynamic Music** — Soundtrack reacts to the board in real time. Captures, checks, blunders, brilliant moves, and promotions all shift the tension level, which drives BPM, filter cutoff, counter-melody volume, and percussion density.
-- **Visual Music Reactivity** — Board glow, background saturation/brightness, and CSS flash animations all respond to tension via CSS custom properties.
-- **Screen Shake** — Captures shake the board proportional to piece value. Queen capture = big shake.
-- **Cinematic Piece Movement** — 5-keyframe arc with motion tilt, peak blur, and landing settle.
-- **Balatro Card System** — Piece cards, jokers, rarity rolls (Common → Legendary), P2P multiplayer via WebRTC.
-- **Achievements** — 12 unlockable per mode, stored in localStorage, with toast popups and a gallery modal.
-- **Annotation Engine** — Real-time move quality: Brilliant `!!`, Good `!`, Inaccuracy `?!`, Mistake `?`, Blunder `??` with per-side accuracy tracking.
-- **Chess Variants** — Standard, Antichess, Atomic, Fog of War, Three-Check, King of the Hill, Crazyhouse, Checkers vs Chess, Bughouse, and more.
-- **Launcher** — Frameless mode-selection screen with crossfade transition and back-to-menu from any game.
+![Battle Edition gameplay](screenshots/battle.png)
 
-## Getting Started
+- Classic chess with per-piece weapon effects, screen shake, and cinematic move arcs.
+- Full annotation engine with brilliant moves, blunders, accuracy meters, and move badges.
+- Includes the main chess variant suite, from Atomic to Fog of War to 4-player boards.
 
-### Requirements
-- [Node.js](https://nodejs.org) v18 or later
+### **Joker's Gambit**
 
-### Run from source
+![Joker's Gambit gameplay](screenshots/jokers_gambit.png)
+
+- Balatro-inspired piece cards gate movement and turn every move into a wager.
+- Jokers, luck cards, reward rolls, rarity tiers, and passive or active powers bend the rules.
+- Jazz-club presentation with card-table UI, suit bursts, and gambling-flavored momentum.
+
+### **Wilderness**
+
+![Wilderness gameplay](screenshots/wilderness.png)
+
+- Don't Starve-inspired sanity meters react to checks, captures, blunders, and brilliant moves.
+- The board darkens as sanity falls, with nightmare filters and survival pressure.
+- Eerie wilderness audio layers drones, crickets, heartbeat pulses, and sudden horror stingers.
+
+## ✨ Features
+
+- **Procedural Web Audio music** - no audio files; every edition has its own synthesized score.
+- **Reactive tension system** - captures, checks, promotions, blunders, and game over events reshape BPM, filters, percussion, and counter-melodies.
+- **Cinematic animations** - arcing piece movement, landing flashes, capture bursts, screen shake, and themed FX.
+- **11 chess variants** - Standard, Chess960, Three-Check, Atomic, King of the Hill, Fog of War, Antichess, Crazyhouse, Checkers vs Chess, Bughouse, and more.
+- **Annotation engine** - real-time `!!`, `!`, `?!`, `?`, and `??` labels with per-side accuracy tracking.
+- **4-player chess** - teams and free-for-all modes on a 14x14 board.
+- **Balatro card system** - piece hands, jokers, luck cards, reward chances, rarity rolls, and card-driven movement.
+- **Don't Starve sanity mechanic** - sanity bars, darkness states, Charlie pressure, and survival-flavored consequences.
+
+## 🎵 Soundtracks
+
+| Edition | Style | Tempo | Harmony | Signature Texture |
+|---|---:|---:|---|---|
+| Battle | War march | 108 BPM | A minor modal | Timpani, low strings, horns, battle percussion |
+| Joker's Gambit | Jazz | 92 BPM | Cm7-Fm7-Bb7-Ebmaj7 | Swing groove, brushed percussion, sly counter-melody |
+| Wilderness | Eerie Phrygian drone | 60 BPM | Phrygian darkness | Cricket textures + heartbeat |
+
+## 🚀 Quick Start
+
 ```bash
 git clone https://github.com/Flopper1-1/Chess-Ultimate.git
 cd Chess-Ultimate
@@ -35,63 +66,48 @@ npm install
 npm start
 ```
 
-### Build the exe
+## 📦 Build
+
+Use the repo build script:
+
 ```bash
 npm run build
 ```
 
-Output: `build-out/ChessUltimate-win32-x64/ChessUltimate.exe`
+Or package the Windows app directly:
 
-The build script automatically strips non-English locales and the Chromium license file, bringing the size from ~360MB down to ~300MB. The size is normal — Electron bundles its own Chromium (same as VS Code, Discord, Slack).
-
-## Download
-
-Grab the latest release from [Releases](https://github.com/Flopper1-1/Chess-Ultimate/releases).
-
-## Project Structure
-
-```
-Chess Ultimate/
-├── main.js          — Electron main process (window management, IPC)
-├── preload.js       — Context bridge (exposes window.electronAPI)
-├── launcher.html    — Mode selection launcher
-├── index.html       — Battle Edition
-├── index2.html      — Joker's Gambit
-├── package.json
-├── README.md
-└── BUILDING.md      — Detailed build & release instructions
+```bash
+npx @electron/packager . ChessUltimate --platform=win32 --arch=x64 --out=dist-pkg --overwrite
 ```
 
-## Controls
+Release-style output:
+
+```text
+dist-pkg/ChessUltimate-win32-x64/ChessUltimate.exe
+```
+
+## 🎮 Controls
 
 | Action | Input |
-|--------|-------|
-| Select piece | Click |
-| Move piece | Click destination |
-| Promote pawn | Picker appears automatically |
-| Open menu | ESC |
-| Back to launcher | ESC → Back to Menu |
+|---|---|
+| Select a piece | Click a piece |
+| Move | Click a legal destination |
+| Drag move | Drag a piece to a square |
+| Promote | Choose from the promotion picker |
+| Planning arrow | Right-click drag or Shift-drag |
+| Highlight square | Right-click or Shift-click |
+| Select a card | Joker's Gambit: click a matching piece card |
+| Music | Press the Music button |
+| Menu | Press Esc or use the Menu button |
+| Back to launcher | Menu -> Back to Menu |
 
-Settings panel: music volume, SFX volume, cinematic FX toggle, bot difficulty.
+## 🧩 Tech Notes
 
-## Music Architecture
-
-All sound is procedurally synthesized via Web Audio API — no audio files. A `_music` tension object (0–1) updates on game events and decays ~0.010–0.012 per 400ms tick.
-
-| Parameter | Calm | Peak |
-|-----------|------|------|
-| BPM (Battle) | 108 | 132 |
-| BPM (Balatro) | 92 | 116 |
-| Chord filter cutoff | 700–800 Hz | 2500 Hz |
-| Counter-melody gain | low | high |
-| Percussion fills | off | on above 0.3 |
-| Ominous drone | off | on above 0.7 |
-| Board glow radius | 70px | 160px |
-
-## Contributing
-
-Pull requests welcome. Check [BUILDING.md](BUILDING.md) for the build setup. Keep PRs focused — one feature or fix per PR.
+- Electron desktop app with isolated preload APIs.
+- Web Audio API synthesis for music and SFX.
+- Local achievements stored per edition in `localStorage`.
+- No bundled audio files and no server required for normal play.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).
