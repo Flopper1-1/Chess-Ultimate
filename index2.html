@@ -47,14 +47,40 @@
 
     * { box-sizing: border-box; }
 
+    /* ── Baltro-themed scrollbar — crimson track, gold thumb ── */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track {
+      background: rgba(10,2,2,0.9);
+      border-left: 1px solid rgba(139,0,0,0.2);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg,
+        rgba(245,200,66,0.8) 0%,
+        rgba(180,60,10,0.7) 45%,
+        rgba(245,200,66,0.8) 100%);
+      border-radius: 6px;
+      border: 2px solid rgba(10,2,2,0.8);
+      box-shadow: 0 0 8px rgba(245,200,66,0.4), inset 0 1px 0 rgba(255,240,180,0.2);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg,
+        rgba(255,220,80,0.95) 0%,
+        rgba(210,80,20,0.85) 50%,
+        rgba(255,220,80,0.95) 100%);
+      box-shadow: 0 0 14px rgba(245,200,66,0.7);
+    }
+    ::-webkit-scrollbar-corner { background: rgba(10,2,2,0.9); }
+    * { scrollbar-width: thin; scrollbar-color: rgba(200,140,30,0.7) rgba(10,2,2,0.9); }
+
     body {
       margin: 0;
-      height: 100vh;
+      min-height: 100vh;
       font-family: "IM Fell English", "Georgia", serif;
       background: #1a0505;
       color: var(--text);
       padding: 10px;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
       display: flex;
       flex-direction: column;
     }
@@ -99,7 +125,7 @@
       flex-direction: column;
       gap: 8px;
       flex: 1;
-      min-height: 0;
+      min-height: calc(100vh - 20px);
     }
 
     .title {
@@ -377,7 +403,7 @@
       grid-template-columns: minmax(320px, 1fr) minmax(260px, 340px);
       gap: 8px;
       flex: 1;
-      min-height: 0;
+      min-height: 600px;
     }
 
     .board-panel,
@@ -389,7 +415,7 @@
       backdrop-filter: blur(6px);
       box-shadow: 0 6px 30px rgba(80,10,5,0.4), inset 0 1px 0 rgba(245,200,66,0.08);
       position: relative;
-      min-height: 0;
+      min-height: 400px;
       overflow: hidden;
     }
 
@@ -491,6 +517,22 @@
       animation: musicEventBloom 0.9s cubic-bezier(0.16,1,0.3,1) forwards;
     }
 
+    /* ── Planning overlay ── */
+    #planOverlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+      overflow: visible;
+    }
+
+    /* Music button waiting state */
+    .music-btn.music-waiting { animation: musicWaitPulse 1.8s ease-in-out infinite; }
+    @keyframes musicWaitPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245,200,66,0); }
+      50%       { box-shadow: 0 0 0 4px rgba(245,200,66,0.4); }
+    }
+
     /* Four-player 14×14 board */
     .board.board-4p {
       --tile4: clamp(22px, 4.2vw, 48px);
@@ -578,6 +620,25 @@
     .square:active {
       transform: scale(0.98);
     }
+
+    /* Wii-glove cursor */
+    .square.has-own-piece { cursor: grab; }
+    .square.has-own-piece:active { cursor: grabbing; }
+    body.dragging-piece { cursor: grabbing !important; }
+    body.dragging-piece * { cursor: grabbing !important; }
+
+    /* Floating drag ghost */
+    #dragGhost {
+      position: fixed;
+      pointer-events: none;
+      z-index: 99998;
+      display: none;
+      transform: translate(-50%, -50%) scale(1.55);
+      filter: drop-shadow(0 6px 18px rgba(0,0,0,0.8)) drop-shadow(0 0 14px rgba(245,200,66,0.7));
+      font-size: calc(var(--tile-size) * 0.64);
+      font-family: "Noto Sans Symbols 2", "Segoe UI Symbol", sans-serif;
+    }
+    #dragGhost.active { display: block; }
 
     .light {
       background: radial-gradient(ellipse at 40% 35%, #e8c98a 0%, #c8a55a 100%);
@@ -2195,7 +2256,7 @@
         <div class="music-controls">
           <button id="menuBackBtn" class="menu-btn" title="Back to menu">⬅ Menu</button>
           <button id="achOpenBtn" class="ach-btn" title="Achievements">🃏 Achs</button>
-          <button id="musicToggleBtn" class="music-btn" title="Toggle background music">♪ Music</button>
+          <button id="musicToggleBtn" class="music-btn music-waiting" title="Click to start music">♪ Music ▶</button>
           <input id="musicVolSlider" type="range" min="0" max="100" value="38" title="Music volume" class="music-vol" />
         </div>
       </div>
@@ -2289,7 +2350,9 @@
             </div>
           </aside>
           <div class="board-wrap">
-            <div class="board" id="board" aria-label="Chess board"></div>
+            <div class="board" id="board" aria-label="Chess board">
+              <svg id="planOverlay" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+            </div>
             <div class="bughouse-wrap" id="bughouseWrap" style="display:none;"></div>
           </div>
         </div>
@@ -2354,10 +2417,14 @@
         <div class="legend">
           <div><b>Symbols:</b> <b>!!</b> brilliant, <b>!</b> strong, <b>?!</b> inaccuracy, <b>?</b> mistake, <b>??</b> blunder.</div>
           <div>Annotations are estimated by comparing the played move to the engine's best candidate at the current analysis depth.</div>
+          <div style="margin-top:6px;"><b>Plan:</b> Right-click drag = arrow &nbsp;|&nbsp; Right-click square = highlight &nbsp;|&nbsp; Shift+drag/click same. Left-click clears.</div>
         </div>
       </aside>
     </section>
   </div>
+
+  <!-- Drag ghost for Wii-glove dragging -->
+  <div id="dragGhost" aria-hidden="true"></div>
 
   <!-- Promotion picker modal -->
   <div id="promotionModal" class="hidden" role="dialog" aria-modal="true" aria-label="Choose promotion piece">
@@ -3346,11 +3413,20 @@
     function startBackgroundMusic() {
       if (_bgMusic && _bgMusic.running) return;
       const ctx = getAudioCtx();
-      const { music } = getMasterGain();
+      getMasterGain(); // ensure _masterGain exists
+      // Each session gets its own gain node — disconnected on stop so old
+      // scheduled nodes never bleed into a new session.
+      const sessionGain = ctx.createGain();
+      sessionGain.gain.value = 0;
+      sessionGain.connect(_masterGain);
+      const targetVol = Number(document.getElementById("musicVolSlider")?.value ?? 38) / 100 * 0.38;
+      sessionGain.gain.setTargetAtTime(targetVol, ctx.currentTime, 0.5);
+
+      const music = sessionGain;
       const BASE_BPM = 92;
       const BARS = 4;
       const BEATS_PER_BAR = 4;
-      const running = { running: true };
+      const running = { running: true, gain: sessionGain };
       _bgMusic = running;
       let nextT = ctx.currentTime + 0.05;
       let cycle = 0;
@@ -3629,20 +3705,23 @@
     }
 
     function stopBackgroundMusic() {
-      if (_bgMusic) { _bgMusic.running = false; _bgMusic = null; }
-      /* fade out music gain instead of hard-cutting */
-      if (_musicGain) {
-        const ctx = getAudioCtx();
-        _musicGain.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
+      if (_bgMusic) {
+        _bgMusic.running = false;
+        if (_bgMusic.gain) {
+          try {
+            const ctx = getAudioCtx();
+            _bgMusic.gain.gain.cancelScheduledValues(ctx.currentTime);
+            _bgMusic.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.12);
+            const g = _bgMusic.gain;
+            setTimeout(() => { try { g.disconnect(); } catch(e) {} }, 400);
+          } catch(e) {}
+        }
+        _bgMusic = null;
       }
     }
 
     function _musicFadeIn() {
-      if (_musicGain) {
-        const ctx = getAudioCtx();
-        const targetVol = Number(document.getElementById("musicVolSlider")?.value ?? 38) / 100;
-        _musicGain.gain.setTargetAtTime(targetVol, ctx.currentTime, 0.4);
-      }
+      // No-op: fade-in handled inside startBackgroundMusic via sessionGain
     }
 
     let _musicEnabled = true;
@@ -3655,7 +3734,6 @@
         resumeAudio();
         getMasterGain();
         startBackgroundMusic();
-        _musicFadeIn();
         if (btn) { btn.textContent = "♪ Music"; btn.classList.remove("music-off"); }
       } else {
         stopBackgroundMusic();
@@ -5151,6 +5229,7 @@
           const wSpan = document.createElement("span");
           wSpan.className = "piece-weapon";
           wSpan.textContent = weapon;
+          wSpan.style.animationDelay = `-${(Math.random() * 3).toFixed(2)}s`;
           span.appendChild(wSpan);
         }
       }
@@ -7677,7 +7756,9 @@
       ui.board.classList.add("board-4p");
       document.getElementById("bughouseWrap").style.display = "none";
       ui.board.style.display = "grid";
+      const _fpOverlay = document.getElementById("planOverlay");
       ui.board.innerHTML = "";
+      if (_fpOverlay) ui.board.appendChild(_fpOverlay);
       const legalMoves = generatePlayableBalatroMoves(game, game.position.turn);
       state.lastLegalMoves = legalMoves;
       const selected = state.selectedSquare;
@@ -7728,7 +7809,9 @@
 
     function renderBughouseBoards(game) {
       ui.board.style.display = "none";
+      const _bhOverlay = document.getElementById("planOverlay");
       ui.board.innerHTML = "";
+      if (_bhOverlay) ui.board.appendChild(_bhOverlay);
       const wrap = document.getElementById("bughouseWrap");
       wrap.style.display = "flex";
       wrap.innerHTML = "";
@@ -7942,10 +8025,12 @@
     function renderBoard() {
       const game = state.game;
       if (!game) {
+        const _ngOverlay = document.getElementById("planOverlay");
         ui.board.innerHTML = "";
         ui.board.classList.remove("board-4p");
         ui.board.style.display = "grid";
         document.getElementById("bughouseWrap").style.display = "none";
+        if (_ngOverlay) ui.board.appendChild(_ngOverlay);
         return;
       }
 
@@ -7966,7 +8051,9 @@
 
       const board = game.position.board;
       const orientation = state.orientation;
+      const planOverlay = document.getElementById("planOverlay");
       ui.board.innerHTML = "";
+      if (planOverlay) ui.board.appendChild(planOverlay);
       const visibilityColor = activeHumanColor();
       const fogVisible = isVariant("fog_of_war") ? visibleSquaresForColor(game, visibilityColor) : null;
 
@@ -8022,6 +8109,10 @@
               badgeSpan.style.setProperty("--badge-color", badge.tone);
               square.appendChild(badgeSpan);
             }
+
+            if (colorOf(piece) === visibilityColor) {
+              square.classList.add("has-own-piece");
+            }
           }
 
           if ((orientation === "w" && boardRank === 7) || (orientation === "b" && boardRank === 0) || (orientation === "w" && boardFile === 0) || (orientation === "b" && boardFile === 7)) {
@@ -8032,9 +8123,11 @@
           }
 
           square.addEventListener("click", onSquareClick);
+          square.addEventListener("pointerdown", onSquarePointerDown);
           ui.board.appendChild(square);
         }
       }
+      if (typeof planRenderOverlay === "function") planRenderOverlay();
     }
 
     function renderMoveLog() {
@@ -8370,7 +8463,216 @@
       }
     }
 
+    /* ══════════════════════════════════════════════════════════
+       CHESS.COM PLANNING MODE — arrows + highlights
+    ══════════════════════════════════════════════════════════ */
+    const plan = {
+      highlights: new Map(),
+      arrows: [],
+      dragFrom: -1,
+      dragColor: "green",
+      active: false
+    };
+
+    function planSquareCenter(idx) {
+      const tileSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tile-size")) || 64;
+      const orientation = state.orientation;
+      const rank = Math.floor(idx / 8);
+      const file = idx % 8;
+      const displayCol = orientation === "w" ? file     : 7 - file;
+      const displayRow = orientation === "w" ? 7 - rank : rank;
+      return { x: (displayCol + 0.5) * tileSize, y: (displayRow + 0.5) * tileSize };
+    }
+
+    function planRenderOverlay() {
+      const svg = document.getElementById("planOverlay");
+      if (!svg) return;
+      const tileSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tile-size")) || 64;
+      const boardSize = tileSize * 8;
+      svg.setAttribute("width", boardSize);
+      svg.setAttribute("height", boardSize);
+      svg.setAttribute("viewBox", `0 0 ${boardSize} ${boardSize}`);
+      svg.innerHTML = "";
+
+      const colorMap = { green: "#22c55e", red: "#ef4444", blue: "#3b82f6", yellow: "#facc15" };
+      const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+      for (const [name, hex] of Object.entries(colorMap)) {
+        const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+        marker.setAttribute("id", `arrowhead-${name}`);
+        marker.setAttribute("markerWidth", "4"); marker.setAttribute("markerHeight", "4");
+        marker.setAttribute("refX", "2"); marker.setAttribute("refY", "2");
+        marker.setAttribute("orient", "auto");
+        const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        poly.setAttribute("points", "0 0, 4 2, 0 4"); poly.setAttribute("fill", hex);
+        marker.appendChild(poly); defs.appendChild(marker);
+      }
+      svg.appendChild(defs);
+
+      for (const [idx, color] of plan.highlights) {
+        const orientation = state.orientation;
+        const rank = Math.floor(idx / 8); const file = idx % 8;
+        const displayCol = orientation === "w" ? file     : 7 - file;
+        const displayRow = orientation === "w" ? 7 - rank : rank;
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", displayCol * tileSize); rect.setAttribute("y", displayRow * tileSize);
+        rect.setAttribute("width", tileSize); rect.setAttribute("height", tileSize);
+        rect.setAttribute("fill", colorMap[color] || colorMap.green); rect.setAttribute("opacity", "0.45");
+        svg.appendChild(rect);
+      }
+
+      const strokeW = Math.max(4, tileSize * 0.12);
+      for (const arrow of plan.arrows) {
+        const from = planSquareCenter(arrow.from); const to = planSquareCenter(arrow.to);
+        if (arrow.from === arrow.to) continue;
+        const dx = to.x - from.x, dy = to.y - from.y;
+        const len = Math.hypot(dx, dy); const nx = dx / len, ny = dy / len;
+        const toX = to.x - nx * strokeW * 1.5; const toY = to.y - ny * strokeW * 1.5;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", from.x); line.setAttribute("y1", from.y);
+        line.setAttribute("x2", toX); line.setAttribute("y2", toY);
+        line.setAttribute("stroke", colorMap[arrow.color] || colorMap.green);
+        line.setAttribute("stroke-width", strokeW); line.setAttribute("stroke-linecap", "round");
+        line.setAttribute("opacity", "0.82"); line.setAttribute("marker-end", `url(#arrowhead-${arrow.color})`);
+        svg.appendChild(line);
+      }
+    }
+
+    function planClear() {
+      plan.highlights.clear(); plan.arrows = [];
+      planRenderOverlay();
+    }
+
+    ui.board.addEventListener("contextmenu", (e) => { e.preventDefault(); plan.active = false; });
+    ui.board.addEventListener("mousedown", (e) => {
+      const isRightClick = e.button === 2;
+      const isShift = e.button === 0 && e.shiftKey;
+      if (!isRightClick && !isShift) return;
+      e.preventDefault();
+      const sq = e.target.closest(".square[data-index]");
+      if (!sq) return;
+      plan.dragFrom = Number(sq.dataset.index);
+      plan.dragColor = "green";
+      plan.active = true;
+    });
+    ui.board.addEventListener("mouseup", (e) => {
+      const isRightClick = e.button === 2;
+      const isShift = e.button === 0 && e.shiftKey;
+      if (!plan.active) return;
+      if (!isRightClick && !isShift) return;
+      e.preventDefault();
+      const sq = e.target.closest(".square[data-index]");
+      const toIdx = sq ? Number(sq.dataset.index) : -1;
+      const fromIdx = plan.dragFrom;
+      plan.active = false; plan.dragFrom = -1;
+      if (fromIdx < 0) return;
+      if (toIdx < 0 || toIdx === fromIdx) {
+        if (plan.highlights.has(fromIdx)) plan.highlights.delete(fromIdx);
+        else plan.highlights.set(fromIdx, plan.dragColor);
+      } else {
+        const existing = plan.arrows.findIndex((a) => a.from === fromIdx && a.to === toIdx);
+        if (existing >= 0) plan.arrows.splice(existing, 1);
+        else plan.arrows.push({ from: fromIdx, to: toIdx, color: plan.dragColor });
+      }
+      planRenderOverlay();
+    });
+
+    /* ══════════════════════════════════════════════════════════
+       WII-GLOVE DRAG SYSTEM
+    ══════════════════════════════════════════════════════════ */
+    const drag = {
+      active: false, fromIndex: -1,
+      ghost: document.getElementById("dragGhost"),
+      startX: 0, startY: 0, moved: false
+    };
+
+    function onSquarePointerDown(e) {
+      if (e.button !== 0) return;
+      const square = e.currentTarget;
+      const idx = Number(square.dataset.index);
+      const game = state.game;
+      if (!game || game.isGameOver() || state.botThinking || state.moveInFlight) return;
+      if (isBughouseVariant() || isFourPlayerVariant()) return;
+      if (isP2PMode() && !p2p.ready) return;
+      const humanColor = activeHumanColor();
+      if (game.position.turn !== humanColor) return;
+      if (isP2PMode() && game.position.turn !== p2p.localColor) return;
+      const piece = game.position.board[idx];
+      if (!piece || colorOf(piece) !== humanColor) return;
+
+      e.preventDefault();
+      drag.active = true; drag.fromIndex = idx;
+      drag.startX = e.clientX; drag.startY = e.clientY; drag.moved = false;
+
+      const glyph = square.querySelector(".piece-glyph");
+      drag.ghost.innerHTML = glyph ? glyph.innerHTML : (PIECE_TO_UNICODE[piece] || piece);
+      drag.ghost.style.left = e.clientX + "px";
+      drag.ghost.style.top  = e.clientY + "px";
+
+      document.body.classList.add("dragging-piece");
+      document.addEventListener("pointermove", onDragMove, { passive: false });
+      document.addEventListener("pointerup",   onDragEnd);
+    }
+
+    function onDragMove(e) {
+      if (!drag.active) return;
+      e.preventDefault();
+      const dx = e.clientX - drag.startX, dy = e.clientY - drag.startY;
+      if (!drag.moved && Math.hypot(dx, dy) > 5) {
+        drag.moved = true;
+        drag.ghost.classList.add("active");
+        state.selectedSquare = drag.fromIndex;
+        state.selectedDropPiece = null;
+        renderBoard(); renderReservePanel();
+        const originSq = ui.board.querySelector(`.square[data-index='${drag.fromIndex}']`);
+        if (originSq) { const g = originSq.querySelector(".piece-glyph"); if (g) g.style.opacity = "0"; }
+      }
+      if (drag.moved) {
+        drag.ghost.style.left = e.clientX + "px";
+        drag.ghost.style.top  = e.clientY + "px";
+      }
+    }
+
+    function onDragEnd(e) {
+      document.removeEventListener("pointermove", onDragMove);
+      document.removeEventListener("pointerup",   onDragEnd);
+      document.body.classList.remove("dragging-piece");
+      drag.ghost.classList.remove("active");
+      drag.ghost.innerHTML = "";
+      if (!drag.active) return;
+      drag.active = false;
+      if (!drag.moved) return;
+
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const squareEl = el && el.closest(".square[data-index]");
+      if (!squareEl) {
+        state.selectedSquare = null; state.selectedDropPiece = null;
+        renderBoard(); renderReservePanel(); return;
+      }
+      const toIndex = Number(squareEl.dataset.index);
+      const game = state.game;
+      if (!game) return;
+      const legalFromSelected = state.lastLegalMoves.filter((mv) => mv.from === drag.fromIndex && mv.to === toIndex);
+      if (legalFromSelected.length > 0) {
+        const hasPromotion = legalFromSelected.some((mv) => mv.promotion);
+        if (hasPromotion) {
+          state.selectedSquare = null;
+          showPromotionPicker(legalFromSelected, (chosenPiece) => {
+            const move = legalFromSelected.find((mv) => mv.promotion && mv.promotion.toLowerCase() === chosenPiece) || legalFromSelected[0];
+            playHumanMove(move);
+          });
+          return;
+        }
+        state.selectedSquare = null;
+        playHumanMove(legalFromSelected[0]);
+      } else {
+        state.selectedSquare = null; state.selectedDropPiece = null;
+        renderBoard(); renderReservePanel();
+      }
+    }
+
     function onSquareClick(event) {
+      if (!event.shiftKey && event.button === 0) planClear();
+
       const targetIndex = Number(event.currentTarget.dataset.index);
       const game = state.game;
 
@@ -8501,6 +8803,8 @@
     async function applyAnnotatedMove(move, annotation, color, actor, liveLabel) {
       const game = state.game;
       if (!game) return;
+
+      planClear();
 
       state.moveInFlight = true;
       try {
@@ -8780,17 +9084,17 @@
       e.stopPropagation();
       resumeAudio();
       getMasterGain();
-      if (!_introPlayed) { _introPlayed = true; synthIntroSting(); }
+      _introPlayed = true;
+      e.currentTarget.classList.remove("music-waiting");
       toggleMusic();
     });
 
     /* ── Music volume slider ── */
     document.getElementById("musicVolSlider").addEventListener("input", (e) => {
       const vol = Number(e.target.value) / 100;
-      if (_musicGain && _musicEnabled) {
-        _musicGain.gain.setTargetAtTime(vol, getAudioCtx().currentTime, 0.05);
+      if (_bgMusic && _bgMusic.gain && _musicEnabled) {
+        _bgMusic.gain.gain.setTargetAtTime(vol * 0.38, getAudioCtx().currentTime, 0.05);
       }
-      /* update slider track fill */
       e.target.style.background = `linear-gradient(90deg, var(--gold) ${e.target.value}%, rgba(80,30,10,0.6) ${e.target.value}%)`;
     });
 
@@ -8828,12 +9132,16 @@
     function onFirstInteraction() {
       resumeAudio();
       getMasterGain();
+      const btn = document.getElementById("musicToggleBtn");
+      if (btn) {
+        btn.classList.remove("music-waiting");
+        if (_musicEnabled) btn.textContent = "♪ Music";
+      }
       if (!_introPlayed) {
         _introPlayed = true;
         synthIntroSting();
-        if (_musicEnabled && !_bgMusic) {
+        if (_musicEnabled && (!_bgMusic || !_bgMusic.running)) {
           startBackgroundMusic();
-          _musicFadeIn();
         }
       }
       document.removeEventListener("click", onFirstInteraction, true);
@@ -9000,6 +9308,7 @@
         const availW = panelW - PANEL_PAD_H;
         const tile = Math.max(30, Math.min(72, Math.floor(Math.min(availH, availW) / 8)));
         root.style.setProperty("--tile-size", tile + "px");
+        if (typeof planRenderOverlay === "function") planRenderOverlay();
       }
 
       const ro = new ResizeObserver(fitBoard);
