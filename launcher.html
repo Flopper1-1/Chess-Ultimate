@@ -6,21 +6,19 @@
 <title>Chess Ultimate — Launcher</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
+
+  html, body {
+    width: 100%; height: 100%;
     background: #07050f;
     color: #fff;
     font-family: 'Segoe UI', system-ui, sans-serif;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     overflow: hidden;
     user-select: none;
   }
+
   /* Frameless drag region */
   .titlebar {
-    position: fixed; top: 0; left: 0; right: 0; height: 36px;
+    position: fixed; top: 0; left: 0; right: 0; height: 32px;
     -webkit-app-region: drag;
     z-index: 100;
     display: flex; align-items: center; justify-content: flex-end;
@@ -28,134 +26,159 @@
   }
   .titlebar-btn {
     -webkit-app-region: no-drag;
-    width: 28px; height: 28px; border-radius: 50%;
-    border: none; cursor: pointer; font-size: 0.8rem;
+    width: 26px; height: 26px; border-radius: 50%;
+    border: none; cursor: pointer; font-size: 0.75rem;
     display: flex; align-items: center; justify-content: center;
     transition: background 0.15s;
   }
-  .titlebar-close { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+  .titlebar-close { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.45); }
   .titlebar-close:hover { background: #e81123; color: #fff; }
 
+  /* Background layer */
   .bg-grid {
     position: fixed; inset: 0; z-index: 0;
     background-image:
-      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-    background-size: 60px 60px;
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 52px 52px;
     pointer-events: none;
   }
-
   .glow-orb {
-    position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0;
+    position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; z-index: 0;
   }
-  .glow-orb.blue  { width: 500px; height: 500px; background: rgba(56,189,248,0.12); top: -100px; right: -100px; }
-  .glow-orb.gold  { width: 400px; height: 400px; background: rgba(245,200,66,0.1);  bottom: -80px; left: -80px; }
+  .glow-orb.blue   { width: 45vw; height: 45vw; background: rgba(56,189,248,0.10);  top: -12vw; right: -8vw; }
+  .glow-orb.gold   { width: 38vw; height: 38vw; background: rgba(245,200,66,0.09);  bottom: -10vw; left: -8vw; }
+  .glow-orb.amber  { width: 32vw; height: 32vw; background: rgba(200,149,42,0.08);  bottom: -6vw; right: 20vw; }
 
+  /* Main layout — fills viewport */
   .content {
-    position: relative; z-index: 1;
+    position: fixed; inset: 0;
     display: flex; flex-direction: column;
-    align-items: center; gap: 48px;
+    align-items: center; justify-content: center;
+    gap: clamp(24px, 4vh, 52px);
+    padding: 40px 24px 32px;
+    z-index: 1;
   }
 
-  .logo {
-    text-align: center;
-  }
+  .logo { text-align: center; }
   .logo h1 {
-    font-size: 3rem; font-weight: 900; letter-spacing: 0.08em;
+    font-size: clamp(1.8rem, 4.5vw, 3.2rem);
+    font-weight: 900; letter-spacing: 0.08em;
     background: linear-gradient(135deg, #fff 0%, #a0aec0 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     text-transform: uppercase;
+    line-height: 1;
   }
   .logo p {
-    font-size: 0.95rem; color: rgba(255,255,255,0.35);
-    letter-spacing: 0.25em; text-transform: uppercase; margin-top: 8px;
+    font-size: clamp(0.7rem, 1.2vw, 0.9rem);
+    color: rgba(255,255,255,0.32);
+    letter-spacing: 0.22em; text-transform: uppercase; margin-top: 8px;
   }
 
+  /* Cards row — always fills available width */
   .cards {
-    display: flex; gap: 32px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(12px, 2vw, 32px);
+    width: 100%;
+    max-width: 980px;
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
   }
 
   .card {
-    width: 280px; border-radius: 20px; padding: 40px 32px;
-    display: flex; flex-direction: column; align-items: center; gap: 20px;
+    border-radius: 18px;
+    padding: clamp(20px, 3vh, 40px) clamp(16px, 2vw, 32px);
+    display: flex; flex-direction: column; align-items: center;
+    gap: clamp(10px, 1.8vh, 20px);
     cursor: pointer; border: 1px solid transparent;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     position: relative; overflow: hidden;
+    justify-content: center;
   }
-  .card:hover {
-    transform: translateY(-6px);
-  }
+  .card:hover { transform: translateY(-5px); }
 
   .card.battle {
     background: linear-gradient(160deg, rgba(15,25,50,0.95), rgba(8,15,35,0.98));
-    border-color: rgba(56,189,248,0.25);
-    box-shadow: 0 8px 40px rgba(56,189,248,0.08);
+    border-color: rgba(56,189,248,0.22);
+    box-shadow: 0 8px 36px rgba(56,189,248,0.07);
   }
   .card.battle:hover {
     border-color: rgba(56,189,248,0.6);
-    box-shadow: 0 16px 60px rgba(56,189,248,0.2);
+    box-shadow: 0 14px 56px rgba(56,189,248,0.2);
   }
-
   .card.balatro {
     background: linear-gradient(160deg, rgba(40,10,10,0.95), rgba(20,5,5,0.98));
     border-color: rgba(245,200,66,0.2);
-    box-shadow: 0 8px 40px rgba(245,200,66,0.06);
+    box-shadow: 0 8px 36px rgba(245,200,66,0.06);
   }
   .card.balatro:hover {
     border-color: rgba(245,200,66,0.55);
-    box-shadow: 0 16px 60px rgba(245,200,66,0.18);
+    box-shadow: 0 14px 56px rgba(245,200,66,0.18);
   }
-
   .card.dontstarve {
     background: linear-gradient(160deg, rgba(18,14,6,0.97), rgba(10,8,3,0.99));
-    border-color: rgba(200,149,42,0.25);
-    box-shadow: 0 8px 40px rgba(200,149,42,0.08);
+    border-color: rgba(200,149,42,0.22);
+    box-shadow: 0 8px 36px rgba(200,149,42,0.07);
   }
   .card.dontstarve:hover {
     border-color: rgba(200,149,42,0.6);
-    box-shadow: 0 16px 60px rgba(200,149,42,0.2);
+    box-shadow: 0 14px 56px rgba(200,149,42,0.2);
   }
 
   .card-icon {
-    font-size: 3.5rem; line-height: 1;
-    filter: drop-shadow(0 0 16px currentColor);
+    font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1;
+    filter: drop-shadow(0 0 14px currentColor);
   }
-  .card.battle .card-icon { color: #38bdf8; }
-  .card.balatro .card-icon { color: #f5c842; }
+  .card.battle    .card-icon { color: #38bdf8; }
+  .card.balatro   .card-icon { color: #f5c842; }
   .card.dontstarve .card-icon { color: #c8952a; }
 
   .card-title {
-    font-size: 1.25rem; font-weight: 800;
-    letter-spacing: 0.04em; text-align: center;
+    font-size: clamp(0.95rem, 1.6vw, 1.25rem);
+    font-weight: 800; letter-spacing: 0.04em; text-align: center;
   }
-  .card.battle .card-title     { color: #e2f4ff; }
-  .card.balatro .card-title    { color: #fdf6e3; }
+  .card.battle    .card-title { color: #e2f4ff; }
+  .card.balatro   .card-title { color: #fdf6e3; }
   .card.dontstarve .card-title { color: #e8d8a8; }
 
   .card-desc {
-    font-size: 0.82rem; color: rgba(255,255,255,0.4);
-    text-align: center; line-height: 1.6;
+    font-size: clamp(0.68rem, 1vw, 0.82rem);
+    color: rgba(255,255,255,0.38);
+    text-align: center; line-height: 1.55;
   }
 
-  .card-btn {
-    margin-top: 8px;
-    padding: 10px 28px; border-radius: 9px; border: none;
-    font-size: 0.88rem; font-weight: 700; letter-spacing: 0.08em;
-    text-transform: uppercase; cursor: pointer;
-    transition: opacity 0.15s;
+  .card-tag {
+    font-size: clamp(0.58rem, 0.85vw, 0.68rem);
+    font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 99px;
+    opacity: 0.75;
   }
-  .card-btn:hover { opacity: 0.85; }
+  .card.battle    .card-tag { background: rgba(56,189,248,0.15);  color: #7dd3fc; }
+  .card.balatro   .card-tag { background: rgba(245,200,66,0.15);  color: #fde68a; }
+  .card.dontstarve .card-tag { background: rgba(200,149,42,0.15); color: #e8d8a8; }
+
+  .card-btn {
+    margin-top: 4px;
+    padding: clamp(8px, 1.2vh, 12px) clamp(18px, 2.5vw, 32px);
+    border-radius: 9px; border: none;
+    font-size: clamp(0.75rem, 1vw, 0.9rem);
+    font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer;
+    transition: opacity 0.15s, transform 0.12s;
+    width: 100%;
+  }
+  .card-btn:hover { opacity: 0.88; transform: scale(1.02); }
   .card.battle      .card-btn { background: #38bdf8; color: #020d1a; }
   .card.balatro     .card-btn { background: #f5c842; color: #1a0a00; }
   .card.dontstarve  .card-btn { background: #c8952a; color: #0a0806; }
 
   .version {
-    position: fixed; bottom: 18px;
-    font-size: 0.72rem; color: rgba(255,255,255,0.18);
+    font-size: 0.65rem; color: rgba(255,255,255,0.16);
     letter-spacing: 0.12em;
+    flex-shrink: 0;
   }
-
-  @keyframes floatCard { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
 </style>
 </head>
 <body>
@@ -165,38 +188,42 @@
 <div class="bg-grid"></div>
 <div class="glow-orb blue"></div>
 <div class="glow-orb gold"></div>
+<div class="glow-orb amber"></div>
 
 <div class="content">
   <div class="logo">
     <h1>Chess Ultimate</h1>
-    <p>Choose your battlefield</p>
+    <p>Choose your edition</p>
   </div>
 
   <div class="cards">
     <div class="card battle">
       <div class="card-icon">⚔️</div>
       <div class="card-title">Battle Edition</div>
-      <div class="card-desc">Classic chess with epic battle animations, SSB Brawl soundtrack, and full annotation engine.</div>
+      <div class="card-tag">Classic</div>
+      <div class="card-desc">Epic battle animations, per-piece weapon FX, full annotation engine, and all 11 chess variants.</div>
       <button class="card-btn" id="btnBattle">Play</button>
     </div>
 
     <div class="card balatro">
       <div class="card-icon">🃏</div>
       <div class="card-title">Joker's Gambit</div>
-      <div class="card-desc">Balatro-themed chess with jazz soundtrack, card aesthetics, and poker-style piece flair.</div>
+      <div class="card-tag">Card Game</div>
+      <div class="card-desc">Piece cards gate movement. Joker powers bend the rules. Jazz soundtrack, poker-style flair.</div>
       <button class="card-btn" id="btnBalatro">Play</button>
     </div>
 
     <div class="card dontstarve">
       <div class="card-icon">🕯️</div>
-      <div class="card-title">Don't Starve</div>
-      <div class="card-desc">Dark wilderness chess. Kings carry lanterns, queens weave webs. Don't let Charlie find you.</div>
+      <div class="card-title">Wilderness</div>
+      <div class="card-tag">Survival</div>
+      <div class="card-desc">Sanity drains in the dark. Pieces grow monstrous at low sanity. Don't let Charlie find your king.</div>
       <button class="card-btn" id="btnDontStarve">Play</button>
     </div>
   </div>
-</div>
 
-<div class="version">Chess Ultimate v1.2.0</div>
+  <div class="version">Chess Ultimate v1.2.1</div>
+</div>
 
 <script>
   function launchGame(file) {

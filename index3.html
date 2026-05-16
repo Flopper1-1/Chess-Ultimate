@@ -700,6 +700,87 @@
       color: rgba(248, 250, 252, 0.65);
     }
 
+    /* ── Don't Starve: Sanity mechanic ── */
+    .sanity-bar {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.82rem; font-weight: 600; color: var(--text);
+      flex-wrap: wrap;
+    }
+    .sanity-label { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    .sanity-pips { display: flex; gap: 3px; align-items: center; }
+    .sanity-pip {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: rgba(200,149,42,0.3); border: 1px solid rgba(200,149,42,0.5);
+      transition: background 0.4s, box-shadow 0.4s;
+    }
+    .sanity-pip.lit {
+      background: #c8952a;
+      box-shadow: 0 0 6px rgba(200,149,42,0.9), 0 0 12px rgba(200,149,42,0.4);
+    }
+    .sanity-pip.danger-lit {
+      background: #8b1a1a;
+      box-shadow: 0 0 6px rgba(139,26,26,0.9), 0 0 12px rgba(200,50,50,0.5);
+    }
+
+    /* Sanity-reactive board darkening */
+    @keyframes charliePulse {
+      0%, 100% { opacity: 0.0; }
+      50%       { opacity: 0.55; }
+    }
+    .board.night-low::before {
+      content: "";
+      position: absolute; inset: 0; z-index: 8; pointer-events: none;
+      border-radius: inherit;
+      background: radial-gradient(ellipse at center, transparent 30%, rgba(13,11,8,0.5) 100%);
+      animation: charliePulse 2.4s ease-in-out infinite;
+    }
+    .board.night-critical::before {
+      background: radial-gradient(ellipse at center, transparent 15%, rgba(13,11,8,0.82) 100%);
+      animation: charliePulse 1.2s ease-in-out infinite;
+    }
+
+    /* Nightmare filter on pieces at critical sanity */
+    body.nightmare-w .square .white-piece {
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.9))
+              drop-shadow(0 0 14px rgba(107,47,160,0.9))
+              drop-shadow(0 0 28px rgba(107,47,160,0.5))
+              hue-rotate(80deg) saturate(1.8) brightness(0.85);
+      animation: nightmareFlicker 1.8s ease-in-out infinite;
+    }
+    body.nightmare-b .square .black-piece {
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.9))
+              drop-shadow(0 0 14px rgba(107,47,160,0.9))
+              drop-shadow(0 0 28px rgba(107,47,160,0.5))
+              hue-rotate(80deg) saturate(1.8) brightness(0.85);
+      animation: nightmareFlicker 1.8s ease-in-out infinite;
+    }
+    @keyframes nightmareFlicker {
+      0%,100% { opacity: 1; }
+      45%     { opacity: 0.82; filter: drop-shadow(0 0 20px rgba(107,47,160,1)) hue-rotate(100deg) saturate(2.2) brightness(0.75); }
+    }
+
+    /* Charlie warning overlay */
+    #charlieWarning {
+      position: fixed; inset: 0; z-index: 99990;
+      display: none; pointer-events: none;
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 12px;
+    }
+    #charlieWarning.visible { display: flex; animation: charlieFadeIn 0.5s ease-out forwards; }
+    @keyframes charlieFadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+    #charlieWarning .charlie-text {
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 900; letter-spacing: 0.1em;
+      color: #6b2fa0; text-align: center;
+      text-shadow: 0 0 30px rgba(107,47,160,0.8), 0 0 60px rgba(107,47,160,0.4);
+      animation: charliePulse 0.9s ease-in-out infinite;
+    }
+    #charlieWarning .charlie-sub {
+      font-size: 1rem; color: rgba(255,255,255,0.5); letter-spacing: 0.08em;
+    }
+
     .ann-badge {
       position: absolute;
       top: 3px;
@@ -1852,6 +1933,10 @@
 </head>
 <body>
   <div id="crossfadeOverlay"></div>
+  <div id="charlieWarning" aria-hidden="true">
+    <div class="charlie-text">IT IS VERY DARK</div>
+    <div class="charlie-sub">Charlie found your king. Darkness wins.</div>
+  </div>
   <div id="achievementToasts"></div>
   <div id="achModal">
     <div class="ach-modal-inner">
@@ -1861,8 +1946,8 @@
     </div>
   </div>
   <div id="introSplash" aria-hidden="true">
-    <div class="splash-title">DON'T STARVE CHESS</div>
-    <div class="splash-sub">Wilderness Edition</div>
+    <div class="splash-title">WILDERNESS CHESS</div>
+    <div class="splash-sub">Don't Starve Edition — Sanity or Checkmate</div>
     <div class="splash-suits">🕯 🕸️ 💀 🌑</div>
   </div>
   <div class="card-floats" id="cardFloats" aria-hidden="true"></div>
@@ -1870,7 +1955,7 @@
   <div class="app">
     <header class="title">
       <div class="title-row">
-        <h1>🕯 Don't Starve Chess — Wilderness Edition</h1>
+        <h1>🕯 Wilderness Chess — Don't Starve</h1>
         <div class="music-controls">
           <button id="menuBackBtn" class="menu-btn" title="Back to menu">⬅ Menu</button>
           <button id="achOpenBtn" class="ach-btn" title="Achievements">🏆</button>
@@ -1878,7 +1963,7 @@
           <input id="musicVolSlider" type="range" min="0" max="100" value="40" title="Music volume" class="music-vol" />
         </div>
       </div>
-      <p>Survive the wilderness. Don't let Charlie find you in the dark. Kings carry lanterns, queens weave webs, pawns gather grass. Annotations: <b>!!</b> brilliant, <b>!</b> strong, <b>?!</b> inaccuracy, <b>?</b> mistake, <b>??</b> blunder.</p>
+      <p>Sanity drains on checks and captures. Reach zero and <b>Charlie</b> claims your king. Brilliant moves restore sanity — blunders accelerate the darkness. Annotations: <b>!!</b> brilliant, <b>!</b> strong, <b>?!</b> inaccuracy, <b>?</b> mistake, <b>??</b> blunder.</p>
     </header>
 
     <section class="controls">
@@ -1955,6 +2040,13 @@
         <div class="status">
           <div><strong id="turnLabel">Turn: White</strong></div>
           <div id="statusText">Game in progress</div>
+        </div>
+        <div class="sanity-bar" id="sanityBar" style="display:none; margin-bottom:6px;">
+          <span class="sanity-label">🕯 Sanity</span>
+          <span style="font-size:0.72rem;color:var(--muted);">White:</span>
+          <div class="sanity-pips" id="sanityPipsW"></div>
+          <span style="font-size:0.72rem;color:var(--muted);margin-left:8px;">Black:</span>
+          <div class="sanity-pips" id="sanityPipsB"></div>
         </div>
         <div class="board-stage">
           <aside class="accuracy-meter" aria-label="Accuracy meter">
@@ -2590,13 +2682,94 @@
         w: { sum: 0, count: 0, value: 100 },
         b: { sum: 0, count: 0, value: 100 }
       },
-      unsupportedMode: false
+      unsupportedMode: false,
+      sanity: { w: 100, b: 100 },   /* Don't Starve sanity mechanic */
+      charlieActive: { w: false, b: false }
     };
 
     const MOVE_ANIMATION_MS = 320;
     const MOVE_GAP_MS = 180;
     const BOT_THINK_MS = 260;
     const CHECK_PULSE_MS = 900;
+
+    /* ══════════════════════════════════════════════════════════
+       DON'T STARVE SANITY ENGINE
+       Sanity 0–100. Drains on bad events, recovers on good ones.
+       At ≤40 ("Night Falls"): board darkens.
+       At 0 ("Charlie"): darkness wins — instant loss.
+    ══════════════════════════════════════════════════════════ */
+    function dsChangeSanity(color, delta) {
+      if (!state.game || state.game.getGameStatus().over) return;
+      const s = state.sanity;
+      s[color] = Math.max(0, Math.min(100, s[color] + delta));
+      dsUpdateSanityVisuals();
+      if (s[color] === 0 && !state.charlieActive[color]) {
+        state.charlieActive[color] = true;
+        dsCharlieTrigger(color);
+      }
+    }
+
+    function dsUpdateSanityVisuals() {
+      const s = state.sanity;
+      const bar = document.getElementById("sanityBar");
+      if (bar) {
+        const gameRunning = state.game && !state.game.getGameStatus().over;
+        bar.style.display = gameRunning ? "flex" : "none";
+      }
+      _dsFillPips("sanityPipsW", s.w);
+      _dsFillPips("sanityPipsB", s.b);
+
+      /* Board darkness class */
+      const board = document.querySelector(".board");
+      if (board) {
+        const playerSanity = s[state.playerColor] || 100;
+        board.classList.toggle("night-low",      playerSanity <= 40 && playerSanity > 15);
+        board.classList.toggle("night-critical", playerSanity <= 15);
+      }
+
+      /* Nightmare piece filter when any side is critical */
+      document.body.classList.toggle("nightmare-w", s.w <= 15);
+      document.body.classList.toggle("nightmare-b", s.b <= 15);
+    }
+
+    function _dsFillPips(id, sanity) {
+      const container = document.getElementById(id);
+      if (!container) return;
+      container.innerHTML = "";
+      const total = 10;
+      const lit = Math.round(sanity / 10);
+      for (let i = 0; i < total; i++) {
+        const pip = document.createElement("div");
+        pip.className = "sanity-pip" + (i < lit ? (sanity <= 30 ? " danger-lit" : " lit") : "");
+        container.appendChild(pip);
+      }
+    }
+
+    function dsCharlieTrigger(color) {
+      /* Show Charlie overlay briefly, then treat as loss for that side */
+      const warning = document.getElementById("charlieWarning");
+      if (warning) {
+        warning.querySelector(".charlie-sub").textContent =
+          `${color === "w" ? "White" : "Black"}'s sanity hit zero. Charlie wins.`;
+        warning.classList.add("visible");
+        warning.setAttribute("aria-hidden", "false");
+      }
+      synthCharlie();
+      setTimeout(() => {
+        if (warning) warning.classList.remove("visible");
+        /* Force a game-over result display */
+        if (state.game && !state.game.getGameStatus().over) {
+          const statusText = document.getElementById("statusText");
+          if (statusText) {
+            statusText.textContent = `${color === "w" ? "Black" : "White"} wins — Charlie took ${color === "w" ? "White" : "Black"} into the dark!`;
+            statusText.classList.add("danger");
+          }
+          /* Stop bot thinking */
+          state.moveInFlight = true;
+          musicOnGameOver(false);
+        }
+      }, 2800);
+    }
 
     /* ══════════════════════════════════════════════════════════
        WEB AUDIO ENGINE — Don't Starve Edition
@@ -3723,6 +3896,38 @@
           osc.connect(lp); lp.connect(og); og.connect(sfx);
           osc.start(t + timing[i]); osc.stop(t + timing[i] + 0.22);
         });
+      } catch(e) {}
+    }
+
+    /* ── CHARLIE: ominous darkness descent ── */
+    function synthCharlie() {
+      try {
+        resumeAudio();
+        const ctx = getAudioCtx();
+        const { master } = getMasterGain();
+        const t = ctx.currentTime;
+        const bus = ctx.createGain(); bus.gain.value = 0.7; bus.connect(master);
+        /* Deep descending drone */
+        [55, 46, 41, 36].forEach((freq, i) => {
+          const osc = ctx.createOscillator(); const og = ctx.createGain();
+          osc.type = "sawtooth"; osc.frequency.value = freq;
+          const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 400;
+          og.gain.setValueAtTime(0, t + i * 0.35);
+          og.gain.linearRampToValueAtTime(0.35, t + i * 0.35 + 0.15);
+          og.gain.exponentialRampToValueAtTime(0.001, t + i * 0.35 + 1.2);
+          osc.connect(lp); lp.connect(og); og.connect(bus);
+          osc.start(t + i * 0.35); osc.stop(t + i * 0.35 + 1.4);
+        });
+        /* Creepy high screech */
+        const screech = ctx.createOscillator(); const sg = ctx.createGain();
+        screech.type = "sawtooth"; screech.frequency.setValueAtTime(880, t + 0.5);
+        screech.frequency.linearRampToValueAtTime(220, t + 2.2);
+        sg.gain.setValueAtTime(0, t + 0.5);
+        sg.gain.linearRampToValueAtTime(0.18, t + 0.6);
+        sg.gain.exponentialRampToValueAtTime(0.001, t + 2.5);
+        const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 600;
+        screech.connect(hp); hp.connect(sg); sg.connect(bus);
+        screech.start(t + 0.5); screech.stop(t + 2.6);
       } catch(e) {}
     }
 
@@ -6875,6 +7080,7 @@
         }
         ui.statusText.classList.remove("danger");
       }
+      dsUpdateSanityVisuals();
     }
 
     function renderLiveFeed() {
@@ -7045,6 +7251,9 @@
       state.gameOverSoundPlayed = false;
       state.accuracy.w = { sum: 0, count: 0, value: 100 };
       state.accuracy.b = { sum: 0, count: 0, value: 100 };
+      state.sanity = { w: 100, b: 100 };
+      state.charlieActive = { w: false, b: false };
+      dsUpdateSanityVisuals();
       setPlayersFromSelection(selectedSideOption());
       if (isLocalMultiplayerMode()) {
         state.playerColor = state.orientation;
@@ -7518,6 +7727,16 @@
         updateAccuracy(color, annotation);
         pushLiveAnnotation(liveLabel, move, annotation);
 
+        /* ── Don't Starve: Sanity updates ── */
+        const opponent = color === "w" ? "b" : "w";
+        if (move.captured) {
+          dsChangeSanity(color, +4);          // attacker gains sanity for capturing
+          dsChangeSanity(opponent, -5);       // defender loses sanity when piece taken
+        }
+        if (annotation && annotation.symbol === "!!") dsChangeSanity(color, +6);
+        if (annotation && annotation.symbol === "??") dsChangeSanity(color, -12);
+        if (annotation && annotation.symbol === "?")  dsChangeSanity(color, -5);
+
         const capturedPiece = move.captured || null;
         if (move.castleKing || move.castleQueen) {
           playSfx("castle");
@@ -7640,6 +7859,7 @@
           playSfx("check");
           playCheckFx(defender);
           musicOnCheck();
+          dsChangeSanity(defender, -8); /* Check drains the defender's sanity */
         }
       } finally {
         state.moveInFlight = false;
