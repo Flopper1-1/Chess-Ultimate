@@ -7679,10 +7679,19 @@
       e.stopPropagation();
       resumeAudio();
       getMasterGain();
-      // Mark interaction done so onFirstInteraction doesn't also start music
-      _introPlayed = true;
       e.currentTarget.classList.remove("music-waiting");
-      toggleMusic();
+      if (!_introPlayed) {
+        // First-ever click: just start music, don't toggle off
+        _introPlayed = true;
+        synthIntroSting();
+        if (_musicEnabled && (!_bgMusic || !_bgMusic.running)) {
+          startBackgroundMusic();
+        }
+        const btn = document.getElementById("musicToggleBtn");
+        if (btn) { btn.textContent = "♪ Music"; btn.classList.remove("music-off"); }
+      } else {
+        toggleMusic();
+      }
     });
 
     /* ── Music volume slider ── */
