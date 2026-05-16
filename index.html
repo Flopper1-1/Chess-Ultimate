@@ -636,23 +636,9 @@
       background-image: radial-gradient(ellipse at center, rgba(255,255,255,0.12) 0%, transparent 70%);
     }
 
-    .square.move-origin::before,
-    .square.move-dest::before {
-      content: "";
-      position: absolute;
-      inset: 8px;
-      border: 3px solid var(--move-annotation-color, var(--accent));
-      border-radius: 8px;
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    .square.move-origin::before {
-      transform: translate(-2px, -2px);
-    }
-
-    .square.move-dest::before {
-      transform: translate(2px, 2px);
+    .square.move-origin,
+    .square.move-dest {
+      background-image: radial-gradient(ellipse at center, rgba(250,204,21,0.28) 0%, rgba(250,204,21,0.10) 70%, transparent 100%) !important;
     }
 
     .square.target::after {
@@ -6314,7 +6300,17 @@
           if (piece) {
             const span = document.createElement("span");
             span.className = "piece-glyph";
-            span.textContent = FP_GLYPH[pType] || pType;
+            const fpGlyph = document.createElement("span");
+            fpGlyph.textContent = FP_GLYPH[pType] || pType;
+            span.appendChild(fpGlyph);
+            const weapon = PIECE_WEAPON_EMOJI[pType];
+            if (weapon) {
+              const wSpan = document.createElement("span");
+              wSpan.className = "piece-weapon";
+              wSpan.textContent = weapon;
+              wSpan.style.animationDelay = `-${(Math.random() * 3).toFixed(2)}s`;
+              span.appendChild(wSpan);
+            }
             square.appendChild(span);
           }
 
@@ -6391,12 +6387,11 @@
             const tm = targets.find(m => m.to === index);
             const dm = dropTargets.find(m => m.to === index);
             if (tm || dm) sq.classList.add((tm || dm).captured ? "capture-target" : "target");
+            if (isActive && state.lastMoveTrail && (index === state.lastMoveTrail.from || index === state.lastMoveTrail.to)) {
+              sq.classList.add(index === state.lastMoveTrail.from ? "move-origin" : "move-dest");
+            }
             if (piece) {
-              const ps = document.createElement("span");
-              ps.className = "piece-glyph";
-              ps.textContent = PIECE_TO_UNICODE[piece] || piece;
-              ps.style.color = colorOf(piece) === "w" ? "var(--light-piece)" : "var(--dark-piece)";
-              sq.appendChild(ps);
+              sq.appendChild(buildPieceSpan(piece, false));
             }
             if (isActive) sq.addEventListener("click", (e) => onBughouseSquareClick(e, boardId, subGame, legalMoves));
             boardEl.appendChild(sq);
@@ -7089,47 +7084,48 @@
       return sq ? Number(sq.dataset.index) : -1;
     }
 
-    // Right-click and Shift interactions on the board
-    ui.board.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-      plan.active = false; // no drag context-menu
-    });
+    // Right-click planning — arrows and square highlights like chess.com
+    // contextmenu is suppressed so right-click drag works cleanly
+    ui.board.addEventListener("contextmenu", (e) => { e.preventDefault(); });
 
     ui.board.addEventListener("mousedown", (e) => {
-      const isRightClick = e.button === 2;
-      const isShift = e.button === 0 && e.shiftKey;
-      if (!isRightClick && !isShift) return;
+      if (e.button !== 2) return;
       e.preventDefault();
       const sq = e.target.closest(".square[data-index]");
       if (!sq) return;
       plan.dragFrom = Number(sq.dataset.index);
-      plan.dragColor = "green";
+      // Color modifier: shift=blue, ctrl=red, alt=yellow, plain=green
+      if (e.shiftKey) plan.dragColor = "blue";
+      else if (e.ctrlKey) plan.dragColor = "red";
+      else if (e.altKey) plan.dragColor = "yellow";
+      else plan.dragColor = "green";
       plan.active = true;
     });
 
-    ui.board.addEventListener("mouseup", (e) => {
-      const isRightClick = e.button === 2;
-      const isShift = e.button === 0 && e.shiftKey;
+    // Also handle document-level mouseup so release outside board still registers
+    document.addEventListener("mouseup", (e) => {
+      if (e.button !== 2) return;
       if (!plan.active) return;
-      if (!isRightClick && !isShift) return;
       e.preventDefault();
-      const sq = e.target.closest(".square[data-index]");
-      const toIdx = sq ? Number(sq.dataset.index) : -1;
-      const fromIdx = plan.dragFrom;
       plan.active = false;
+      const fromIdx = plan.dragFrom;
       plan.dragFrom = -1;
-
       if (fromIdx < 0) return;
+
+      // Find the square under the cursor at release time
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const sq = el && el.closest(".square[data-index]");
+      const toIdx = sq ? Number(sq.dataset.index) : -1;
+
       if (toIdx < 0 || toIdx === fromIdx) {
-        // Highlight the square
-        const key = fromIdx;
-        if (plan.highlights.has(key)) {
-          plan.highlights.delete(key);
+        // Tap on same square → cycle highlight color or clear
+        if (plan.highlights.has(fromIdx) && plan.highlights.get(fromIdx) === plan.dragColor) {
+          plan.highlights.delete(fromIdx);
         } else {
-          plan.highlights.set(key, plan.dragColor);
+          plan.highlights.set(fromIdx, plan.dragColor);
         }
       } else {
-        // Arrow from → to; toggle if already present
+        // Drag to different square → arrow
         const existing = plan.arrows.findIndex((a) => a.from === fromIdx && a.to === toIdx);
         if (existing >= 0) {
           plan.arrows.splice(existing, 1);
@@ -7161,45 +7157,50 @@
       if (!game || game.isGameOver() || state.botThinking || state.moveInFlight) return;
       if (isBughouseVariant() || isFourPlayerVariant()) return;
       if (isP2PMode() && !p2p.ready) return;
+
+      // Allow pointerdown on any square — drag only starts if it's own piece
+      // Click-to-move is handled by the click event (not suppressed here unless dragging)
       const humanColor = activeHumanColor();
       if (game.position.turn !== humanColor) return;
       if (isP2PMode() && game.position.turn !== p2p.localColor) return;
 
       const piece = game.position.board[idx];
+      // Only initiate drag prep on own pieces; empty squares handled by click event
       if (!piece || colorOf(piece) !== humanColor) return;
 
-      e.preventDefault();
+      // Don't preventDefault yet — wait until user actually starts dragging
       drag.active = true;
       drag.fromIndex = idx;
       drag.startX = e.clientX;
       drag.startY = e.clientY;
       drag.moved = false;
+      drag.originSquare = square;
 
-      // Build ghost content matching the piece
+      // Pre-build ghost content
       const glyph = square.querySelector(".piece-glyph");
       drag.ghost.innerHTML = glyph ? glyph.innerHTML : (PIECE_TO_UNICODE[piece] || piece);
       drag.ghost.style.left = e.clientX + "px";
       drag.ghost.style.top  = e.clientY + "px";
 
-      document.body.classList.add("dragging-piece");
       document.addEventListener("pointermove", onDragMove, { passive: false });
       document.addEventListener("pointerup",   onDragEnd);
     }
 
     function onDragMove(e) {
       if (!drag.active) return;
-      e.preventDefault();
       const dx = e.clientX - drag.startX;
       const dy = e.clientY - drag.startY;
-      if (!drag.moved && Math.hypot(dx, dy) > 5) {
+      if (!drag.moved && Math.hypot(dx, dy) > 6) {
         drag.moved = true;
+        e.preventDefault();
         drag.ghost.classList.add("active");
-        // Select the from-square so legal moves show
+        document.body.classList.add("dragging-piece");
+        // Show legal move targets
         state.selectedSquare = drag.fromIndex;
         state.selectedDropPiece = null;
         renderBoard();
         renderReservePanel();
-        // Hide the static piece on the origin square so only the ghost shows
+        // Hide piece on origin so only ghost shows
         const originSq = ui.board.querySelector(`.square[data-index='${drag.fromIndex}']`);
         if (originSq) {
           const glyph = originSq.querySelector(".piece-glyph");
@@ -7207,6 +7208,7 @@
         }
       }
       if (drag.moved) {
+        e.preventDefault();
         drag.ghost.style.left = e.clientX + "px";
         drag.ghost.style.top  = e.clientY + "px";
       }
@@ -7223,11 +7225,11 @@
       drag.active = false;
 
       if (!drag.moved) {
-        // Treat as a click (select/deselect)
+        // No movement — let the normal click event handle selection/move
         return;
       }
 
-      // Find which square the pointer is over
+      // Drag completed — find target square
       const el = document.elementFromPoint(e.clientX, e.clientY);
       const squareEl = el && el.closest(".square[data-index]");
       if (!squareEl) {
@@ -7258,7 +7260,7 @@
         state.selectedSquare = null;
         playHumanMove(legalFromSelected[0]);
       } else {
-        // Dropped on invalid square — just deselect
+        // Dropped on invalid square — deselect
         state.selectedSquare = null;
         state.selectedDropPiece = null;
         renderBoard();
@@ -7715,8 +7717,7 @@
       }
       if (!_introPlayed) {
         _introPlayed = true;
-        synthIntroSting();
-        // Only auto-start if music is enabled and not already running
+        // Only auto-start background music — no intro sting on random clicks
         if (_musicEnabled && (!_bgMusic || !_bgMusic.running)) {
           startBackgroundMusic();
         }

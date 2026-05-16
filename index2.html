@@ -658,23 +658,9 @@
       background-image: radial-gradient(ellipse at center, rgba(255,220,100,0.12) 0%, transparent 70%);
     }
 
-    .square.move-origin::before,
-    .square.move-dest::before {
-      content: "";
-      position: absolute;
-      inset: 8px;
-      border: 3px solid var(--move-annotation-color, var(--accent));
-      border-radius: 8px;
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    .square.move-origin::before {
-      transform: translate(-2px, -2px);
-    }
-
-    .square.move-dest::before {
-      transform: translate(2px, 2px);
+    .square.move-origin,
+    .square.move-dest {
+      background-image: radial-gradient(ellipse at center, rgba(250,204,21,0.28) 0%, rgba(250,204,21,0.10) 70%, transparent 100%) !important;
     }
 
     .square.target::after {
@@ -7797,7 +7783,17 @@
           if (piece) {
             const span = document.createElement("span");
             span.className = "piece-glyph";
-            span.textContent = FP_GLYPH[pType] || pType;
+            const fpGlyph = document.createElement("span");
+            fpGlyph.textContent = FP_GLYPH[pType] || pType;
+            span.appendChild(fpGlyph);
+            const weapon = PIECE_WEAPON_EMOJI[pType];
+            if (weapon) {
+              const wSpan = document.createElement("span");
+              wSpan.className = "piece-weapon";
+              wSpan.textContent = weapon;
+              wSpan.style.animationDelay = `-${(Math.random() * 3).toFixed(2)}s`;
+              span.appendChild(wSpan);
+            }
             square.appendChild(span);
           }
 
@@ -7874,12 +7870,11 @@
             const tm = targets.find(m => m.to === index);
             const dm = dropTargets.find(m => m.to === index);
             if (tm || dm) sq.classList.add((tm || dm).captured ? "capture-target" : "target");
+            if (isActive && state.lastMoveTrail && (index === state.lastMoveTrail.from || index === state.lastMoveTrail.to)) {
+              sq.classList.add(index === state.lastMoveTrail.from ? "move-origin" : "move-dest");
+            }
             if (piece) {
-              const ps = document.createElement("span");
-              ps.className = "piece-glyph";
-              ps.textContent = PIECE_TO_UNICODE[piece] || piece;
-              ps.style.color = colorOf(piece) === "w" ? "var(--light-piece)" : "var(--dark-piece)";
-              sq.appendChild(ps);
+              sq.appendChild(buildPieceSpan(piece, false));
             }
             if (isActive) sq.addEventListener("click", (e) => onBughouseSquareClick(e, boardId, subGame, legalMoves));
             boardEl.appendChild(sq);
@@ -8542,32 +8537,38 @@
       planRenderOverlay();
     }
 
-    ui.board.addEventListener("contextmenu", (e) => { e.preventDefault(); plan.active = false; });
+    ui.board.addEventListener("contextmenu", (e) => { e.preventDefault(); });
+
     ui.board.addEventListener("mousedown", (e) => {
-      const isRightClick = e.button === 2;
-      const isShift = e.button === 0 && e.shiftKey;
-      if (!isRightClick && !isShift) return;
+      if (e.button !== 2) return;
       e.preventDefault();
       const sq = e.target.closest(".square[data-index]");
       if (!sq) return;
       plan.dragFrom = Number(sq.dataset.index);
-      plan.dragColor = "green";
+      if (e.shiftKey) plan.dragColor = "blue";
+      else if (e.ctrlKey) plan.dragColor = "red";
+      else if (e.altKey) plan.dragColor = "yellow";
+      else plan.dragColor = "green";
       plan.active = true;
     });
-    ui.board.addEventListener("mouseup", (e) => {
-      const isRightClick = e.button === 2;
-      const isShift = e.button === 0 && e.shiftKey;
+
+    document.addEventListener("mouseup", (e) => {
+      if (e.button !== 2) return;
       if (!plan.active) return;
-      if (!isRightClick && !isShift) return;
       e.preventDefault();
-      const sq = e.target.closest(".square[data-index]");
-      const toIdx = sq ? Number(sq.dataset.index) : -1;
+      plan.active = false;
       const fromIdx = plan.dragFrom;
-      plan.active = false; plan.dragFrom = -1;
+      plan.dragFrom = -1;
       if (fromIdx < 0) return;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const sq = el && el.closest(".square[data-index]");
+      const toIdx = sq ? Number(sq.dataset.index) : -1;
       if (toIdx < 0 || toIdx === fromIdx) {
-        if (plan.highlights.has(fromIdx)) plan.highlights.delete(fromIdx);
-        else plan.highlights.set(fromIdx, plan.dragColor);
+        if (plan.highlights.has(fromIdx) && plan.highlights.get(fromIdx) === plan.dragColor) {
+          plan.highlights.delete(fromIdx);
+        } else {
+          plan.highlights.set(fromIdx, plan.dragColor);
+        }
       } else {
         const existing = plan.arrows.findIndex((a) => a.from === fromIdx && a.to === toIdx);
         if (existing >= 0) plan.arrows.splice(existing, 1);
@@ -8599,27 +8600,27 @@
       const piece = game.position.board[idx];
       if (!piece || colorOf(piece) !== humanColor) return;
 
-      e.preventDefault();
       drag.active = true; drag.fromIndex = idx;
       drag.startX = e.clientX; drag.startY = e.clientY; drag.moved = false;
+      drag.originSquare = square;
 
       const glyph = square.querySelector(".piece-glyph");
       drag.ghost.innerHTML = glyph ? glyph.innerHTML : (PIECE_TO_UNICODE[piece] || piece);
       drag.ghost.style.left = e.clientX + "px";
       drag.ghost.style.top  = e.clientY + "px";
 
-      document.body.classList.add("dragging-piece");
       document.addEventListener("pointermove", onDragMove, { passive: false });
       document.addEventListener("pointerup",   onDragEnd);
     }
 
     function onDragMove(e) {
       if (!drag.active) return;
-      e.preventDefault();
       const dx = e.clientX - drag.startX, dy = e.clientY - drag.startY;
-      if (!drag.moved && Math.hypot(dx, dy) > 5) {
+      if (!drag.moved && Math.hypot(dx, dy) > 6) {
         drag.moved = true;
+        e.preventDefault();
         drag.ghost.classList.add("active");
+        document.body.classList.add("dragging-piece");
         state.selectedSquare = drag.fromIndex;
         state.selectedDropPiece = null;
         renderBoard(); renderReservePanel();
@@ -8627,6 +8628,7 @@
         if (originSq) { const g = originSq.querySelector(".piece-glyph"); if (g) g.style.opacity = "0"; }
       }
       if (drag.moved) {
+        e.preventDefault();
         drag.ghost.style.left = e.clientX + "px";
         drag.ghost.style.top  = e.clientY + "px";
       }
@@ -8640,7 +8642,7 @@
       drag.ghost.innerHTML = "";
       if (!drag.active) return;
       drag.active = false;
-      if (!drag.moved) return;
+      if (!drag.moved) return; // let click event handle it
 
       const el = document.elementFromPoint(e.clientX, e.clientY);
       const squareEl = el && el.closest(".square[data-index]");
@@ -9148,7 +9150,6 @@
       }
       if (!_introPlayed) {
         _introPlayed = true;
-        synthIntroSting();
         if (_musicEnabled && (!_bgMusic || !_bgMusic.running)) {
           startBackgroundMusic();
         }
