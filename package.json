@@ -5,6 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "test:playthrough": "node scripts/playthrough-smoke.js",
     "prebuild": "node -e \"const fs=require('fs'),p='build-out';try{fs.rmSync(p,{recursive:true,force:true})}catch(e){}\"",
     "build": "npx @electron/packager . ChessUltimate --platform=win32 --arch=x64 --icon=icon.ico --out=build-out --overwrite --prune=true --ignore=\"node_modules/@breezystack\" --ignore=\"node_modules/lamejs\" --ignore=\"node_modules/node-lame\" --ignore=\"\\.git$\" --ignore=\"build-out\" --ignore=\"dist-pkg\" --ignore=\"AGENTS\\.md\" --ignore=\"\\.vscode\" && node build-strip.js"
   },
