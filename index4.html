@@ -50,17 +50,17 @@
       box-sizing: border-box;
     }
 
-    /* ── Don't Starve parchment scrollbar ── */
+    /* ── Terraria scrollbar ── */
     ::-webkit-scrollbar { width: 10px; height: 10px; }
-    ::-webkit-scrollbar-track { background: rgba(13,11,8,0.9); border-left: 1px solid rgba(139,110,60,0.1); }
+    ::-webkit-scrollbar-track { background: rgba(8,15,4,0.9); border-left: 1px solid rgba(74,157,60,0.1); }
     ::-webkit-scrollbar-thumb {
-      background: linear-gradient(180deg, rgba(200,149,42,0.7) 0%, rgba(139,90,20,0.6) 50%, rgba(200,149,42,0.7) 100%);
-      border-radius: 3px; border: 2px solid rgba(13,11,8,0.8);
-      box-shadow: 0 0 6px rgba(200,149,42,0.3);
+      background: linear-gradient(180deg, rgba(74,157,60,0.7) 0%, rgba(40,90,20,0.6) 50%, rgba(74,157,60,0.7) 100%);
+      border-radius: 3px; border: 2px solid rgba(8,15,4,0.8);
+      box-shadow: 0 0 6px rgba(74,157,60,0.3);
     }
-    ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, rgba(220,175,70,0.9) 0%, rgba(180,120,30,0.8) 50%, rgba(220,175,70,0.9) 100%); }
-    ::-webkit-scrollbar-corner { background: rgba(13,11,8,0.9); }
-    * { scrollbar-width: thin; scrollbar-color: rgba(200,149,42,0.6) rgba(13,11,8,0.9); }
+    ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, rgba(100,200,70,0.9) 0%, rgba(60,140,30,0.8) 50%, rgba(100,200,70,0.9) 100%); }
+    ::-webkit-scrollbar-corner { background: rgba(8,15,4,0.9); }
+    * { scrollbar-width: thin; scrollbar-color: rgba(74,157,60,0.6) rgba(8,15,4,0.9); }
 
     body {
       margin: 0;
@@ -95,7 +95,7 @@
       transition: filter 0.25s ease, opacity 0.25s ease;
     }
 
-    /* Wilderness vignette — dark edges like DS's night closing in */
+    /* Terraria vignette — dark edges */
     .scanlines-overlay {
       position: fixed;
       inset: 0;
@@ -128,11 +128,11 @@
       display: grid;
       gap: 4px;
       background: var(--panel);
-      border: 1px solid rgba(200,149,42,0.4);
+      border: 1px solid rgba(74,157,60,0.4);
       border-radius: 10px;
       padding: 8px 14px;
       backdrop-filter: blur(8px);
-      box-shadow: 0 0 30px rgba(200,149,42,0.08), inset 0 1px 0 rgba(255,255,255,0.06);
+      box-shadow: 0 0 30px rgba(74,157,60,0.08), inset 0 1px 0 rgba(255,255,255,0.06);
       animation: borderPulse 2.4s ease-in-out infinite;
       flex-shrink: 0;
     }
@@ -334,10 +334,10 @@
     }
 
     .start-btn {
-      border: 1px solid rgba(200,149,42,0.45);
+      border: 1px solid rgba(74,157,60,0.45);
       border-radius: 10px;
-      background: linear-gradient(135deg, #a07020 0%, #6b4a10 50%, #3d2a08 100%);
-      color: #e8d8a8;
+      background: linear-gradient(135deg, #4a9d3c 0%, #2f6e24 50%, #12380c 100%);
+      color: #c8e6a0;
       font-weight: 700;
       padding: 12px 16px;
       cursor: pointer;
@@ -346,7 +346,7 @@
       text-transform: uppercase;
       box-shadow:
         0 6px 24px rgba(14,165,233,0.4),
-        0 0 0 0 rgba(200,149,42,0),
+        0 0 0 0 rgba(74,157,60,0),
         inset 0 1px 0 rgba(255,255,255,0.15);
       transition: box-shadow 0.18s ease, transform 0.12s ease, background 0.2s ease;
       position: relative;
@@ -365,9 +365,9 @@
       transform: translateY(-1px);
       box-shadow:
         0 10px 32px rgba(14,165,233,0.55),
-        0 0 0 3px rgba(200,149,42,0.3),
+        0 0 0 3px rgba(74,157,60,0.3),
         inset 0 1px 0 rgba(255,255,255,0.2);
-      background: linear-gradient(135deg, #c8952a 0%, #a07020 50%, #8b6518 100%);
+      background: linear-gradient(135deg, #5fcf4f 0%, #3d8a2f 50%, #1b4f12 100%);
     }
 
     .start-btn:active {
@@ -432,15 +432,15 @@
       display: grid;
       grid-template-columns: repeat(8, var(--tile-size));
       grid-template-rows: repeat(8, var(--tile-size));
-      border: 2px solid rgba(200,149,42,0.5);
+      border: 2px solid rgba(74,157,60,0.5);
       border-radius: 10px;
       overflow: hidden;
       box-shadow:
-        0 10px 50px rgba(13,11,8,0.8),
-        0 0 0 1px rgba(200,149,42,0.25),
-        0 0 0 4px rgba(200,149,42,0.06),
-        0 0 80px rgba(200,149,42,0.12),
-        0 0 var(--music-board-size) rgba(200,149,42,var(--music-board-alpha));
+        0 10px 50px rgba(4,12,2,0.8),
+        0 0 0 1px rgba(74,157,60,0.25),
+        0 0 0 4px rgba(74,157,60,0.06),
+        0 0 80px rgba(74,157,60,0.12),
+        0 0 var(--music-board-size) rgba(74,157,60,var(--music-board-alpha));
       position: relative;
       transition: box-shadow 0.2s cubic-bezier(0,0,0.2,1);
       animation: boardBeat 577ms ease-in-out infinite;
@@ -582,7 +582,7 @@
       transition: background 0.15s;
     }
     .bughouse-reserve-piece:hover, .bughouse-reserve-piece.selected {
-      background: rgba(200,149,42,0.25);
+      background: rgba(74,157,60,0.25);
       border-color: var(--accent);
     }
 
@@ -624,7 +624,7 @@
       z-index: 99998;
       display: none;
       transform: translate(-50%, -50%) scale(1.55);
-      filter: drop-shadow(0 6px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 14px rgba(200,149,42,0.8));
+      filter: drop-shadow(0 6px 18px rgba(0,0,0,0.7)) drop-shadow(0 0 14px rgba(74,157,60,0.8));
       font-size: calc(var(--tile-size) * 0.64);
       font-family: "Noto Sans Symbols 2", "Segoe UI Symbol", sans-serif;
       transition: filter 0.1s;
@@ -638,11 +638,11 @@
     }
 
     .light {
-      background: radial-gradient(ellipse at 35% 30%, #fbb06a 0%, #e8843a 60%, var(--light-square) 100%);
+      background: radial-gradient(ellipse at 35% 30%, #7ab84a 0%, #5a8c2e 60%, var(--light-square) 100%);
     }
 
     .dark {
-      background: radial-gradient(ellipse at 35% 30%, #6b2c28 0%, #3d1614 60%, var(--dark-square) 100%);
+      background: radial-gradient(ellipse at 35% 30%, #3a5a18 0%, #1e3408 60%, var(--dark-square) 100%);
     }
 
     .square.selected {
@@ -807,7 +807,7 @@
       line-height: 1.15;
       font-weight: 800;
       pointer-events: none;
-      box-shadow: 0 0 8px var(--badge-color, rgba(200,149,42,0.4));
+      box-shadow: 0 0 8px var(--badge-color, rgba(74,157,60,0.4));
       animation: annBadgePop 0.42s cubic-bezier(0.34,1.56,0.64,1) forwards;
     }
 
@@ -908,8 +908,8 @@
     }
 
     @keyframes staffGlow {
-      0%, 100% { filter: drop-shadow(0 0 2px #a07020); transform: rotate(-8deg); }
-      50%       { filter: drop-shadow(0 0 8px #c8952a); transform: rotate(8deg); }
+      0%, 100% { filter: drop-shadow(0 0 2px #3a7a20); transform: rotate(-8deg); }
+      50%       { filter: drop-shadow(0 0 8px #4a9d3c); transform: rotate(8deg); }
     }
 
     @keyframes swordSpin {
@@ -927,7 +927,7 @@
 
     /* Piece colour tinting */
     .piece-glyph.white-piece {
-      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.9)) drop-shadow(0 0 10px rgba(255,255,255,0.55)) drop-shadow(0 0 20px rgba(200,149,42,0.2));
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.9)) drop-shadow(0 0 10px rgba(255,255,255,0.55)) drop-shadow(0 0 20px rgba(74,157,60,0.25));
       transition: filter 0.15s cubic-bezier(0,0,0.2,1);
       will-change: filter;
     }
@@ -939,7 +939,7 @@
     }
 
     .square:hover .piece-glyph.white-piece {
-      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.9)) drop-shadow(0 0 16px rgba(255,255,255,0.9)) drop-shadow(0 0 32px rgba(200,149,42,0.6));
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.9)) drop-shadow(0 0 16px rgba(255,255,255,0.9)) drop-shadow(0 0 32px rgba(74,157,60,0.6));
     }
 
     .square:hover .piece-glyph.black-piece {
@@ -1044,8 +1044,8 @@
     .moving-piece.cinematic {
       filter:
         drop-shadow(0 0 8px rgba(255,255,255,0.95))
-        drop-shadow(0 0 20px rgba(200,149,42,0.8))
-        drop-shadow(0 0 40px rgba(200,149,42,0.35));
+        drop-shadow(0 0 20px rgba(74,157,60,0.8))
+        drop-shadow(0 0 40px rgba(184,115,51,0.35));
     }
 
     .fx-layer {
@@ -1063,10 +1063,10 @@
       transform-origin: left center;
       background: linear-gradient(90deg,
         rgba(255,255,255,0.95) 0%,
-        rgba(200,149,42,1)    8%,
-        rgba(200,149,42,0.85) 55%,
+        rgba(74,157,60,1)    8%,
+        rgba(184,115,51,0.85) 55%,
         rgba(125,211,252,0.15) 100%);
-      box-shadow: 0 0 16px rgba(200,149,42,0.9), 0 0 32px rgba(200,149,42,0.45);
+      box-shadow: 0 0 16px rgba(74,157,60,0.9), 0 0 32px rgba(184,115,51,0.45);
       animation: streakOut 0.32s cubic-bezier(0.22,1,0.36,1) forwards;
     }
 
@@ -1075,7 +1075,7 @@
       height: 3px;
       border-radius: 999px;
       transform-origin: left center;
-      background: linear-gradient(90deg, rgba(200,149,42,0.4), transparent);
+      background: linear-gradient(90deg, rgba(74,157,60,0.4), transparent);
       animation: streakTrail 0.55s ease-out forwards;
       pointer-events: none;
     }
@@ -1092,12 +1092,12 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     .promo-card {
-      background: linear-gradient(160deg, rgba(8,18,45,0.97) 0%, rgba(3,9,25,0.97) 100%);
-      border: 2px solid rgba(200,149,42,0.55);
+      background: linear-gradient(160deg, rgba(8,18,4,0.97) 0%, rgba(3,12,2,0.97) 100%);
+      border: 2px solid rgba(74,157,60,0.55);
       border-radius: 18px;
       padding: 26px 30px;
       text-align: center;
-      box-shadow: 0 0 50px rgba(200,149,42,0.2), 0 0 0 6px rgba(13,11,8,0.6);
+      box-shadow: 0 0 50px rgba(74,157,60,0.2), 0 0 0 6px rgba(8,15,4,0.6);
       animation: promoCardPop 0.28s cubic-bezier(0.22,1,0.36,1);
     }
     @keyframes promoCardPop {
@@ -1105,7 +1105,7 @@
       to   { transform: scale(1); opacity: 1; }
     }
     .promo-card h2 {
-      color: #c8952a;
+      color: #4a9d3c;
       font-size: 1rem;
       margin: 0 0 16px;
       letter-spacing: 0.12em;
@@ -1117,7 +1117,7 @@
     .promo-choice {
       display: flex; flex-direction: column; align-items: center; gap: 6px;
       background: rgba(20,16,8,0.85);
-      border: 2px solid rgba(200,149,42,0.3);
+      border: 2px solid rgba(74,157,60,0.3);
       border-radius: 12px;
       padding: 12px 16px;
       cursor: pointer;
@@ -1127,10 +1127,10 @@
       color: var(--light-piece);
     }
     .promo-choice:hover {
-      background: rgba(18,14,6,0.95);
-      border-color: #c8952a;
+      background: rgba(10,24,6,0.95);
+      border-color: #4a9d3c;
       transform: translateY(-4px) scale(1.08);
-      box-shadow: 0 8px 28px rgba(200,149,42,0.3);
+      box-shadow: 0 8px 28px rgba(74,157,60,0.3);
     }
     .promo-choice span {
       font-size: 0.62rem;
@@ -1183,7 +1183,7 @@
       border-radius: 0;
       inset: 0;
       pointer-events: none;
-      background: radial-gradient(ellipse at center, rgba(200,149,42,0.6) 0%, rgba(200,149,42,0.15) 55%, transparent 75%);
+      background: radial-gradient(ellipse at center, rgba(74,157,60,0.6) 0%, rgba(74,157,60,0.15) 55%, transparent 75%);
       animation: beatGlow 0.38s ease-out forwards;
       z-index: 7;
     }
@@ -1338,8 +1338,8 @@
     }
 
     .acc-fill.bot {
-      background: linear-gradient(180deg, #e8d8a8 0%, #c8952a 35%, #8b6518 100%);
-      box-shadow: 0 -4px 16px rgba(200,149,42,0.5);
+      background: linear-gradient(180deg, #c8e6a0 0%, #4a9d3c 35%, #2a5c1e 100%);
+      box-shadow: 0 -4px 16px rgba(74,157,60,0.5);
       animation: accentBarPulse 1.6s ease-in-out infinite 0.8s;
     }
 
@@ -1365,18 +1365,18 @@
       margin-top: 10px;
       min-height: 42px;
       padding: 10px 12px;
-      border: 1px solid rgba(200,149,42,0.25);
+      border: 1px solid rgba(74,157,60,0.25);
       border-radius: 10px;
-      background: rgba(18,12,4,0.58);
+      background: rgba(8,18,4,0.58);
       font-size: 0.92rem;
       line-height: 1.35;
-      box-shadow: inset 0 0 20px rgba(200,149,42,0.04);
+      box-shadow: inset 0 0 20px rgba(74,157,60,0.04);
     }
 
     .live-note strong {
       color: var(--accent);
       margin-right: 8px;
-      text-shadow: 0 0 10px rgba(200,149,42,0.6);
+      text-shadow: 0 0 10px rgba(74,157,60,0.6);
     }
 
     .reserve-panel {
@@ -1445,7 +1445,7 @@
 
     .reserve-btn.selected {
       border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(200,149,42, 0.3) inset;
+      box-shadow: 0 0 0 2px rgba(74,157,60, 0.3) inset;
     }
 
     .reserve-btn.enemy {
@@ -1555,19 +1555,19 @@
     }
 
     @keyframes titleGlow {
-      0%, 100% { filter: brightness(0.92) drop-shadow(0 0 0px rgba(200,149,42,0)); }
-      50%       { filter: brightness(1.08) drop-shadow(0 0 12px rgba(200,149,42,0.6)); }
+      0%, 100% { filter: brightness(0.92) drop-shadow(0 0 0px rgba(74,157,60,0)); }
+      50%       { filter: brightness(1.08) drop-shadow(0 0 12px rgba(74,157,60,0.6)); }
     }
 
     @keyframes borderPulse {
-      0%, 100% { box-shadow: 0 0 0px rgba(200,149,42,0), 0 0 30px rgba(200,149,42,0.06), inset 0 1px 0 rgba(255,255,255,0.06); }
-      50%       { box-shadow: 0 0 28px rgba(200,149,42,0.4), 0 0 60px rgba(200,149,42,0.14), inset 0 1px 0 rgba(255,255,255,0.12); }
+      0%, 100% { box-shadow: 0 0 0px rgba(74,157,60,0), 0 0 30px rgba(74,157,60,0.06), inset 0 1px 0 rgba(255,255,255,0.06); }
+      50%       { box-shadow: 0 0 28px rgba(74,157,60,0.4), 0 0 60px rgba(74,157,60,0.14), inset 0 1px 0 rgba(255,255,255,0.12); }
     }
 
-    /* Board beat-pulse — 104 BPM = ~577ms */
+    /* Board beat-pulse — 140 BPM = ~429ms */
     @keyframes boardBeat {
-      0%, 100% { box-shadow: 0 0 0 2px rgba(60,40,10,0.6), 0 0 30px rgba(200,149,42,0.08), 0 16px 40px rgba(0,0,0,0.55), 0 0 var(--music-board-size) rgba(200,149,42,var(--music-board-alpha)); }
-      8%, 22%  { box-shadow: 0 0 0 3px rgba(200,149,42,0.7), 0 0 40px rgba(200,149,42,0.3), 0 0 70px rgba(200,149,42,0.12), 0 16px 50px rgba(0,0,0,0.65), 0 0 var(--music-board-strong-size) rgba(200,149,42,var(--music-board-alpha)); }
+      0%, 100% { box-shadow: 0 0 0 2px rgba(20,50,10,0.6), 0 0 30px rgba(74,157,60,0.08), 0 16px 40px rgba(0,0,0,0.55), 0 0 var(--music-board-size) rgba(74,157,60,var(--music-board-alpha)); }
+      8%, 22%  { box-shadow: 0 0 0 3px rgba(74,157,60,0.7), 0 0 40px rgba(74,157,60,0.3), 0 0 70px rgba(74,157,60,0.12), 0 16px 50px rgba(0,0,0,0.65), 0 0 var(--music-board-strong-size) rgba(74,157,60,var(--music-board-alpha)); }
     }
 
     /* Floating particle background */
@@ -1697,7 +1697,7 @@
       scroll-behavior: smooth;
     }
 
-    /* Don't Starve Edition — steel war scrollbar */
+    /* Terraria move log scrollbar */
     .move-table-wrap::-webkit-scrollbar {
       width: 7px;
     }
@@ -1761,7 +1761,7 @@
     .p2p-panel {
       margin-top: 10px;
       padding: 10px 12px;
-      border: 1px solid rgba(200,149,42,0.35);
+      border: 1px solid rgba(74,157,60,0.35);
       border-radius: 10px;
       background: rgba(18,12,4,0.6);
       display: grid;
@@ -1788,7 +1788,7 @@
     }
 
     .p2p-btn {
-      border: 1px solid rgba(200,149,42,0.45);
+      border: 1px solid rgba(74,157,60,0.45);
       border-radius: 8px;
       background: rgba(14,165,233,0.15);
       color: var(--text);
@@ -1867,15 +1867,15 @@
 
   /* ── Back-to-menu button ── */
   .menu-btn {
-    background: rgba(18,12,4,0.88);
-    border: 1px solid rgba(200,149,42,0.4);
-    color: #c8952a;
+    background: rgba(8,18,4,0.88);
+    border: 1px solid rgba(74,157,60,0.4);
+    color: #4a9d3c;
     font-size: 0.75rem; font-weight: 700;
     padding: 5px 12px; border-radius: 20px;
     cursor: pointer; transition: all 0.2s;
     white-space: nowrap; letter-spacing: 0.05em;
   }
-  .menu-btn:hover { background: rgba(28,18,6,0.92); border-color: #c8952a; }
+  .menu-btn:hover { background: rgba(14,28,6,0.92); border-color: #4a9d3c; }
 
   /* ── Achievements ── */
   #achievementToasts {
@@ -1885,33 +1885,33 @@
     pointer-events: none;
   }
   .ach-toast {
-    background: linear-gradient(135deg, rgba(18,14,6,0.97), rgba(12,9,4,0.97));
-    border: 1px solid rgba(200,149,42,0.5);
+    background: linear-gradient(135deg, rgba(8,18,4,0.97), rgba(4,12,2,0.97));
+    border: 1px solid rgba(74,157,60,0.5);
     border-radius: 14px; padding: 12px 18px;
     display: flex; align-items: center; gap: 12px;
     min-width: 280px; max-width: 360px;
-    box-shadow: 0 8px 32px rgba(200,149,42,0.15), 0 0 0 1px rgba(200,149,42,0.08);
+    box-shadow: 0 8px 32px rgba(74,157,60,0.15), 0 0 0 1px rgba(74,157,60,0.08);
     animation: achSlideIn 0.4s cubic-bezier(0.22,1,0.36,1) forwards;
     pointer-events: all;
   }
   .ach-toast.hiding { animation: achSlideOut 0.35s ease forwards; }
   .ach-icon { font-size: 1.8rem; flex-shrink: 0; }
   .ach-text { flex: 1; }
-  .ach-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #c8952a; margin-bottom: 2px; }
-  .ach-name { font-size: 0.95rem; font-weight: 800; color: #e8d8a8; }
+  .ach-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #4a9d3c; margin-bottom: 2px; }
+  .ach-name { font-size: 0.95rem; font-weight: 800; color: #c8e6a0; }
   .ach-desc { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-top: 2px; }
   @keyframes achSlideIn { from { opacity:0; transform:translateX(60px) scale(0.9); } to { opacity:1; transform:translateX(0) scale(1); } }
   @keyframes achSlideOut { to { opacity:0; transform:translateX(60px) scale(0.9); } }
 
   /* ── Achievement gallery button ── */
   .ach-btn {
-    background: rgba(18,12,4,0.88);
-    border: 1px solid rgba(200,149,42,0.4);
-    color: #c8952a; font-size: 0.75rem; font-weight: 700;
+    background: rgba(8,18,4,0.88);
+    border: 1px solid rgba(74,157,60,0.4);
+    color: #4a9d3c; font-size: 0.75rem; font-weight: 700;
     padding: 5px 12px; border-radius: 20px;
     cursor: pointer; transition: all 0.2s; white-space: nowrap; letter-spacing: 0.05em;
   }
-  .ach-btn:hover { background: rgba(28,18,6,0.92); border-color: #c8952a; }
+  .ach-btn:hover { background: rgba(14,28,6,0.92); border-color: #4a9d3c; }
 
   /* ── Achievement modal ── */
   #achModal {
@@ -1921,25 +1921,25 @@
   }
   #achModal.open { display: flex; }
   .ach-modal-inner {
-    background: linear-gradient(160deg, rgba(20,16,8,0.98), rgba(5,12,30,0.98));
-    border: 1px solid rgba(200,149,42,0.3); border-radius: 20px;
+    background: linear-gradient(160deg, rgba(8,18,4,0.98), rgba(3,12,2,0.98));
+    border: 1px solid rgba(74,157,60,0.3); border-radius: 20px;
     padding: 32px; max-width: 560px; width: 90%;
     max-height: 80vh; overflow-y: auto;
   }
-  .ach-modal-inner h2 { color: #c8952a; font-size: 1.4rem; margin-bottom: 20px; }
+  .ach-modal-inner h2 { color: #4a9d3c; font-size: 1.4rem; margin-bottom: 20px; }
   .ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .ach-card {
     background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
     border-radius: 12px; padding: 14px; display: flex; gap: 10px; align-items: flex-start;
     transition: border-color 0.2s;
   }
-  .ach-card.unlocked { border-color: rgba(200,149,42,0.4); background: rgba(200,149,42,0.06); }
+  .ach-card.unlocked { border-color: rgba(74,157,60,0.4); background: rgba(74,157,60,0.06); }
   .ach-card .ach-icon { font-size: 1.5rem; }
   .ach-card .ach-name { font-size: 0.88rem; font-weight: 700; color: #e8d8a8; }
   .ach-card .ach-desc { font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-top: 3px; }
   .ach-card.locked .ach-icon, .ach-card.locked .ach-name { opacity: 0.3; filter: grayscale(1); }
-  .ach-modal-close { margin-top: 20px; width: 100%; padding: 10px; background: rgba(200,149,42,0.12); border: 1px solid rgba(200,149,42,0.3); color: #c8952a; border-radius: 10px; cursor: pointer; font-weight: 700; }
-  .ach-modal-close:hover { background: rgba(200,149,42,0.22); }
+  .ach-modal-close { margin-top: 20px; width: 100%; padding: 10px; background: rgba(74,157,60,0.12); border: 1px solid rgba(74,157,60,0.3); color: #4a9d3c; border-radius: 10px; cursor: pointer; font-weight: 700; }
+  .ach-modal-close:hover { background: rgba(74,157,60,0.22); }
   </style>
 </head>
 <body>
@@ -2735,9 +2735,11 @@
       const xp = state_tr.xp[color];
       const lv = trGetLevel(xp);
       const nextLv = TR_LEVELS[lv.level] || null;
-      const segMax = 50;
-      const segXP = xp % segMax;
-      const pct = Math.min(100, (segXP / segMax) * 100);
+      const segStart = lv.xp;
+      const segEnd = nextLv ? nextLv.xp : lv.xp;
+      const pct = nextLv
+        ? Math.max(0, Math.min(100, ((xp - segStart) / (segEnd - segStart)) * 100))
+        : 100;
       const fillEl = document.getElementById(color === "w" ? "xpFillW" : "xpFillB");
       const labelEl = document.getElementById(color === "w" ? "xpLabelW" : "xpLabelB");
       const numEl   = document.getElementById(color === "w" ? "xpNumW"   : "xpNumB");
@@ -2853,9 +2855,9 @@
     }
 
     /* ─────────────────────────────────────────────
-       BACKGROUND MUSIC — Wilderness Ambience
-       "Iron Throne" — Epic minor orchestral march
-       Am pentatonic, 108 BPM, 8-bar loop
+       BACKGROUND MUSIC — Terraria Chiptune
+       Square-wave adventure loop
+       D major, 140 BPM, 8-bar loop
     ───────────────────────────────────────────── */
     let _bgMusic = null;
 
@@ -5918,15 +5920,15 @@
 
       const BATTLE_WORDS = {
         n: ["SLASH!", "HUNT!", "STRIKE!"],
-        r: ["THORNS!", "SNARE!", "TRAP!"],
-        b: ["GNAW!", "FEAST!", "HUNGER!"],
-        q: ["NIGHTMARE!", "DARKNESS!", "REIGN!"],
-        k: ["CHARLIE!", "VOID!"],
-        p: ["SCRATCH!", "HIT!", "STARVE!"]
+        r: ["THORNS!", "VINE!", "SNARE!"],
+        b: ["SPORES!", "BLOOM!", "ROOTS!"],
+        q: ["BOSS!", "METEOR!", "MANA!"],
+        k: ["CROWN!", "ASCEND!"],
+        p: ["DIG!", "CHIP!", "MINE!"]
       };
       const WORD_COLORS = {
-        n: "#c8952a", r: "#4a7a2a", b: "#e8a82a",
-        q: "#6b2fa0", k: "#e8621a", p: "#8b7a52"
+        n: "#b87333", r: "#4a9d3c", b: "#7ab84a",
+        q: "#7c3aed", k: "#e8621a", p: "#8b7a52"
       };
 
       const words = BATTLE_WORDS[pt] || BATTLE_WORDS.p;
@@ -6168,7 +6170,7 @@
       const center = squareCenter(sq, boardRect);
 
       const mist = document.createElement("span");
-      mist.style.cssText = `position:absolute;width:48px;height:48px;border-radius:50%;background:radial-gradient(circle,rgba(200,149,42,0.5) 0%,transparent 70%);transform:translate(-50%,-50%);pointer-events:none;animation:beatGlow 0.4s ease-out forwards;`;
+      mist.style.cssText = `position:absolute;width:48px;height:48px;border-radius:50%;background:radial-gradient(circle,rgba(74,157,60,0.5) 0%,transparent 70%);transform:translate(-50%,-50%);pointer-events:none;animation:beatGlow 0.4s ease-out forwards;`;
       mist.style.left = `${center.x}px`; mist.style.top = `${center.y}px`;
       layer.appendChild(mist);
       setTimeout(() => mist.remove(), 450);
@@ -6185,7 +6187,7 @@
       const word = document.createElement("span");
       word.className = "fx-explosion-word";
       word.textContent = "SACRIFICED! ♟️";
-      word.style.color = "#c8952a";
+      word.style.color = "#4a9d3c";
       word.style.left = `${center.x}px`; word.style.top = `${center.y - 18}px`;
       layer.appendChild(word);
       setTimeout(() => word.remove(), 800);
@@ -6206,7 +6208,7 @@
         spark.style.left = `${center.x}px`; spark.style.top = `${center.y}px`;
         spark.style.setProperty("--sx", `${Math.cos(angle) * (12 + Math.random() * 14)}px`);
         spark.style.setProperty("--sy", `${Math.sin(angle) * (12 + Math.random() * 14)}px`);
-        spark.style.background = ["#c8952a","#818cf8","#c084fc"][i % 3];
+        spark.style.background = ["#4a9d3c","#b87333","#86efac"][i % 3];
         layer.appendChild(spark);
         setTimeout(() => spark.remove(), 480);
       }
@@ -6214,7 +6216,7 @@
       const word = document.createElement("span");
       word.className = "fx-explosion-word";
       word.textContent = "DROP! ⬇️";
-      word.style.color = "#c8952a";
+      word.style.color = "#4a9d3c";
       word.style.left = `${center.x}px`; word.style.top = `${center.y - 18}px`;
       layer.appendChild(word);
       setTimeout(() => word.remove(), 750);
@@ -6379,35 +6381,35 @@
           {
             transform: `translate(0px, 0px) scale(1) rotate(0deg)`,
             filter: cinematic
-              ? "drop-shadow(0 0 8px rgba(255,255,255,0.95)) drop-shadow(0 0 20px rgba(200,149,42,0.8))"
+              ? "drop-shadow(0 0 8px rgba(255,255,255,0.95)) drop-shadow(0 0 20px rgba(74,157,60,0.8))"
               : "none",
             offset: 0
           },
           {
             transform: `translate(${dx * 0.25}px, ${dy * 0.25 - lift * 0.6}px) scale(1.08) rotate(${dx > 0 ? 4 : -4}deg)`,
             filter: cinematic
-              ? "drop-shadow(0 0 12px rgba(255,255,255,1)) drop-shadow(0 0 28px rgba(200,149,42,0.9)) blur(0.5px)"
+              ? "drop-shadow(0 0 12px rgba(255,255,255,1)) drop-shadow(0 0 28px rgba(74,157,60,0.9)) blur(0.5px)"
               : "none",
             offset: 0.2
           },
           {
             transform: `translate(${dx * 0.5}px, ${dy * 0.5 - lift}px) scale(1.18) rotate(${dx > 0 ? 6 : -6}deg)`,
             filter: cinematic
-              ? "drop-shadow(0 0 18px rgba(255,255,255,1)) drop-shadow(0 0 40px rgba(200,149,42,1)) drop-shadow(0 0 60px rgba(200,149,42,0.6)) blur(0.8px)"
+              ? "drop-shadow(0 0 18px rgba(255,255,255,1)) drop-shadow(0 0 40px rgba(74,157,60,1)) drop-shadow(0 0 60px rgba(74,157,60,0.6)) blur(0.8px)"
               : "none",
             offset: 0.45
           },
           {
             transform: `translate(${dx * 0.8}px, ${dy * 0.8 - lift * 0.2}px) scale(1.05) rotate(${dx > 0 ? 2 : -2}deg)`,
             filter: cinematic
-              ? "drop-shadow(0 0 10px rgba(255,255,255,0.8)) drop-shadow(0 0 22px rgba(200,149,42,0.7))"
+              ? "drop-shadow(0 0 10px rgba(255,255,255,0.8)) drop-shadow(0 0 22px rgba(74,157,60,0.7))"
               : "none",
             offset: 0.78
           },
           {
             transform: `translate(${dx}px, ${dy}px) scale(1) rotate(0deg)`,
             filter: cinematic
-              ? "drop-shadow(0 0 6px rgba(255,255,255,0.7)) drop-shadow(0 0 14px rgba(200,149,42,0.5))"
+              ? "drop-shadow(0 0 6px rgba(255,255,255,0.7)) drop-shadow(0 0 14px rgba(74,157,60,0.5))"
               : "none",
             offset: 1
           }
@@ -8022,7 +8024,7 @@
       { id:"speedrun",      icon:"⚡",  name:"Speedrun",           desc:"Win in under 15 moves." },
     ];
 
-    const ACH_STORE_KEY = "chessUltimate_dontstarve_achievements";
+    const ACH_STORE_KEY = "chessUltimate_terraria_achievements";
 
     function achLoad() {
       try { return JSON.parse(localStorage.getItem(ACH_STORE_KEY) || "{}"); } catch { return {}; }
