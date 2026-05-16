@@ -1,6 +1,6 @@
 {
   "name": "chess-ultimate",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Chess Ultimate — Battle Edition & Joker's Gambit",
   "main": "main.js",
   "scripts": {
