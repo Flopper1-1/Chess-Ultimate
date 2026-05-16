@@ -13,6 +13,7 @@ function createGameWindow(htmlFile) {
     "index3.html": "Wilderness Chess - Don't Starve",
     "index.html":  "Chess Ultimate — Battle Edition",
     "index2.html": "Chess Balatro — The Joker's Gambit",
+    "index4.html": "Terraria Chess — Mine. Fight. Conquer.",
   };
   const win = new BrowserWindow({
     icon: APP_ICON,

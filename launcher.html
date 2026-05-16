@@ -75,13 +75,14 @@
     letter-spacing: 0.22em; text-transform: uppercase; margin-top: 8px;
   }
 
-  /* Cards row — always fills available width */
+  /* Cards grid — 2×2 for four editions */
   .cards {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: clamp(12px, 2vw, 32px);
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: clamp(12px, 2vw, 28px);
     width: 100%;
-    max-width: 980px;
+    max-width: 860px;
     flex: 1;
     min-height: 0;
     align-items: stretch;
@@ -126,6 +127,15 @@
     border-color: rgba(200,149,42,0.6);
     box-shadow: 0 14px 56px rgba(200,149,42,0.2);
   }
+  .card.terraria {
+    background: linear-gradient(160deg, rgba(8,18,4,0.97), rgba(4,10,2,0.99));
+    border-color: rgba(74,157,60,0.22);
+    box-shadow: 0 8px 36px rgba(74,157,60,0.07);
+  }
+  .card.terraria:hover {
+    border-color: rgba(74,157,60,0.6);
+    box-shadow: 0 14px 56px rgba(74,157,60,0.22);
+  }
 
   .card-icon {
     font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1;
@@ -134,6 +144,7 @@
   .card.battle    .card-icon { color: #38bdf8; }
   .card.balatro   .card-icon { color: #f5c842; }
   .card.dontstarve .card-icon { color: #c8952a; }
+  .card.terraria  .card-icon { color: #4a9d3c; }
 
   .card-title {
     font-size: clamp(0.95rem, 1.6vw, 1.25rem);
@@ -142,6 +153,7 @@
   .card.battle    .card-title { color: #e2f4ff; }
   .card.balatro   .card-title { color: #fdf6e3; }
   .card.dontstarve .card-title { color: #e8d8a8; }
+  .card.terraria  .card-title { color: #c8e6a0; }
 
   .card-desc {
     font-size: clamp(0.68rem, 1vw, 0.82rem);
@@ -158,6 +170,7 @@
   .card.battle    .card-tag { background: rgba(56,189,248,0.15);  color: #7dd3fc; }
   .card.balatro   .card-tag { background: rgba(245,200,66,0.15);  color: #fde68a; }
   .card.dontstarve .card-tag { background: rgba(200,149,42,0.15); color: #e8d8a8; }
+  .card.terraria  .card-tag { background: rgba(74,157,60,0.15);   color: #8fbc5a; }
 
   .card-btn {
     margin-top: 4px;
@@ -173,6 +186,7 @@
   .card.battle      .card-btn { background: #38bdf8; color: #020d1a; }
   .card.balatro     .card-btn { background: #f5c842; color: #1a0a00; }
   .card.dontstarve  .card-btn { background: #c8952a; color: #0a0806; }
+  .card.terraria    .card-btn { background: #4a9d3c; color: #040a02; }
 
   .version {
     font-size: 0.65rem; color: rgba(255,255,255,0.16);
@@ -225,6 +239,14 @@
       <div class="card-desc">Sanity drains in the dark. Pieces grow monstrous at low sanity. Don't let Charlie find your king.</div>
       <button class="card-btn" id="btnDontStarve">Play</button>
     </div>
+
+    <div class="card terraria">
+      <div class="card-icon">⛏️</div>
+      <div class="card-title">Terraria Chess</div>
+      <div class="card-tag">Roguelike</div>
+      <div class="card-desc">Mine XP from captures. Level up your king through Spawn → Guide → Hardmode → Moon Lord.</div>
+      <button class="card-btn" id="btnTerraria">Play</button>
+    </div>
   </div>
 
   <div class="version">
@@ -242,6 +264,7 @@
   document.getElementById("btnBattle").addEventListener("click", () => launchGame("index.html"));
   document.getElementById("btnBalatro").addEventListener("click", () => launchGame("index2.html"));
   document.getElementById("btnDontStarve").addEventListener("click", () => launchGame("index3.html"));
+  document.getElementById("btnTerraria").addEventListener("click", () => launchGame("index4.html"));
   document.getElementById("btnClose").addEventListener("click", () => {
     if (window.electronAPI) window.electronAPI.closeApp();
   });
