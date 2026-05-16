@@ -44,6 +44,37 @@
       box-sizing: border-box;
     }
 
+    /* ── Battle-themed page scrollbar ── */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(5, 12, 30, 0.85);
+      border-left: 1px solid rgba(56,189,248,0.08);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg,
+        rgba(56,189,248,0.7) 0%,
+        rgba(14,165,233,0.55) 40%,
+        rgba(56,189,248,0.7) 100%);
+      border-radius: 6px;
+      border: 2px solid rgba(5,12,30,0.8);
+      box-shadow: 0 0 8px rgba(56,189,248,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg,
+        rgba(125,211,252,0.9) 0%,
+        rgba(56,189,248,0.75) 50%,
+        rgba(125,211,252,0.9) 100%);
+      box-shadow: 0 0 14px rgba(56,189,248,0.7);
+    }
+    ::-webkit-scrollbar-corner {
+      background: rgba(5,12,30,0.85);
+    }
+    /* Firefox */
+    * { scrollbar-width: thin; scrollbar-color: rgba(56,189,248,0.6) rgba(5,12,30,0.85); }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -148,6 +179,11 @@
     }
     .music-btn:hover { background: rgba(20, 35, 65, 0.9); border-color: #38bdf8; }
     .music-btn.music-off { color: var(--muted); border-color: rgba(56,189,248,0.2); }
+    .music-btn.music-waiting { animation: musicWaitPulse 1.8s ease-in-out infinite; }
+    @keyframes musicWaitPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(56,189,248,0); }
+      50%       { box-shadow: 0 0 0 4px rgba(56,189,248,0.35); }
+    }
 
     .music-vol {
       -webkit-appearance: none;
@@ -1827,7 +1863,7 @@
         <div class="music-controls">
           <button id="menuBackBtn" class="menu-btn" title="Back to menu">⬅ Menu</button>
           <button id="achOpenBtn" class="ach-btn" title="Achievements">🏆</button>
-          <button id="musicToggleBtn" class="music-btn" title="Toggle background music">♪ Music</button>
+          <button id="musicToggleBtn" class="music-btn music-waiting" title="Click to start music">♪ Music ▶</button>
           <input id="musicVolSlider" type="range" min="0" max="100" value="40" title="Music volume" class="music-vol" />
         </div>
       </div>
@@ -3170,7 +3206,9 @@
       if (_bgMusic) { _bgMusic.running = false; _bgMusic = null; }
       if (_musicGain) {
         const ctx = getAudioCtx();
-        _musicGain.gain.setTargetAtTime(0, ctx.currentTime, 0.4);
+        // Cancel any in-flight ramps then fade to silence quickly
+        _musicGain.gain.cancelScheduledValues(ctx.currentTime);
+        _musicGain.gain.setTargetAtTime(0, ctx.currentTime, 0.18);
       }
     }
 
@@ -3178,12 +3216,18 @@
       if (_musicGain) {
         const ctx = getAudioCtx();
         const v = Number(document.getElementById("musicVolSlider")?.value ?? 40) / 100;
+        _musicGain.gain.cancelScheduledValues(ctx.currentTime);
         _musicGain.gain.setTargetAtTime(v, ctx.currentTime, 0.5);
       }
     }
 
     let _musicEnabled = true;
+    let _toggleDebounce = null;
     function toggleMusic(force) {
+      // Debounce: ignore rapid clicks within 350ms to prevent loop stacking
+      if (_toggleDebounce) return;
+      _toggleDebounce = setTimeout(() => { _toggleDebounce = null; }, 350);
+
       if (force === undefined) _musicEnabled = !_musicEnabled;
       else _musicEnabled = force;
       const btn = document.getElementById("musicToggleBtn");
@@ -3191,8 +3235,13 @@
         stopBackgroundMusic();
         resumeAudio();
         getMasterGain();
-        startBackgroundMusic();
-        _musicFadeIn();
+        // Delay start slightly so the fade-out has time to silence old nodes
+        setTimeout(() => {
+          if (_musicEnabled && (!_bgMusic || !_bgMusic.running)) {
+            startBackgroundMusic();
+            _musicFadeIn();
+          }
+        }, 200);
         if (btn) { btn.textContent = "♪ Music"; btn.classList.remove("music-off"); }
       } else {
         stopBackgroundMusic();
@@ -7628,7 +7677,9 @@
       e.stopPropagation();
       resumeAudio();
       getMasterGain();
-      if (!_introPlayed) { _introPlayed = true; synthIntroSting(); }
+      // Mark interaction done so onFirstInteraction doesn't also start music
+      _introPlayed = true;
+      e.currentTarget.classList.remove("music-waiting");
       toggleMusic();
     });
 
@@ -7644,10 +7695,19 @@
     function onFirstInteraction() {
       resumeAudio();
       getMasterGain();
+      // Clear the "waiting for click" pulse on the music button
+      const btn = document.getElementById("musicToggleBtn");
+      if (btn) {
+        btn.classList.remove("music-waiting");
+        if (_musicEnabled) {
+          btn.textContent = "♪ Music";
+        }
+      }
       if (!_introPlayed) {
         _introPlayed = true;
         synthIntroSting();
-        if (_musicEnabled && !_bgMusic) {
+        // Only auto-start if music is enabled and not already running
+        if (_musicEnabled && (!_bgMusic || !_bgMusic.running)) {
           startBackgroundMusic();
           _musicFadeIn();
         }
