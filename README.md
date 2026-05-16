@@ -1,6 +1,6 @@
 <h1 align="center">Chess Ultimate</h1>
 
-<p align="center"><strong>Three cinematic chess editions with reactive procedural soundtracks.</strong></p>
+<p align="center"><strong>Four cinematic chess editions with reactive procedural soundtracks.</strong></p>
 <p align="center">Made by <strong>TheHollyCow</strong> and <strong>Masternazz</strong>.</p>
 
 <p align="center">
@@ -10,14 +10,14 @@
 </p>
 
 <p align="center">
-  <img src="assets/roadmap.svg" alt="Chess Ultimate roadmap showing completed v1 progress and upcoming Terraria, graphics, and Kerbal Space Program updates">
+  <img src="assets/roadmap.svg" alt="Chess Ultimate roadmap — v1 foundation complete, Terraria Chess shipped in v1.5, graphics polish and Kerbal Space Program update ahead">
 </p>
 
 <p align="center">
-  <img src="screenshots/launcher.png" alt="Chess Ultimate launcher showing Battle Edition, Joker's Gambit, and Wilderness">
+  <img src="screenshots/launcher.png" alt="Chess Ultimate launcher showing all four editions">
 </p>
 
-## ⚔️ Three Editions
+## ⚔️ Four Editions
 
 ### **Battle Edition**
 
@@ -43,24 +43,35 @@
 - The board darkens as sanity falls, with nightmare filters and survival pressure.
 - Eerie wilderness audio layers drones, crickets, heartbeat pulses, and sudden horror stingers.
 
+### **Terraria Chess** *(new in v1.5)*
+
+- Class system: K/R/N are Warriors, Q/B are Mages, P are Rangers — each with themed weapon overlays.
+- Capture pieces to earn XP. Level up your king from Spawn → Guide → Hardmode → Moon Lord.
+- XP thresholds: Pawn=10, Knight/Bishop=20, Rook=30, Queen=50. Levels at 50 / 100 / 150 XP.
+- Class combo detection: two consecutive captures with the same class triggers a combo burst.
+- 140 BPM D-major chiptune with square-wave arpeggios, NES-style bass, and boss drone at high tension.
+- Green/copper visual theme with king level-up banners and ore-pickup sound FX.
+
 ## ✨ Features
 
-- **Procedural Web Audio music** - no audio files; every edition has its own synthesized score.
-- **Reactive tension system** - captures, checks, promotions, blunders, and game over events reshape BPM, filters, percussion, and counter-melodies.
-- **Cinematic animations** - arcing piece movement, landing flashes, capture bursts, screen shake, and themed FX.
-- **11 chess variants** - Standard, Chess960, Three-Check, Atomic, King of the Hill, Fog of War, Antichess, Crazyhouse, Checkers vs Chess, Bughouse, and more.
-- **Annotation engine** - real-time `!!`, `!`, `?!`, `?`, and `??` labels with per-side accuracy tracking.
-- **4-player chess** - teams and free-for-all modes on a 14x14 board.
-- **Balatro card system** - piece hands, jokers, luck cards, reward chances, rarity rolls, and card-driven movement.
-- **Don't Starve sanity mechanic** - sanity bars, darkness states, Charlie pressure, and survival-flavored consequences.
+- **Procedural Web Audio music** — no audio files; every edition has its own synthesized score.
+- **Reactive tension system** — captures, checks, promotions, blunders, and game over events reshape BPM, filters, percussion, and counter-melodies in real time.
+- **Cinematic animations** — arcing piece movement, landing flashes, capture bursts, screen shake, and themed FX.
+- **11 chess variants** — Standard, Chess960, Three-Check, Atomic, King of the Hill, Fog of War, Antichess, Crazyhouse, Checkers vs Chess, Bughouse, and more.
+- **Annotation engine** — real-time `!!`, `!`, `?!`, `?`, and `??` labels with per-side accuracy tracking.
+- **4-player chess** — teams and free-for-all modes on a 14×14 board.
+- **Balatro card system** — piece hands, jokers, luck cards, reward chances, rarity rolls, and card-driven movement.
+- **Don't Starve sanity mechanic** — sanity bars, darkness states, Charlie pressure, and survival-flavored consequences.
+- **Terraria XP system** — class-based XP bars, king level progression, and combo chains.
 
 ## 🎵 Soundtracks
 
 | Edition | Style | Tempo | Harmony | Signature Texture |
 |---|---:|---:|---|---|
-| Battle | War march | 108 BPM | A minor modal | Timpani, low strings, horns, battle percussion |
+| Battle | War march | 108 BPM | A minor modal | Distorted brass, double-kick drums, snare rolls |
 | Joker's Gambit | Jazz | 92 BPM | Cm7-Fm7-Bb7-Ebmaj7 | Swing groove, brushed percussion, sly counter-melody |
-| Wilderness | Eerie Phrygian drone | 60 BPM | Phrygian darkness | Cricket textures + heartbeat |
+| Wilderness | Eerie Phrygian drone | 60 BPM | A Phrygian | Cricket textures, heartbeat pulses, cave reverb |
+| Terraria Chess | NES chiptune | 140 BPM | D major | Square-wave arpeggios, bouncy sine bass, boss drone |
 
 ## 🚀 Quick Start
 
@@ -73,23 +84,11 @@ npm start
 
 ## 📦 Build
 
-Use the repo build script:
-
 ```bash
 npm run build
 ```
 
-Or package the Windows app directly:
-
-```bash
-npx @electron/packager . ChessUltimate --platform=win32 --arch=x64 --icon=icon.ico --out=dist-pkg --overwrite
-```
-
-Release-style output:
-
-```text
-dist-pkg/ChessUltimate-win32-x64/ChessUltimate.exe
-```
+Output: `build-out/ChessUltimate-win32-x64/ChessUltimate.exe` (zipped to `dist-pkg/`).
 
 ## 🎮 Controls
 
@@ -104,15 +103,15 @@ dist-pkg/ChessUltimate-win32-x64/ChessUltimate.exe
 | Select a card | Joker's Gambit: click a matching piece card |
 | Music | Press the Music button |
 | Menu | Press Esc or use the Menu button |
-| Back to launcher | Menu -> Back to Menu |
+| Back to launcher | Menu → Back to Menu |
 
 ## 🧩 Tech Notes
 
 - Electron desktop app with isolated preload APIs.
-- Web Audio API synthesis for music and SFX.
+- Web Audio API synthesis for all music and SFX — zero bundled audio files.
 - Local achievements stored per edition in `localStorage`.
-- No bundled audio files and no server required for normal play.
+- No server required for normal play.
 
 ## License
 
-MIT - see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
