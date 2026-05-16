@@ -7680,13 +7680,12 @@
       resumeAudio();
       getMasterGain();
       e.currentTarget.classList.remove("music-waiting");
-      if (!_introPlayed) {
-        // First-ever click: just start music, don't toggle off
+      if (!_bgMusic || !_bgMusic.running) {
+        // Music not running yet — start it
         _introPlayed = true;
+        _musicEnabled = true;
         synthIntroSting();
-        if (_musicEnabled && (!_bgMusic || !_bgMusic.running)) {
-          startBackgroundMusic();
-        }
+        startBackgroundMusic();
         const btn = document.getElementById("musicToggleBtn");
         if (btn) { btn.textContent = "♪ Music"; btn.classList.remove("music-off"); }
       } else {
