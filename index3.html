@@ -2146,6 +2146,7 @@
   </div>
 
   <script>
+    const GAME_CREDITS = "Made by TheHollyCow and Masternazz";
     const FILES = "abcdefgh";
     const PIECE_TO_UNICODE = {
       P: "\u2659",
@@ -7284,10 +7285,9 @@
       const orientation = state.orientation;
       const rank = Math.floor(idx / 8);
       const file = idx % 8;
-      // Both orientations: rank 0 is visually at bottom (row 7), rank 7 at top (row 0).
-      // When black plays, file 0 is on the right, file 7 on the left.
+      // Match renderBoard(): index rank 0 is the top row for White, flipped for Black.
       const displayCol = orientation === "w" ? file     : 7 - file;
-      const displayRow = 7 - rank; // same for both orientations
+      const displayRow = orientation === "w" ? rank     : 7 - rank;
       return {
         x: (displayCol + 0.5) * tileSize,
         y: (displayRow + 0.5) * tileSize
@@ -7329,7 +7329,7 @@
         const rank = Math.floor(idx / 8);
         const file = idx % 8;
         const displayCol = orientation === "w" ? file : 7 - file;
-        const displayRow = 7 - rank; // same for both orientations
+        const displayRow = orientation === "w" ? rank : 7 - rank;
         const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         rect.setAttribute("x", displayCol * tileSize);
         rect.setAttribute("y", displayRow * tileSize);

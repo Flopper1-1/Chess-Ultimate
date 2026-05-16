@@ -2,13 +2,20 @@ const { app, BrowserWindow, Menu, ipcMain } = require("electron");
 const path = require("path");
 
 let launcherWin = null;
+const APP_ICON = path.join(__dirname, "icon.png");
+
+if (process.platform === "win32") {
+  app.setAppUserModelId("com.flopper.chessultimate");
+}
 
 function createGameWindow(htmlFile) {
   const titles = {
+    "index3.html": "Wilderness Chess - Don't Starve",
     "index.html":  "Chess Ultimate — Battle Edition",
     "index2.html": "Chess Balatro — The Joker's Gambit",
   };
   const win = new BrowserWindow({
+    icon: APP_ICON,
     title: titles[htmlFile] || "Chess Ultimate",
     fullscreen: true,
     frame: false,
@@ -38,6 +45,7 @@ function createLauncher() {
     height: 540,
     resizable: false,
     frame: false,
+    icon: APP_ICON,
     title: "Chess Ultimate",
     webPreferences: {
       nodeIntegration: false,
@@ -53,6 +61,12 @@ function createLauncher() {
 }
 
 app.whenReady().then(() => {
+  if (process.platform === "darwin" && app.dock) {
+    app.dock.setIcon(APP_ICON);
+  }
+
+  ipcMain.handle("get-app-version", () => app.getVersion());
+
   createLauncher();
 
   ipcMain.on("open-game", (event, file) => {

@@ -2487,6 +2487,7 @@
   </div>
 
   <script>
+    const GAME_CREDITS = "Made by TheHollyCow and Masternazz";
     const FILES = "abcdefgh";
     const PIECE_TO_UNICODE = {
       P: "\u2659",
@@ -8616,7 +8617,7 @@
       const rank = Math.floor(idx / 8);
       const file = idx % 8;
       const displayCol = orientation === "w" ? file : 7 - file;
-      const displayRow = 7 - rank; // rank 0 always at bottom visually
+      const displayRow = orientation === "w" ? rank : 7 - rank;
       return { x: (displayCol + 0.5) * tileSize, y: (displayRow + 0.5) * tileSize };
     }
 
@@ -8648,7 +8649,7 @@
         const orientation = state.orientation;
         const rank = Math.floor(idx / 8); const file = idx % 8;
         const displayCol = orientation === "w" ? file : 7 - file;
-        const displayRow = 7 - rank;
+        const displayRow = orientation === "w" ? rank : 7 - rank;
         const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         rect.setAttribute("x", displayCol * tileSize); rect.setAttribute("y", displayRow * tileSize);
         rect.setAttribute("width", tileSize); rect.setAttribute("height", tileSize);

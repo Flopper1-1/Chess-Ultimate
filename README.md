@@ -1,11 +1,16 @@
 <h1 align="center">Chess Ultimate</h1>
 
 <p align="center"><strong>Three cinematic chess editions with reactive procedural soundtracks.</strong></p>
+<p align="center">Made by <strong>TheHollyCow</strong> and <strong>Masternazz</strong>.</p>
 
 <p align="center">
   <a href="https://github.com/Flopper1-1/Chess-Ultimate/releases">
     <img alt="Download latest release" src="https://img.shields.io/badge/Download-Latest%20Release-2ea44f?style=for-the-badge&logo=github">
   </a>
+</p>
+
+<p align="center">
+  <img src="assets/roadmap.svg" alt="Chess Ultimate roadmap showing completed v1 progress and upcoming Terraria, graphics, and Kerbal Space Program updates">
 </p>
 
 <p align="center">
@@ -77,7 +82,7 @@ npm run build
 Or package the Windows app directly:
 
 ```bash
-npx @electron/packager . ChessUltimate --platform=win32 --arch=x64 --out=dist-pkg --overwrite
+npx @electron/packager . ChessUltimate --platform=win32 --arch=x64 --icon=icon.ico --out=dist-pkg --overwrite
 ```
 
 Release-style output:

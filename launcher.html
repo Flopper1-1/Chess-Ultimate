@@ -178,6 +178,11 @@
     font-size: 0.65rem; color: rgba(255,255,255,0.16);
     letter-spacing: 0.12em;
     flex-shrink: 0;
+    text-align: center;
+    line-height: 1.8;
+  }
+  .version .credit {
+    color: rgba(255,255,255,0.22);
   }
 </style>
 </head>
@@ -222,10 +227,15 @@
     </div>
   </div>
 
-  <div class="version">Chess Ultimate v1.2.1</div>
+  <div class="version">
+    <div>Chess Ultimate v<span id="appVersion">1.4.0</span></div>
+    <div class="credit">Made by TheHollyCow and Masternazz</div>
+  </div>
 </div>
 
 <script>
+  const GAME_CREDITS = "Made by TheHollyCow and Masternazz";
+
   function launchGame(file) {
     if (window.electronAPI) window.electronAPI.openGame(file);
   }
@@ -235,6 +245,15 @@
   document.getElementById("btnClose").addEventListener("click", () => {
     if (window.electronAPI) window.electronAPI.closeApp();
   });
+
+  (async () => {
+    try {
+      const version = await window.electronAPI?.getAppVersion?.();
+      if (version) document.getElementById("appVersion").textContent = version;
+    } catch (_) {
+      /* Keep the static fallback version when running outside Electron. */
+    }
+  })();
 </script>
 </body>
 </html>
