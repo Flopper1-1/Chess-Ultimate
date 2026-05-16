@@ -81,10 +81,10 @@
 
   <!-- Card 2: Terraria Chess — SHIPPED -->
   <g filter="url(#softShadow)">
-    <rect x="445" y="188" width="345" height="502" rx="24" fill="#080f04" fill-opacity="0.92" stroke="#4a9d3c" stroke-opacity="0.72" stroke-width="2.5"/>
+    <rect x="445" y="188" width="380" height="502" rx="24" fill="#080f04" fill-opacity="0.92" stroke="#4a9d3c" stroke-opacity="0.72" stroke-width="2.5"/>
     <!-- checkmark badge top-right -->
-    <rect x="742" y="196" width="40" height="40" rx="10" fill="#4a9d3c" fill-opacity="0.28"/>
-    <path d="M750 216 l8 8 l14 -16" fill="none" stroke="#86efac" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="777" y="196" width="40" height="40" rx="10" fill="#4a9d3c" fill-opacity="0.28"/>
+    <path d="M785 216 l8 8 l14 -16" fill="none" stroke="#86efac" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
     <circle cx="487" cy="230" r="17" fill="#4a9d3c" filter="url(#glowGreen)"/>
     <text x="517" y="239" class="smallCaps" fill="#86efac">Shipped in v1.5</text>
     <text x="473" y="295" class="cardTitle">⛏️ Terraria Chess</text>
@@ -101,42 +101,42 @@
 
   <!-- Card 3: Polish Pass -->
   <g filter="url(#softShadow)">
-    <rect x="820" y="188" width="405" height="502" rx="24" fill="#1b0b0b" fill-opacity="0.9" stroke="#fb7185" stroke-opacity="0.5" stroke-width="2"/>
-    <circle cx="862" cy="230" r="17" fill="#fb7185"/>
-    <text x="892" y="239" class="smallCaps" fill="#fda4af">Next up</text>
-    <text x="848" y="298" class="cardTitle">Bugfixes + Polish</text>
-    <text x="848" y="344" class="bodyDim">Board readability pass</text>
-    <text x="848" y="380" class="bodyDim">Cleaner animations and timing</text>
-    <text x="848" y="416" class="bodyDim">Sharper card and piece art</text>
-    <text x="848" y="452" class="bodyDim">Performance and save cleanup</text>
-    <text x="848" y="488" class="bodyDim">Accessibility and settings polish</text>
-    <rect x="956" y="576" width="80" height="54" rx="9" fill="#fb7185" fill-opacity="0.12" stroke="#fda4af" stroke-width="3"/>
-    <path d="M972 602 h48 M996 578 v50" stroke="#fda4af" stroke-width="5" stroke-linecap="round"/>
+    <rect x="860" y="188" width="405" height="502" rx="24" fill="#1b0b0b" fill-opacity="0.9" stroke="#fb7185" stroke-opacity="0.5" stroke-width="2"/>
+    <circle cx="902" cy="230" r="17" fill="#fb7185"/>
+    <text x="932" y="239" class="smallCaps" fill="#fda4af">Next up</text>
+    <text x="888" y="298" class="cardTitle">Bugfixes + Polish</text>
+    <text x="888" y="344" class="bodyDim">Board readability pass</text>
+    <text x="888" y="380" class="bodyDim">Cleaner animations and timing</text>
+    <text x="888" y="416" class="bodyDim">Sharper card and piece art</text>
+    <text x="888" y="452" class="bodyDim">Performance and save cleanup</text>
+    <text x="888" y="488" class="bodyDim">Accessibility and settings polish</text>
+    <rect x="996" y="576" width="80" height="54" rx="9" fill="#fb7185" fill-opacity="0.12" stroke="#fda4af" stroke-width="3"/>
+    <path d="M1012 602 h48 M1036 578 v50" stroke="#fda4af" stroke-width="5" stroke-linecap="round"/>
   </g>
 
   <!-- Card 4: Kerbal -->
   <g filter="url(#softShadow)">
-    <rect x="1250" y="188" width="405" height="502" rx="24" fill="#070914" fill-opacity="0.92" stroke="#f5c842" stroke-opacity="0.55" stroke-width="2"/>
-    <circle cx="1292" cy="230" r="17" fill="#f5c842" filter="url(#glowGold)"/>
-    <text x="1322" y="239" class="smallCaps" fill="#fde68a">Major Update 2</text>
-    <text x="1278" y="298" class="cardTitle">Kerbal Space Program</text>
-    <text x="1278" y="344" class="bodyDim">Rocket-part upgrade trees</text>
-    <text x="1278" y="380" class="bodyDim">Orbital mission campaign map</text>
-    <text x="1278" y="416" class="bodyDim">Gravity-assist modifiers</text>
-    <text x="1278" y="452" class="bodyDim">Launch-window boss events</text>
-    <text x="1278" y="488" class="bodyDim">Science points for wild builds</text>
-    <path d="M1443 574 c22 -54 76 -71 98 -72 c-1 25 -18 78 -72 100 l-22 45 l-19 -19 l-45 22 l22 -45 l-19 -19 z" fill="#f5c842" fill-opacity="0.18" stroke="#fde68a" stroke-width="3"/>
-    <circle cx="1497" cy="544" r="10" fill="#fde68a"/>
+    <rect x="1290" y="188" width="400" height="502" rx="24" fill="#070914" fill-opacity="0.92" stroke="#f5c842" stroke-opacity="0.55" stroke-width="2"/>
+    <circle cx="1332" cy="230" r="17" fill="#f5c842" filter="url(#glowGold)"/>
+    <text x="1362" y="239" class="smallCaps" fill="#fde68a">Major Update 2</text>
+    <text x="1318" y="298" class="cardTitle">Kerbal Space Program</text>
+    <text x="1318" y="344" class="bodyDim">Rocket-part upgrade trees</text>
+    <text x="1318" y="380" class="bodyDim">Orbital mission campaign map</text>
+    <text x="1318" y="416" class="bodyDim">Gravity-assist modifiers</text>
+    <text x="1318" y="452" class="bodyDim">Launch-window boss events</text>
+    <text x="1318" y="488" class="bodyDim">Science points for wild builds</text>
+    <path d="M1483 574 c22 -54 76 -71 98 -72 c-1 25 -18 78 -72 100 l-22 45 l-19 -19 l-45 22 l22 -45 l-19 -19 z" fill="#f5c842" fill-opacity="0.18" stroke="#fde68a" stroke-width="3"/>
+    <circle cx="1537" cy="544" r="10" fill="#fde68a"/>
   </g>
 
   <!-- Connector dots -->
   <g opacity="0.86">
     <circle cx="420" cy="440" r="10" fill="#38bdf8"/>
     <path d="M430 440 H445" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="795" cy="440" r="10" fill="#4a9d3c"/>
-    <path d="M805 440 H820" stroke="#4a9d3c" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="1230" cy="440" r="10" fill="#fb7185"/>
-    <path d="M1240 440 H1250" stroke="#fb7185" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="830" cy="440" r="10" fill="#4a9d3c"/>
+    <path d="M840 440 H860" stroke="#4a9d3c" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="1270" cy="440" r="10" fill="#fb7185"/>
+    <path d="M1280 440 H1290" stroke="#fb7185" stroke-width="4" stroke-linecap="round"/>
   </g>
 
   <text x="80" y="726" class="body" opacity="0.78">Roadmap is flexible: ideas may shift as the game gets weirder, cleaner, and more fun.</text>
