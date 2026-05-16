@@ -553,10 +553,30 @@
     .square.piece-blue  { color: #4488ff; }
     .square.piece-yellow{ color: #ffcc00; }
     .square.piece-green { color: #44cc44; }
-    .square.piece-red .piece-glyph   { text-shadow: 0 0 8px #ff4444; }
-    .square.piece-blue .piece-glyph  { text-shadow: 0 0 8px #4488ff; }
-    .square.piece-yellow .piece-glyph{ text-shadow: 0 0 8px #ffcc00; }
-    .square.piece-green .piece-glyph { text-shadow: 0 0 8px #44cc44; }
+    /* 4-player piece glyphs — colored fills + glow per army */
+    .square.piece-red .piece-glyph {
+      color: #ff5555; text-shadow: 0 0 10px #ff2222, 0 0 22px rgba(255,68,68,0.6);
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.9));
+    }
+    .square.piece-blue .piece-glyph {
+      color: #55aaff; text-shadow: 0 0 10px #2266ff, 0 0 22px rgba(68,136,255,0.6);
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.9));
+    }
+    .square.piece-yellow .piece-glyph {
+      color: #ffdd22; text-shadow: 0 0 10px #ffaa00, 0 0 22px rgba(255,204,0,0.6);
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.9));
+    }
+    .square.piece-green .piece-glyph {
+      color: #55ee66; text-shadow: 0 0 10px #22cc44, 0 0 22px rgba(68,204,68,0.6);
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.9));
+    }
+    /* Checkers pieces are visually wider — scale them down */
+    .square .piece-glyph[data-piece="M"],
+    .square .piece-glyph[data-piece="C"],
+    .square .piece-glyph[data-piece="m"],
+    .square .piece-glyph[data-piece="c"] {
+      font-size: 0.72em;
+    }
 
     /* Bughouse dual-board layout */
     .bughouse-wrap {
@@ -7612,38 +7632,55 @@
       setTimeout(() => ring.remove(), 700);
     }
 
-    function playFourPlayerCaptureFx(squareIndex) {
+    function playFourPlayerCaptureFx(squareIndex, capturedPiece, attackerColor) {
       if (!state.cinematicFx) return;
-      // For 4-player board, squareIndex is row*14+col — find that element
       const sq = document.querySelector(`.board-4p .square[data-index='${squareIndex}']`);
-      if (!sq) { playCaptureBurst(squareIndex, null); return; }
+      if (!sq) return;
       const boardEl = document.querySelector(".board-4p");
       if (!boardEl) return;
       const layer = ensureFxLayer();
-      const boardRect = boardEl.getBoundingClientRect();
       const sqRect = sq.getBoundingClientRect();
-      const cx = sqRect.left - boardRect.left + sqRect.width / 2 + boardRect.left;
-      const cy = sqRect.top  - boardRect.top  + sqRect.height/ 2 + boardRect.top;
+      const cx = sqRect.left + sqRect.width / 2;
+      const cy = sqRect.top  + sqRect.height / 2;
 
-      for (let i = 0; i < 8; i++) {
+      const armyHex = { r: "#ff5555", b: "#55aaff", y: "#ffdd22", g: "#55ee66" };
+      const sparkColor = armyHex[attackerColor] || "#facc15";
+
+      for (let i = 0; i < 12; i++) {
         const spark = document.createElement("span");
         spark.className = "fx-spark";
         spark.style.left = `${cx}px`;
         spark.style.top  = `${cy}px`;
-        spark.style.setProperty("--sx", `${(Math.random() - 0.5) * 100}px`);
-        spark.style.setProperty("--sy", `${(Math.random() - 0.5) * 100}px`);
-        spark.style.background = `hsl(${30 + Math.random()*30},100%,60%)`;
+        spark.style.setProperty("--sx", `${(Math.random() - 0.5) * 120}px`);
+        spark.style.setProperty("--sy", `${(Math.random() - 0.5) * 120}px`);
+        spark.style.background = sparkColor;
         layer.appendChild(spark);
-        setTimeout(() => spark.remove(), 600);
+        setTimeout(() => spark.remove(), 650);
       }
       const ring = document.createElement("span");
       ring.className = "fx-burst-ring";
       ring.style.left = `${cx}px`; ring.style.top = `${cy}px`;
       ring.style.width = "10px"; ring.style.height = "10px";
-      ring.style.borderColor = "#facc15";
-      ring.style.boxShadow = "0 0 14px #facc15";
+      ring.style.borderColor = sparkColor;
+      ring.style.boxShadow = `0 0 14px ${sparkColor}`;
       layer.appendChild(ring);
-      setTimeout(() => ring.remove(), 700);
+      setTimeout(() => ring.remove(), 750);
+
+      const capturedType = capturedPiece ? fp4type(capturedPiece) : null;
+      const fpBattleWords = {
+        N: ["SLASH!", "CLANG!", "STRIKE!"], Q: ["DESTROY!", "OBLITERATE!", "REIGN!"],
+        R: ["BOOM!", "FIRE!", "SHOT!"],     B: ["ZAP!", "MAGIC!", "SPELL!"],
+        K: ["EXECUTE!", "VANQUISH!"],       P: ["STAB!", "HIT!", "PIERCE!"]
+      };
+      const wList = (capturedType && fpBattleWords[capturedType]) || fpBattleWords.P;
+      const wordEl = document.createElement("span");
+      wordEl.className = "fx-explosion-word";
+      wordEl.textContent = wList[Math.floor(Math.random() * wList.length)];
+      wordEl.style.color = sparkColor;
+      wordEl.style.left = `${cx}px`;
+      wordEl.style.top  = `${cy - 22}px`;
+      layer.appendChild(wordEl);
+      setTimeout(() => wordEl.remove(), 800);
     }
 
     function playFourPlayerEliminatedFx(playerName, playerColor) {
@@ -7821,6 +7858,14 @@
             const span = document.createElement("span");
             span.className = "piece-glyph";
             span.dataset.piece = pType; // enables weapon CSS rules
+            /* Apply per-army color so pieces look filled and distinct */
+            const armyColors = { r: "#ff5555", b: "#55aaff", y: "#ffdd22", g: "#55ee66" };
+            const armyGlow   = { r: "#ff2222", b: "#2266ff", y: "#ffaa00", g: "#22cc44" };
+            if (pColor && armyColors[pColor]) {
+              span.style.color = armyColors[pColor];
+              span.style.textShadow = `0 0 10px ${armyGlow[pColor]}, 0 0 22px ${armyGlow[pColor]}66`;
+              span.style.filter = "drop-shadow(0 2px 5px rgba(0,0,0,0.9))";
+            }
             const fpGlyph = document.createElement("span");
             fpGlyph.textContent = FP_GLYPH[pType] || pType;
             span.appendChild(fpGlyph);
@@ -8031,7 +8076,8 @@
         game.applyMove(move);
         playSfx(move.captured ? "capture" : "move", null);
         if (move.captured) {
-          playFourPlayerCaptureFx(move.to);
+          const attackerCol = move.piece ? fp4color(move.piece) : game.turn;
+          playFourPlayerCaptureFx(move.to, move.captured, attackerCol);
           // Check if a king was captured — show elimination FX
           if (fp4type(move.captured) === "K") {
             const eliminatedColor = fp4color(move.captured);

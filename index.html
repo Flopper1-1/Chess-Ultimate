@@ -520,10 +520,30 @@
     .square.piece-blue  { color: #4488ff; }
     .square.piece-yellow{ color: #ffcc00; }
     .square.piece-green { color: #44cc44; }
-    .square.piece-red .piece-glyph   { text-shadow: 0 0 8px #ff4444; }
-    .square.piece-blue .piece-glyph  { text-shadow: 0 0 8px #4488ff; }
-    .square.piece-yellow .piece-glyph{ text-shadow: 0 0 8px #ffcc00; }
-    .square.piece-green .piece-glyph { text-shadow: 0 0 8px #44cc44; }
+    /* 4-player piece glyphs — colored fills + glow per army */
+    .square.piece-red .piece-glyph {
+      color: #ff5555; text-shadow: 0 0 10px #ff2222, 0 0 22px rgba(255,68,68,0.6);
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.9));
+    }
+    .square.piece-blue .piece-glyph {
+      color: #55aaff; text-shadow: 0 0 10px #2266ff, 0 0 22px rgba(68,136,255,0.6);
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.9));
+    }
+    .square.piece-yellow .piece-glyph {
+      color: #ffdd22; text-shadow: 0 0 10px #ffaa00, 0 0 22px rgba(255,204,0,0.6);
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.9));
+    }
+    .square.piece-green .piece-glyph {
+      color: #55ee66; text-shadow: 0 0 10px #22cc44, 0 0 22px rgba(68,204,68,0.6);
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.9));
+    }
+    /* Checkers pieces are visually wider — scale them down */
+    .square .piece-glyph[data-piece="M"],
+    .square .piece-glyph[data-piece="C"],
+    .square .piece-glyph[data-piece="m"],
+    .square .piece-glyph[data-piece="c"] {
+      font-size: 0.72em;
+    }
 
     /* Bughouse dual-board layout */
     .bughouse-wrap {
@@ -3033,199 +3053,226 @@
         nextT += LOOP_DUR;
         const tension = _music.tension;
 
-        /* ── SUB-BASS + BASS per bar ── */
+        /* ── HEAVY WAR BASS — distorted sub + driven midrange ── */
         for (let bar = 0; bar < BARS; bar++) {
           const barT = t0 + bar * BPB * BEAT;
           const bl = MARCH_BASS[bar % 4];
           bl.forEach((freq, bi) => {
             const bt = barT + bi * BEAT;
-            /* Sub */
+            /* Sub octave — bone-shaking sine */
             const sub = ctx.createOscillator(); const sg = ctx.createGain();
             sub.type = "sine"; sub.frequency.value = freq * 0.5;
             sg.gain.setValueAtTime(0, bt);
-            sg.gain.linearRampToValueAtTime(0.38, bt + 0.02);
-            sg.gain.exponentialRampToValueAtTime(0.001, bt + BEAT * 0.9);
+            sg.gain.linearRampToValueAtTime(0.52, bt + 0.015);
+            sg.gain.exponentialRampToValueAtTime(0.001, bt + BEAT * 0.88);
             sub.connect(sg); sg.connect(music);
-            sub.start(bt); sub.stop(bt + BEAT * 0.95);
-            /* Main bass — driven sine */
+            sub.start(bt); sub.stop(bt + BEAT * 0.94);
+            /* Main bass — heavy tanh distortion */
             const osc = ctx.createOscillator(); const og = ctx.createGain();
             const ws = ctx.createWaveShaper();
-            const wc = new Float32Array(256);
-            for (let i=0;i<256;i++){const x=(i*2)/256-1; wc[i]=Math.tanh(x*3);}
+            const wc = new Float32Array(512);
+            for (let i=0;i<512;i++){const x=(i*2)/512-1; wc[i]=Math.tanh(x*6);}
             ws.curve = wc;
-            osc.type = "sine"; osc.frequency.value = freq;
+            osc.type = "sawtooth"; osc.frequency.value = freq;
             og.gain.setValueAtTime(0, bt);
-            og.gain.linearRampToValueAtTime(0.42, bt + 0.03);
-            og.gain.exponentialRampToValueAtTime(0.001, bt + BEAT * 0.92);
+            og.gain.linearRampToValueAtTime(0.32, bt + 0.02);
+            og.gain.exponentialRampToValueAtTime(0.001, bt + BEAT * 0.90);
             osc.connect(ws); ws.connect(og); og.connect(music); og.connect(rvSend);
-            osc.start(bt); osc.stop(bt + BEAT * 0.96);
+            osc.start(bt); osc.stop(bt + BEAT * 0.95);
           });
         }
 
-        /* ── CHORDS — routed through tension filter bus ── */
+        /* ── BRASS CHORDS — aggressive overdriven sawtooth stabs ── */
         for (let bar = 0; bar < BARS; bar++) {
           const barT = t0 + bar * BPB * BEAT;
           const chord = MARCH_CHORDS[bar % 4];
           chord.forEach((freq, fi) => {
-            [-10,-4,0,4,10].forEach((det, di) => {
+            [-8,-3,0,3,8].forEach((det, di) => {
               const osc = ctx.createOscillator(); const og = ctx.createGain();
-              osc.type = di % 2 === 0 ? "sawtooth" : "triangle";
+              /* All sawtooth for brassy aggression */
+              osc.type = "sawtooth";
               osc.frequency.value = freq; osc.detune.value = det;
-              /* Gain scales with tension: louder and brighter at high tension */
-              const baseVol = 0.018 + tension * 0.01;
+              /* Hard clip WaveShaper for brass bite */
+              const bws = ctx.createWaveShaper();
+              const bc = new Float32Array(256);
+              for (let i=0;i<256;i++){const x=(i*2)/256-1; bc[i]=Math.max(-0.8, Math.min(0.8, x*2.2));}
+              bws.curve = bc;
+              const baseVol = 0.022 + tension * 0.014;
               og.gain.setValueAtTime(0, barT);
-              og.gain.linearRampToValueAtTime(baseVol, barT + 0.12);
-              og.gain.setValueAtTime(baseVol, barT + BPB * BEAT - 0.12);
+              og.gain.linearRampToValueAtTime(baseVol, barT + 0.06); /* fast brass attack */
+              og.gain.setValueAtTime(baseVol, barT + BPB * BEAT - 0.08);
               og.gain.linearRampToValueAtTime(0, barT + BPB * BEAT);
-              osc.connect(og); og.connect(chordFilter); og.connect(rvSend);
+              osc.connect(bws); bws.connect(og); og.connect(chordFilter); og.connect(rvSend);
               osc.start(barT); osc.stop(barT + BPB * BEAT);
             });
           });
         }
 
-        /* ── EPIC KICK — march double-hit pattern ── */
+        /* ── WAR DRUMS — heavy double-kick + rolling snare ── */
         const totalHalfBeats = BARS * BPB * 2;
         for (let b = 0; b < totalHalfBeats; b++) {
-          if (b % 4 !== 0 && b % 4 !== 1) continue; /* beats 1 + echo */
+          if (b % 4 !== 0 && b % 4 !== 1) continue;
           const kt = t0 + b * BEAT * 0.5;
           const isMain = b % 4 === 0;
+          /* Main thud — two-layer kick */
           const kick = ctx.createOscillator(); const kg = ctx.createGain();
           kick.type = "sine";
-          kick.frequency.setValueAtTime(isMain ? 200 : 150, kt);
-          kick.frequency.exponentialRampToValueAtTime(30, kt + 0.18);
-          kg.gain.setValueAtTime(isMain ? 0.7 : 0.35, kt);
-          kg.gain.exponentialRampToValueAtTime(0.001, kt + 0.22);
+          kick.frequency.setValueAtTime(isMain ? 240 : 170, kt);
+          kick.frequency.exponentialRampToValueAtTime(28, kt + (isMain ? 0.22 : 0.16));
+          kg.gain.setValueAtTime(isMain ? 0.88 : 0.50, kt);
+          kg.gain.exponentialRampToValueAtTime(0.001, kt + 0.26);
           kick.connect(kg); kg.connect(music);
-          kick.start(kt); kick.stop(kt + 0.25);
-          /* transient click */
-          const cb = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.007), ctx.sampleRate);
-          const cd = cb.getChannelData(0);
-          for (let i=0;i<cd.length;i++) cd[i]=(Math.random()*2-1)*(1-i/cd.length);
-          const cs = ctx.createBufferSource(); cs.buffer = cb;
-          const cg = ctx.createGain(); cg.gain.value = isMain ? 0.45 : 0.2;
-          cs.connect(cg); cg.connect(music); cs.start(kt); cs.stop(kt+0.008);
+          kick.start(kt); kick.stop(kt + 0.28);
+          /* Body noise click */
+          const cn = Math.floor(ctx.sampleRate * 0.009);
+          const cbuf = ctx.createBuffer(1, cn, ctx.sampleRate);
+          const cd = cbuf.getChannelData(0);
+          for (let i=0;i<cn;i++) cd[i]=(Math.random()*2-1)*(1-i/cn);
+          const cs = ctx.createBufferSource(); cs.buffer = cbuf;
+          const cg = ctx.createGain(); cg.gain.value = isMain ? 0.6 : 0.3;
+          cs.connect(cg); cg.connect(music); cs.start(kt); cs.stop(kt+0.01);
         }
 
-        /* ── SNARE on 2 & 4 ── */
+        /* ── SNARE HITS on 2 & 4 — heavy with body ── */
         for (let b = 2; b < totalHalfBeats; b += 4) {
           const st = t0 + b * BEAT * 0.5;
-          /* noise */
-          const sn = Math.floor(ctx.sampleRate * 0.16);
+          const sn = Math.floor(ctx.sampleRate * 0.22);
           const sbuf = ctx.createBuffer(2, sn, ctx.sampleRate);
           for (let ch=0;ch<2;ch++){const d=sbuf.getChannelData(ch);for(let i=0;i<sn;i++)d[i]=Math.random()*2-1;}
           const snr = ctx.createBufferSource(); snr.buffer = sbuf;
-          const sbp = ctx.createBiquadFilter(); sbp.type="bandpass"; sbp.frequency.value=2400; sbp.Q.value=0.6;
+          const sbp = ctx.createBiquadFilter(); sbp.type="bandpass"; sbp.frequency.value=2200; sbp.Q.value=0.5;
           const sg = ctx.createGain();
-          sg.gain.setValueAtTime(0.28, st); sg.gain.exponentialRampToValueAtTime(0.001, st+0.15);
+          sg.gain.setValueAtTime(0.42, st); sg.gain.exponentialRampToValueAtTime(0.001, st+0.20);
           snr.connect(sbp); sbp.connect(sg); sg.connect(music); sg.connect(rvSend);
-          snr.start(st); snr.stop(st+0.17);
-          /* body tone */
+          snr.start(st); snr.stop(st+0.22);
+          /* Snare body tone */
           const sb = ctx.createOscillator(); const sbg = ctx.createGain();
-          sb.type="triangle"; sb.frequency.setValueAtTime(260,st);
-          sb.frequency.exponentialRampToValueAtTime(120,st+0.08);
-          sbg.gain.setValueAtTime(0.2,st); sbg.gain.exponentialRampToValueAtTime(0.001,st+0.11);
-          sb.connect(sbg); sbg.connect(music); sb.start(st); sb.stop(st+0.13);
+          sb.type="triangle"; sb.frequency.setValueAtTime(280,st);
+          sb.frequency.exponentialRampToValueAtTime(110,st+0.10);
+          sbg.gain.setValueAtTime(0.32,st); sbg.gain.exponentialRampToValueAtTime(0.001,st+0.14);
+          sb.connect(sbg); sbg.connect(music); sb.start(st); sb.stop(st+0.16);
         }
 
-        /* ── HI-HAT 16ths with open on beat 4 of last bar ── */
-        for (let b = 0; b < totalHalfBeats; b++) {
+        /* ── HI-HATS — 8th notes with accent on beat 1 ── */
+        for (let b = 0; b < totalHalfBeats; b += 2) {
           const ht = t0 + b * BEAT * 0.5;
-          const isOpen = (b === totalHalfBeats - 2);
-          const hn = Math.floor(ctx.sampleRate * (isOpen ? 0.2 : 0.03));
+          const isAccent = b % 8 === 0;
+          const hn = Math.floor(ctx.sampleRate * (isAccent ? 0.06 : 0.032));
           const hbuf = ctx.createBuffer(1, hn, ctx.sampleRate);
           const hd = hbuf.getChannelData(0);
           for (let i=0;i<hn;i++) hd[i]=Math.random()*2-1;
           const hat = ctx.createBufferSource(); hat.buffer = hbuf;
-          const hf = ctx.createBiquadFilter(); hf.type="highpass"; hf.frequency.value=isOpen?5500:9000;
+          const hf = ctx.createBiquadFilter(); hf.type="highpass"; hf.frequency.value=9500;
           const hg = ctx.createGain();
-          const vol = isOpen ? 0.13 : (b%2===0 ? 0.08 : 0.04);
-          hg.gain.setValueAtTime(vol, ht);
-          hg.gain.exponentialRampToValueAtTime(0.001, ht+(isOpen?0.2:0.03));
+          hg.gain.setValueAtTime(isAccent ? 0.12 : 0.06, ht);
+          hg.gain.exponentialRampToValueAtTime(0.001, ht+(isAccent?0.06:0.032));
           hat.connect(hf); hf.connect(hg); hg.connect(music);
-          hat.start(ht); hat.stop(ht+(isOpen?0.21:0.04));
+          hat.start(ht); hat.stop(ht+(isAccent?0.065:0.035));
         }
 
-        /* ── EPIC STRING MELODY — louder with tension ── */
+        /* ── EPIC STRINGS MELODY — thick sawtooth layer ── */
         MARCH_MELODY.forEach((freq, mi) => {
           if (MARCH_MEL_RESTS[mi]) return;
           const mt = t0 + mi * BEAT * 0.5;
-          [-5,0,5].forEach((det, di) => {
+          [-6,-2,0,2,6].forEach((det, di) => {
             const mel = ctx.createOscillator(); const mg = ctx.createGain();
             const lp = ctx.createBiquadFilter();
             mel.type = "sawtooth"; mel.frequency.value = freq; mel.detune.value = det;
-            lp.type = "lowpass"; lp.frequency.value = 2200 + tension * 800;
+            lp.type = "lowpass"; lp.frequency.value = 2800 + tension * 1200;
             mg.gain.setValueAtTime(0, mt);
-            mg.gain.linearRampToValueAtTime(0.055 + tension * 0.03, mt+0.04);
-            mg.gain.exponentialRampToValueAtTime(0.001, mt+BEAT*0.88);
+            mg.gain.linearRampToValueAtTime(0.065 + tension * 0.04, mt+0.03);
+            mg.gain.exponentialRampToValueAtTime(0.001, mt+BEAT*0.85);
             mel.connect(lp); lp.connect(mg);
-            mg.connect(di===0?panL:di===2?panR:music); mg.connect(rvSend);
-            mel.start(mt); mel.stop(mt+BEAT*0.92);
+            mg.connect(di===0?panL:di===4?panR:music); mg.connect(rvSend);
+            mel.start(mt); mel.stop(mt+BEAT*0.90);
           });
         });
 
-        /* ── HORN COUNTER-MELODY — routed through counterBus (tension-gated) ── */
+        /* ── BRASS COUNTER-MELODY — square wave, punchy ── */
         MARCH_COUNTER.forEach((freq, ci) => {
           if (MARCH_CTR_RESTS[ci]) return;
           const ct = t0 + ci * BEAT * 0.5;
           const cm = ctx.createOscillator(); const cmg = ctx.createGain();
           const cmlp = ctx.createBiquadFilter();
           cm.type = "square"; cm.frequency.value = freq;
-          cmlp.type = "lowpass"; cmlp.frequency.value = 1400;
+          cmlp.type = "lowpass"; cmlp.frequency.value = 1800;
           cmg.gain.setValueAtTime(0, ct);
-          cmg.gain.linearRampToValueAtTime(0.045, ct+0.05);
-          cmg.gain.exponentialRampToValueAtTime(0.001, ct+BEAT*0.7);
+          cmg.gain.linearRampToValueAtTime(0.055, ct+0.04);
+          cmg.gain.exponentialRampToValueAtTime(0.001, ct+BEAT*0.65);
           cm.connect(cmlp); cmlp.connect(cmg); cmg.connect(counterBus);
-          cm.start(ct); cm.stop(ct+BEAT*0.75);
+          cm.start(ct); cm.stop(ct+BEAT*0.70);
         });
 
-        /* ── TIMPANI — louder with tension ── */
+        /* ── HEAVY TIMPANI — booming kettle drums ── */
         for (let bar = 0; bar < BARS; bar++) {
           const tt = t0 + bar * BPB * BEAT;
           const timp = ctx.createOscillator(); const tg = ctx.createGain();
           timp.type = "sine";
           timp.frequency.setValueAtTime(NOTE("A",-3) * (bar%4===3?1.189:1), tt);
-          timp.frequency.exponentialRampToValueAtTime(NOTE("A",-4), tt+0.3);
-          tg.gain.setValueAtTime(0.55 + tension * 0.3, tt);
-          tg.gain.exponentialRampToValueAtTime(0.001, tt+0.5);
+          timp.frequency.exponentialRampToValueAtTime(NOTE("A",-4), tt+0.4);
+          tg.gain.setValueAtTime(0.72 + tension * 0.35, tt);
+          tg.gain.exponentialRampToValueAtTime(0.001, tt+0.65);
           timp.connect(tg); tg.connect(music); tg.connect(rvSend);
-          timp.start(tt); timp.stop(tt+0.55);
+          timp.start(tt); timp.stop(tt+0.7);
+          /* Snare roll on last beat of every 4th bar for tension */
+          if (bar % 4 === 3) {
+            const rollStart = tt + BEAT * 3;
+            for (let r = 0; r < 8; r++) {
+              const rt = rollStart + r * BEAT * 0.125;
+              const rn = Math.floor(ctx.sampleRate * 0.04);
+              const rbuf = ctx.createBuffer(1, rn, ctx.sampleRate);
+              const rd = rbuf.getChannelData(0);
+              for (let i=0;i<rn;i++) rd[i]=Math.random()*2-1;
+              const rs = ctx.createBufferSource(); rs.buffer = rbuf;
+              const rf = ctx.createBiquadFilter(); rf.type="bandpass"; rf.frequency.value=2500; rf.Q.value=0.7;
+              const rg = ctx.createGain();
+              rg.gain.setValueAtTime(0.06 + r * 0.025, rt);
+              rg.gain.exponentialRampToValueAtTime(0.001, rt+0.04);
+              rs.connect(rf); rf.connect(rg); rg.connect(percBus);
+              rs.start(rt); rs.stop(rt+0.045);
+            }
+          }
         }
 
-        /* ── TENSION PERCUSSION LAYER — sixteenth fills above 0.3 ── */
+        /* ── TENSION SIXTEENTH FILLS — snare flams above 0.3 ── */
         if (tension > 0.3) {
           const totalHB = BARS * BPB * 2;
           for (let b = 0; b < totalHB; b += 1) {
-            if (b % 2 === 0) continue; /* only off-beats */
+            if (b % 2 === 0) continue;
             const pt = t0 + b * BEAT * 0.5;
-            /* hi-hat 16th fill */
             const pn = Math.floor(ctx.sampleRate * 0.02);
             const pb = ctx.createBuffer(1, pn, ctx.sampleRate);
             const pd = pb.getChannelData(0);
             for (let i=0;i<pn;i++) pd[i]=Math.random()*2-1;
             const ps = ctx.createBufferSource(); ps.buffer = pb;
-            const phf = ctx.createBiquadFilter(); phf.type="highpass"; phf.frequency.value=10000;
+            const phf = ctx.createBiquadFilter(); phf.type="highpass"; phf.frequency.value=9500;
             const pg = ctx.createGain();
-            pg.gain.setValueAtTime((tension - 0.3) * 0.12, pt);
+            pg.gain.setValueAtTime((tension - 0.3) * 0.18, pt);
             pg.gain.exponentialRampToValueAtTime(0.001, pt+0.02);
             ps.connect(phf); phf.connect(pg); pg.connect(percBus);
             ps.start(pt); ps.stop(pt+0.025);
           }
         }
 
-        /* ── DANGER DRONE — low rumble above 0.7 tension ── */
+        /* ── WAR CRY DRONE — distorted power chord swell above 0.7 ── */
         if (tension > 0.7) {
           const droneStart = t0;
           const droneEnd = t0 + LOOP_DUR;
-          const drone = ctx.createOscillator(); const dg = ctx.createGain();
-          drone.type = "sawtooth";
-          drone.frequency.setValueAtTime(NOTE("A",-4), droneStart);
-          drone.frequency.linearRampToValueAtTime(NOTE("A",-4) * 1.005, droneEnd);
-          dg.gain.setValueAtTime(0, droneStart);
-          dg.gain.linearRampToValueAtTime((tension - 0.7) * 0.25, droneStart + 0.5);
-          dg.gain.linearRampToValueAtTime(0, droneEnd);
-          const dlp = ctx.createBiquadFilter(); dlp.type="lowpass"; dlp.frequency.value=200;
-          drone.connect(dlp); dlp.connect(dg); dg.connect(music);
-          drone.start(droneStart); drone.stop(droneEnd);
+          /* Power fifth distorted drone */
+          [NOTE("A",-4), NOTE("E",-3)].forEach((dfreq, di) => {
+            const drone = ctx.createOscillator(); const dg = ctx.createGain();
+            const dws = ctx.createWaveShaper();
+            const dc = new Float32Array(256);
+            for (let i=0;i<256;i++){const x=(i*2)/256-1; dc[i]=Math.tanh(x*5);}
+            dws.curve = dc;
+            drone.type = "sawtooth"; drone.frequency.value = dfreq;
+            dg.gain.setValueAtTime(0, droneStart);
+            dg.gain.linearRampToValueAtTime((tension - 0.7) * (di===0?0.20:0.12), droneStart + 0.5);
+            dg.gain.linearRampToValueAtTime(0, droneEnd);
+            const dlp = ctx.createBiquadFilter(); dlp.type="lowpass"; dlp.frequency.value=300;
+            drone.connect(dws); dws.connect(dlp); dlp.connect(dg); dg.connect(music);
+            drone.start(droneStart); drone.stop(droneEnd);
+          });
         }
 
         cycle++;
@@ -6117,38 +6164,58 @@
       setTimeout(() => ring.remove(), 700);
     }
 
-    function playFourPlayerCaptureFx(squareIndex) {
+    function playFourPlayerCaptureFx(squareIndex, capturedPiece, attackerColor) {
       if (!state.cinematicFx) return;
-      // For 4-player board, squareIndex is row*14+col — find that element
       const sq = document.querySelector(`.board-4p .square[data-index='${squareIndex}']`);
-      if (!sq) { playCaptureBurst(squareIndex, null); return; }
+      if (!sq) return;
       const boardEl = document.querySelector(".board-4p");
       if (!boardEl) return;
       const layer = ensureFxLayer();
-      const boardRect = boardEl.getBoundingClientRect();
       const sqRect = sq.getBoundingClientRect();
-      const cx = sqRect.left - boardRect.left + sqRect.width / 2 + boardRect.left;
-      const cy = sqRect.top  - boardRect.top  + sqRect.height/ 2 + boardRect.top;
+      const cx = sqRect.left + sqRect.width / 2;
+      const cy = sqRect.top  + sqRect.height / 2;
 
-      for (let i = 0; i < 8; i++) {
+      const armyHex = { r: "#ff5555", b: "#55aaff", y: "#ffdd22", g: "#55ee66" };
+      const sparkColor = armyHex[attackerColor] || "#facc15";
+
+      /* Sparks in attacker's army color */
+      for (let i = 0; i < 12; i++) {
         const spark = document.createElement("span");
         spark.className = "fx-spark";
         spark.style.left = `${cx}px`;
         spark.style.top  = `${cy}px`;
-        spark.style.setProperty("--sx", `${(Math.random() - 0.5) * 100}px`);
-        spark.style.setProperty("--sy", `${(Math.random() - 0.5) * 100}px`);
-        spark.style.background = `hsl(${30 + Math.random()*30},100%,60%)`;
+        spark.style.setProperty("--sx", `${(Math.random() - 0.5) * 120}px`);
+        spark.style.setProperty("--sy", `${(Math.random() - 0.5) * 120}px`);
+        spark.style.background = sparkColor;
         layer.appendChild(spark);
-        setTimeout(() => spark.remove(), 600);
+        setTimeout(() => spark.remove(), 650);
       }
+      /* Burst ring */
       const ring = document.createElement("span");
       ring.className = "fx-burst-ring";
       ring.style.left = `${cx}px`; ring.style.top = `${cy}px`;
       ring.style.width = "10px"; ring.style.height = "10px";
-      ring.style.borderColor = "#facc15";
-      ring.style.boxShadow = "0 0 14px #facc15";
+      ring.style.borderColor = sparkColor;
+      ring.style.boxShadow = `0 0 14px ${sparkColor}`;
       layer.appendChild(ring);
-      setTimeout(() => ring.remove(), 700);
+      setTimeout(() => ring.remove(), 750);
+
+      /* Battle word */
+      const capturedType = capturedPiece ? fp4type(capturedPiece) : null;
+      const fpBattleWords = {
+        N: ["SLASH!", "CLANG!", "STRIKE!"], Q: ["DESTROY!", "OBLITERATE!", "REIGN!"],
+        R: ["BOOM!", "FIRE!", "SHOT!"],     B: ["ZAP!", "MAGIC!", "SPELL!"],
+        K: ["EXECUTE!", "VANQUISH!"],       P: ["STAB!", "HIT!", "PIERCE!"]
+      };
+      const wList = (capturedType && fpBattleWords[capturedType]) || fpBattleWords.P;
+      const wordEl = document.createElement("span");
+      wordEl.className = "fx-explosion-word";
+      wordEl.textContent = wList[Math.floor(Math.random() * wList.length)];
+      wordEl.style.color = sparkColor;
+      wordEl.style.left = `${cx}px`;
+      wordEl.style.top  = `${cy - 22}px`;
+      layer.appendChild(wordEl);
+      setTimeout(() => wordEl.remove(), 800);
     }
 
     function playFourPlayerEliminatedFx(playerName, playerColor) {
@@ -6339,6 +6406,14 @@
             const span = document.createElement("span");
             span.className = "piece-glyph";
             span.dataset.piece = pType; // enables weapon CSS rules
+            /* Apply per-army color so pieces look filled and distinct */
+            const armyColors = { r: "#ff5555", b: "#55aaff", y: "#ffdd22", g: "#55ee66" };
+            const armyGlow   = { r: "#ff2222", b: "#2266ff", y: "#ffaa00", g: "#22cc44" };
+            if (pColor && armyColors[pColor]) {
+              span.style.color = armyColors[pColor];
+              span.style.textShadow = `0 0 10px ${armyGlow[pColor]}, 0 0 22px ${armyGlow[pColor]}66`;
+              span.style.filter = "drop-shadow(0 2px 5px rgba(0,0,0,0.9))";
+            }
             const fpGlyph = document.createElement("span");
             fpGlyph.textContent = FP_GLYPH[pType] || pType;
             span.appendChild(fpGlyph);
@@ -6549,7 +6624,8 @@
         game.applyMove(move);
         playSfx(move.captured ? "capture" : "move", null);
         if (move.captured) {
-          playFourPlayerCaptureFx(move.to);
+          const attackerCol = move.piece ? fp4color(move.piece) : game.turn;
+          playFourPlayerCaptureFx(move.to, move.captured, attackerCol);
           // Check if a king was captured — show elimination FX
           if (fp4type(move.captured) === "K") {
             const eliminatedColor = fp4color(move.captured);
