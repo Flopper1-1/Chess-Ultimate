@@ -2782,6 +2782,7 @@
     }
 
     function trChangeXP(color, capturedPiece) {
+      if (!capturedPiece || typeof capturedPiece !== "string") return;
       const val = TR_XP_VALUE[capturedPiece.toUpperCase()] || 0;
       if (!val) return;
       const prevXP = state_tr.xp[color];
@@ -7675,6 +7676,9 @@
         clearCheckFx();
         await animateMove(move);
         const undo = game.applyMove(move);
+        const capturedPiece = undo.capturedPiece || (typeof move.captured === "string" ? move.captured : null);
+        const didCapture = Boolean(capturedPiece || move.captured);
+        move.capturedPiece = capturedPiece;
         undo.annotation = annotation;
         undo.annotatedText = formatAnnotated(move, annotation);
 
@@ -7690,32 +7694,31 @@
         pushLiveAnnotation(liveLabel, move, annotation);
 
         /* ── Terraria: XP and class combo ── */
-        if (move.captured) {
-          trChangeXP(color, move.captured);
+        if (didCapture) {
+          trChangeXP(color, capturedPiece);
           trCheckCombo(color, move.piece);
           synthTrOrePickup();
         }
 
-        const capturedPiece = move.captured || null;
         if (move.castleKing || move.castleQueen) {
           playSfx("castle");
         } else if (move.promotion) {
           playSfx("promotion");
         } else {
-          playSfx(move.captured ? "capture" : "move", capturedPiece);
+          playSfx(didCapture ? "capture" : "move", capturedPiece);
         }
         if (move.castleKing || move.castleQueen) {
           musicOnCastle();
-        } else if (!move.captured && !move.promotion) {
+        } else if (!didCapture && !move.promotion) {
           musicOnMove();
         }
         /* Achievement hooks */
         if (window._achOnMove) window._achOnMove(move);
         if (window._achOnAnnotation && annotation) window._achOnAnnotation(annotation);
         /* Dynamic music tension hooks */
-        if (move.captured) {
+        if (didCapture) {
           const pieceValues = { p:1, n:3, b:3, r:5, q:9, k:0, P:1, N:3, B:3, R:5, Q:9, K:0 };
-          musicOnCapture(pieceValues[move.captured] || 1);
+          musicOnCapture(pieceValues[capturedPiece] || 1);
         }
         if (move.promotion) musicOnPromotion();
         maybePlayGameOverSfx();
@@ -7729,7 +7732,7 @@
           state.orientation = game.position.turn;
         }
         renderAll();
-        if (move.captured) {
+        if (didCapture) {
           const burstSquare = move.enPassant
             ? move.capturedSquare
             : (Number.isInteger(move.capturedSquare) ? move.capturedSquare : move.to);
@@ -7742,7 +7745,7 @@
             /* Screen shake on capture — intensity scales with piece value */
             if (state.cinematicFx) {
               const vals = { p:1, n:3, b:3, r:5, q:9, P:1, N:3, B:3, R:5, Q:9 };
-              const v = vals[move.captured] || 1;
+              const v = vals[capturedPiece] || 1;
               ui.board.classList.remove("shake");
               void ui.board.offsetWidth;
               if (v >= 9) {
@@ -8087,7 +8090,8 @@
       if (move.promotion) achUnlock("promotion");
       if (move.flags && move.flags.includes("e")) achUnlock("en_passant");
       /* queen sacrifice: captured a queen and we're doing a lower-value piece */
-      if (move.captured === "q" || move.captured === "Q") {
+      const capturedPiece = move.capturedPiece || (typeof move.captured === "string" ? move.captured : null);
+      if (capturedPiece === "q" || capturedPiece === "Q") {
         const attacker = move.piece ? move.piece.toLowerCase() : "";
         if (["p","n","b","r"].includes(attacker)) achUnlock("sacrifice");
       }
