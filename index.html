@@ -682,6 +682,33 @@
       font-weight: 700;
     }
 
+    /* ── Variant-specific square decorations ── */
+    .square.hill-square {
+      background-image: radial-gradient(ellipse at center, rgba(250,204,21,0.22) 0%, transparent 70%) !important;
+      box-shadow: inset 0 0 0 2px rgba(250,204,21,0.5);
+    }
+    .square.fog-hidden {
+      background-image: linear-gradient(135deg, rgba(2,8,23,0.55) 0%, rgba(10,20,50,0.55) 100%) !important;
+    }
+    .square.forced-capture {
+      box-shadow: inset 0 0 0 3px rgba(239,68,68,0.8), 0 0 12px rgba(239,68,68,0.4);
+      animation: forcedPulse 0.9s ease-in-out infinite;
+    }
+    @keyframes forcedPulse {
+      0%, 100% { box-shadow: inset 0 0 0 3px rgba(239,68,68,0.8), 0 0 8px rgba(239,68,68,0.3); }
+      50%       { box-shadow: inset 0 0 0 3px rgba(239,68,68,1.0), 0 0 18px rgba(239,68,68,0.6); }
+    }
+    .check-pip {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      font-size: 0.5em;
+      line-height: 1;
+      pointer-events: none;
+      z-index: 5;
+      filter: drop-shadow(0 0 3px #ef4444);
+    }
+
     .dark .coord {
       color: rgba(248, 250, 252, 0.65);
     }
@@ -6588,6 +6615,20 @@
       const targets = selected == null ? [] : legalMoves.filter((mv) => mv.from === selected);
       const dropTargets = state.selectedDropPiece ? legalMoves.filter((mv) => mv.dropPiece === state.selectedDropPiece) : [];
 
+      // Variant pre-compute
+      const HILL_SQUARES = new Set([27, 28, 35, 36]); // d4 e4 d5 e5
+      const isKOTH = isVariant("king_of_the_hill");
+      const isThreeCheck = isVariant("three_check");
+      const isAntichess = isVariant("antichess");
+      const isCheckers = isVariant("checkers_vs_chess");
+      const isFog = isVariant("fog_of_war");
+      // Antichess: if any capture is legal, only capture squares are valid moves
+      const antichessCaptures = isAntichess ? legalMoves.filter(mv => mv.captured) : [];
+      const antichessForcedFrom = isAntichess && antichessCaptures.length > 0
+        ? new Set(antichessCaptures.map(mv => mv.from)) : null;
+      // Checkers: mandatory jump squares (captures)
+      const checkersForcedFrom = isCheckers ? new Set(legalMoves.filter(mv => mv.captured).map(mv => mv.from)) : null;
+
       for (let dr = 0; dr < 8; dr += 1) {
         for (let df = 0; df < 8; df += 1) {
           const boardRank = orientation === "w" ? dr : 7 - dr;
@@ -6595,7 +6636,7 @@
           const index = boardRank * 8 + boardFile;
           const boardPiece = board[index];
           let piece = boardPiece;
-          if (isVariant("fog_of_war") && piece && colorOf(piece) !== visibilityColor) {
+          if (isFog && piece && colorOf(piece) !== visibilityColor) {
             if (!fogVisible.has(index)) {
               piece = null;
             }
@@ -6605,6 +6646,16 @@
           square.className = `square ${(dr + df) % 2 === 0 ? "light" : "dark"}`;
           square.dataset.index = String(index);
           square.setAttribute("aria-label", `Square ${indexToCoord(index)}`);
+
+          // King of the Hill: glow the four hill squares
+          if (isKOTH && HILL_SQUARES.has(index)) {
+            square.classList.add("hill-square");
+          }
+
+          // Fog of War: darken squares hidden from current player
+          if (isFog && !fogVisible.has(index)) {
+            square.classList.add("fog-hidden");
+          }
 
           if (selected === index) {
             square.classList.add("selected");
@@ -6625,6 +6676,30 @@
           if (piece) {
             const pieceSpan = buildPieceSpan(piece, false);
             square.appendChild(pieceSpan);
+
+            // Antichess: pieces that MUST move (forced capture) get a warning glow
+            if (antichessForcedFrom && antichessForcedFrom.has(index)) {
+              square.classList.add("forced-capture");
+            }
+            // Checkers: pieces with mandatory jump
+            if (checkersForcedFrom && checkersForcedFrom.has(index)) {
+              square.classList.add("forced-capture");
+            }
+
+            // Three-check: show check count pip on kings
+            if (isThreeCheck && game.position.checksGiven) {
+              const pType = pieceType(piece);
+              if (pType === "k") {
+                const col = colorOf(piece);
+                const checks = game.position.checksGiven[col === "w" ? "b" : "w"] || 0;
+                if (checks > 0) {
+                  const pip = document.createElement("span");
+                  pip.className = "check-pip";
+                  pip.textContent = "⚡".repeat(checks);
+                  square.appendChild(pip);
+                }
+              }
+            }
 
             const badge = state.moveBadges.find((entry) => entry.square === index && entry.color === colorOf(piece));
             if (badge) {
@@ -6789,7 +6864,25 @@
       } else {
         if (isVariant("three_check")) {
           const checks = game.position.checksGiven;
-          ui.statusText.textContent = `${status.result || "Game in progress."} Checks: White ${checks.w}/3, Black ${checks.b}/3.`;
+          const wPips = "⚡".repeat(checks.w) + "○".repeat(3 - checks.w);
+          const bPips = "⚡".repeat(checks.b) + "○".repeat(3 - checks.b);
+          ui.statusText.textContent = `White ${wPips}  Black ${bPips}`;
+        } else if (isVariant("king_of_the_hill")) {
+          const kingW = findKingSquare(game.position.board, "w");
+          const kingB = findKingSquare(game.position.board, "b");
+          const hill = new Set([27,28,35,36]);
+          const distToHill = (sq) => {
+            if (sq < 0) return 99;
+            const r = Math.floor(sq/8), f = sq%8;
+            return Math.min(...[27,28,35,36].map(h => Math.max(Math.abs(r-Math.floor(h/8)), Math.abs(f-h%8))));
+          };
+          const dW = distToHill(kingW), dB = distToHill(kingB);
+          ui.statusText.textContent = `👑 White king: ${dW === 0 ? "ON HILL!" : dW + " from hill"}  |  Black king: ${dB === 0 ? "ON HILL!" : dB + " from hill"}`;
+        } else if (isVariant("antichess")) {
+          const captures = game.generateLegalMoves().filter(m => m.captured);
+          ui.statusText.textContent = captures.length > 0
+            ? `⚠️ Capture is mandatory! (${captures.length} capture${captures.length > 1 ? "s" : ""} available)`
+            : "Game in progress.";
         } else {
           ui.statusText.textContent = status.result || "Game in progress.";
         }
@@ -7001,11 +7094,12 @@
     function planSquareCenter(idx) {
       const tileSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--tile-size")) || 64;
       const orientation = state.orientation;
-      // Convert board index → display row/col
       const rank = Math.floor(idx / 8);
       const file = idx % 8;
-      const displayCol = orientation === "w" ? file         : 7 - file;
-      const displayRow = orientation === "w" ? 7 - rank     : rank;
+      // Both orientations: rank 0 is visually at bottom (row 7), rank 7 at top (row 0).
+      // When black plays, file 0 is on the right, file 7 on the left.
+      const displayCol = orientation === "w" ? file     : 7 - file;
+      const displayRow = 7 - rank; // same for both orientations
       return {
         x: (displayCol + 0.5) * tileSize,
         y: (displayRow + 0.5) * tileSize
@@ -7046,8 +7140,8 @@
         const orientation = state.orientation;
         const rank = Math.floor(idx / 8);
         const file = idx % 8;
-        const displayCol = orientation === "w" ? file     : 7 - file;
-        const displayRow = orientation === "w" ? 7 - rank : rank;
+        const displayCol = orientation === "w" ? file : 7 - file;
+        const displayRow = 7 - rank; // same for both orientations
         const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         rect.setAttribute("x", displayCol * tileSize);
         rect.setAttribute("y", displayRow * tileSize);

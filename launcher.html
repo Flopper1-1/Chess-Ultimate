@@ -106,19 +106,31 @@
     box-shadow: 0 16px 60px rgba(245,200,66,0.18);
   }
 
+  .card.dontstarve {
+    background: linear-gradient(160deg, rgba(18,14,6,0.97), rgba(10,8,3,0.99));
+    border-color: rgba(200,149,42,0.25);
+    box-shadow: 0 8px 40px rgba(200,149,42,0.08);
+  }
+  .card.dontstarve:hover {
+    border-color: rgba(200,149,42,0.6);
+    box-shadow: 0 16px 60px rgba(200,149,42,0.2);
+  }
+
   .card-icon {
     font-size: 3.5rem; line-height: 1;
     filter: drop-shadow(0 0 16px currentColor);
   }
   .card.battle .card-icon { color: #38bdf8; }
   .card.balatro .card-icon { color: #f5c842; }
+  .card.dontstarve .card-icon { color: #c8952a; }
 
   .card-title {
     font-size: 1.25rem; font-weight: 800;
     letter-spacing: 0.04em; text-align: center;
   }
-  .card.battle .card-title  { color: #e2f4ff; }
-  .card.balatro .card-title { color: #fdf6e3; }
+  .card.battle .card-title     { color: #e2f4ff; }
+  .card.balatro .card-title    { color: #fdf6e3; }
+  .card.dontstarve .card-title { color: #e8d8a8; }
 
   .card-desc {
     font-size: 0.82rem; color: rgba(255,255,255,0.4);
@@ -133,8 +145,9 @@
     transition: opacity 0.15s;
   }
   .card-btn:hover { opacity: 0.85; }
-  .card.battle  .card-btn { background: #38bdf8; color: #020d1a; }
-  .card.balatro .card-btn { background: #f5c842; color: #1a0a00; }
+  .card.battle      .card-btn { background: #38bdf8; color: #020d1a; }
+  .card.balatro     .card-btn { background: #f5c842; color: #1a0a00; }
+  .card.dontstarve  .card-btn { background: #c8952a; color: #0a0806; }
 
   .version {
     position: fixed; bottom: 18px;
@@ -173,10 +186,17 @@
       <div class="card-desc">Balatro-themed chess with jazz soundtrack, card aesthetics, and poker-style piece flair.</div>
       <button class="card-btn" id="btnBalatro">Play</button>
     </div>
+
+    <div class="card dontstarve">
+      <div class="card-icon">🕯️</div>
+      <div class="card-title">Don't Starve</div>
+      <div class="card-desc">Dark wilderness chess. Kings carry lanterns, queens weave webs. Don't let Charlie find you.</div>
+      <button class="card-btn" id="btnDontStarve">Play</button>
+    </div>
   </div>
 </div>
 
-<div class="version">Chess Ultimate v1.0</div>
+<div class="version">Chess Ultimate v1.2.0</div>
 
 <script>
   function launchGame(file) {
@@ -184,6 +204,7 @@
   }
   document.getElementById("btnBattle").addEventListener("click", () => launchGame("index.html"));
   document.getElementById("btnBalatro").addEventListener("click", () => launchGame("index2.html"));
+  document.getElementById("btnDontStarve").addEventListener("click", () => launchGame("index3.html"));
   document.getElementById("btnClose").addEventListener("click", () => {
     if (window.electronAPI) window.electronAPI.closeApp();
   });
