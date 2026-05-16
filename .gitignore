@@ -1,7 +1,6 @@
 node_modules/
 dist-pkg/
-build-out/
-build-out2/
+build-out*/
 *.log
 *.mp3
 *.wav
