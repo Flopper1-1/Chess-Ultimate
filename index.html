@@ -7594,34 +7594,34 @@
         }
         if (game.variant === "antichess" && move.captured && state.cinematicFx) {
           playAntichessCaptureFx(move.to);
+          synthMagicZap();
         }
         if (move.dropPiece && game.variant === "crazyhouse" && state.cinematicFx) {
           playCrazyhouseDropFx(move.to);
+          synthWhoosh();
         }
         if (game.variant === "king_of_the_hill" && state.cinematicFx) {
           const moverKingSq = findKingSquare(game.position.board, oppositeColor(game.position.turn));
           if (statusAfterMove.over && statusAfterMove.result && statusAfterMove.result.includes("Hill")) {
-            if (moverKingSq >= 0) playKingOfHillFx(moverKingSq);
+            if (moverKingSq >= 0) { playKingOfHillFx(moverKingSq); synthVictoryJingle(); }
           } else if (moverKingSq >= 0) {
-            // pulse when king is on or adjacent to hill
             const hill = new Set([27, 28, 35, 36]);
             const adjHill = new Set([18,19,20,26,29,34,37,43,44,45]);
-            if (hill.has(moverKingSq)) playKingOfHillFx(moverKingSq);
-            else if (adjHill.has(moverKingSq)) playKingApproachFx(moverKingSq);
+            if (hill.has(moverKingSq)) { playKingOfHillFx(moverKingSq); synthPromotion(); }
+            else if (adjHill.has(moverKingSq)) { playKingApproachFx(moverKingSq); synthWhoosh(); }
           }
         }
         if (game.variant === "fog_of_war" && state.cinematicFx) {
-          // Reveal FX only on the destination and squares it newly attacks
           playFogRevealFx(move.to);
+          synthWhoosh();
         }
         if (game.variant === "three_check") {
           const checksW = game.position.checksGiven.w;
           const checksB = game.position.checksGiven.b;
-          const prevChecks = color === "w" ? checksW - 1 : checksB - 1;
           if ((color === "w" && checksW > (undo.prevChecksGiven ? undo.prevChecksGiven.w : 0)) ||
               (color === "b" && checksB > (undo.prevChecksGiven ? undo.prevChecksGiven.b : 0))) {
             const count = color === "w" ? checksW : checksB;
-            if (count > 0) playThreeCheckFx(count);
+            if (count > 0) { playThreeCheckFx(count); synthOminousStab(); }
           }
         }
         if (game.variant === "checkers_vs_chess") {
@@ -7629,6 +7629,7 @@
           const pieceAtDest = game.position.board[movedTo];
           if (pieceAtDest && (pieceAtDest === "C" || pieceAtDest === "c")) {
             playCheckersKingFx(movedTo);
+            synthPromotion();
           }
         }
         if (annotation && annotation.symbol === "!!" && state.cinematicFx) {

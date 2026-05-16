@@ -8386,7 +8386,16 @@
         return;
       }
       if (state.variant === "chess960") ui.variantNote.textContent = "Randomized back rank with Chess960 castling rules.";
+      else if (state.variant === "three_check") ui.variantNote.textContent = "First side to give 3 checks wins. Check counter shown in status.";
+      else if (state.variant === "atomic") ui.variantNote.textContent = "Captures explode adjacent non-pawn pieces. Boom! 💥";
       else if (state.variant === "king_of_the_hill") ui.variantNote.textContent = "Move your king to d4/e4/d5/e5 to win instantly. 👑";
+      else if (state.variant === "fog_of_war") ui.variantNote.textContent = "Enemy pieces are hidden unless your pieces can see them.";
+      else if (state.variant === "antichess") ui.variantNote.textContent = "Captures are mandatory. Lose ALL pieces to win!";
+      else if (state.variant === "crazyhouse") ui.variantNote.textContent = "Captured pieces go to reserve and can be dropped anywhere.";
+      else if (state.variant === "checkers_vs_chess") ui.variantNote.textContent = "White plays chess pieces, Black plays checkers. Reach the back rank to king!";
+      else if (state.variant === "four_player_teams") ui.variantNote.textContent = "4-Player Chess (Teams) — pass-and-play on a 14×14 board. Red+Green vs Blue+Yellow. Last team standing wins!";
+      else if (state.variant === "four_player_ffa") ui.variantNote.textContent = "4-Player Chess FFA — 14×14 board. Capture a king to eliminate that player. Last one standing wins!";
+      else if (state.variant === "bughouse") ui.variantNote.textContent = "Bughouse — Two boards. Captures go to your partner's reserve. Drops allowed from reserve. Pass-and-play!";
       else ui.variantNote.textContent = "Piece cards gate movement; joker powers add the wild rules.";
     }
 
@@ -8973,34 +8982,34 @@
         }
         if (game.variant === "antichess" && move.captured && state.cinematicFx) {
           playAntichessCaptureFx(move.to);
+          synthMagicZap();
         }
         if (move.dropPiece && (game.variant === "crazyhouse" || hasJoker(color, "crazyhouse")) && state.cinematicFx) {
           playCrazyhouseDropFx(move.to);
+          synthWhoosh();
         }
         if (game.variant === "king_of_the_hill" && state.cinematicFx) {
           const moverKingSq = findKingSquare(game.position.board, oppositeColor(game.position.turn));
           if (statusAfterMove.over && statusAfterMove.result && statusAfterMove.result.includes("Hill")) {
-            if (moverKingSq >= 0) playKingOfHillFx(moverKingSq);
+            if (moverKingSq >= 0) { playKingOfHillFx(moverKingSq); synthVictoryJingle(); }
           } else if (moverKingSq >= 0) {
-            // pulse when king is on or adjacent to hill
             const hill = new Set([27, 28, 35, 36]);
             const adjHill = new Set([18,19,20,26,29,34,37,43,44,45]);
-            if (hill.has(moverKingSq)) playKingOfHillFx(moverKingSq);
-            else if (adjHill.has(moverKingSq)) playKingApproachFx(moverKingSq);
+            if (hill.has(moverKingSq)) { playKingOfHillFx(moverKingSq); synthPromotion(); }
+            else if (adjHill.has(moverKingSq)) { playKingApproachFx(moverKingSq); synthWhoosh(); }
           }
         }
         if (game.variant === "fog_of_war" && state.cinematicFx) {
-          // Reveal FX only on the destination and squares it newly attacks
           playFogRevealFx(move.to);
+          synthWhoosh();
         }
         if (game.variant === "three_check") {
           const checksW = game.position.checksGiven.w;
           const checksB = game.position.checksGiven.b;
-          const prevChecks = color === "w" ? checksW - 1 : checksB - 1;
           if ((color === "w" && checksW > (undo.prevChecksGiven ? undo.prevChecksGiven.w : 0)) ||
               (color === "b" && checksB > (undo.prevChecksGiven ? undo.prevChecksGiven.b : 0))) {
             const count = color === "w" ? checksW : checksB;
-            if (count > 0) playThreeCheckFx(count);
+            if (count > 0) { playThreeCheckFx(count); synthOminousStab(); }
           }
         }
         if (hasJoker(color, "three_check") && checkNow && state.cardGame) {
@@ -9011,6 +9020,7 @@
           const pieceAtDest = game.position.board[movedTo];
           if (pieceAtDest && (pieceAtDest === "C" || pieceAtDest === "c")) {
             playCheckersKingFx(movedTo);
+            synthPromotion();
           }
         }
         if (annotation && annotation.symbol === "!!" && state.cinematicFx) {
