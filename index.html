@@ -539,6 +539,17 @@
       align-items: center;
       gap: 6px;
     }
+    /* Bughouse boards each fit half the available space */
+    #bughouseWrap .board {
+      --bh-tile: clamp(28px, calc((min(96vw, 900px) - 40px) / 16), 56px);
+      grid-template-columns: repeat(8, var(--bh-tile));
+      grid-template-rows: repeat(8, var(--bh-tile));
+    }
+    #bughouseWrap .board .square {
+      width: var(--bh-tile);
+      height: var(--bh-tile);
+      font-size: calc(var(--bh-tile) * 0.62);
+    }
     .bughouse-label {
       font-size: 0.78rem;
       font-weight: 700;
@@ -6300,6 +6311,7 @@
           if (piece) {
             const span = document.createElement("span");
             span.className = "piece-glyph";
+            span.dataset.piece = pType; // enables weapon CSS rules
             const fpGlyph = document.createElement("span");
             fpGlyph.textContent = FP_GLYPH[pType] || pType;
             span.appendChild(fpGlyph);
@@ -7677,14 +7689,17 @@
     }, 3000);
 
     /* ── Music toggle button ── */
+    // pointerdown fires before capture-phase click, so we claim the interaction first
+    document.getElementById("musicToggleBtn").addEventListener("pointerdown", () => {
+      _introPlayed = true; // block onFirstInteraction from auto-starting music
+    });
     document.getElementById("musicToggleBtn").addEventListener("click", (e) => {
       e.stopPropagation();
       resumeAudio();
       getMasterGain();
       e.currentTarget.classList.remove("music-waiting");
       if (!_bgMusic || !_bgMusic.running) {
-        // Music not running yet — start it
-        _introPlayed = true;
+        // Music not running — start it
         _musicEnabled = true;
         synthIntroSting();
         startBackgroundMusic();
