@@ -42,8 +42,8 @@ function createGameWindow(htmlFile) {
 
 function createLauncher() {
   launcherWin = new BrowserWindow({
-    width: 780,
-    height: 540,
+    width: 820,
+    height: 660,
     resizable: false,
     frame: false,
     icon: APP_ICON,

@@ -1592,7 +1592,7 @@
     /* Intro splash */
     #introSplash {
       position: fixed; inset: 0; z-index: 99999;
-      background: #0a0806;
+      background: #080f04;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 16px;
       animation: splashFadeOut 0.6s ease-in 2.2s forwards;
@@ -1600,13 +1600,13 @@
     #introSplash .splash-title {
       font-size: clamp(2.4rem, 8vw, 6rem);
       font-weight: 900;
-      background: linear-gradient(135deg, #c8952a 0%, #e8d8a8 40%, #ffffff 60%, #c8952a 100%);
+      background: linear-gradient(135deg, #4a9d3c 0%, #c8e6a0 40%, #ffffff 60%, #b87333 100%);
       -webkit-background-clip: text; background-clip: text;
       -webkit-text-fill-color: transparent;
       text-align: center;
       letter-spacing: 0.1em;
       animation: splashTitlePop 0.7s cubic-bezier(0.22,1,0.36,1) 0.3s both;
-      filter: drop-shadow(0 0 40px rgba(200,149,42,0.6));
+      filter: drop-shadow(0 0 40px rgba(74,157,60,0.6));
     }
     #introSplash .splash-sub {
       font-size: clamp(1rem, 3vw, 1.5rem);
@@ -1617,7 +1617,7 @@
     #introSplash .splash-suits {
       font-size: clamp(1.8rem, 5vw, 3.5rem);
       letter-spacing: 0.5em;
-      color: #c8952a;
+      color: #4a9d3c;
       animation: splashTitlePop 0.5s ease 1.2s both;
     }
     @keyframes splashTitlePop {
@@ -1629,8 +1629,8 @@
     }
 
     @keyframes moveLogRow {
-      0%   { background: rgba(200,149,42,0.22); transform: translateX(-4px); }
-      40%  { background: rgba(200,149,42,0.12); transform: translateX(0); }
+      0%   { background: rgba(74,157,60,0.22); transform: translateX(-4px); }
+      40%  { background: rgba(74,157,60,0.12); transform: translateX(0); }
       100% { background: transparent; }
     }
 
@@ -3213,7 +3213,7 @@
 
       const arpBus = ctx.createGain(); arpBus.gain.value = 0.055; arpBus.connect(masterHp); arpBus.connect(rvSend);
       const bassBus = ctx.createGain(); bassBus.gain.value = 0.09; bassBus.connect(music);
-      _music.filterNode = arpBus;
+      _music.filterNode = null; /* Terraria uses GainNode not BiquadFilter — no .frequency */
       _music.counterGain = bassBus;
       _music.percGain = ctx.createGain(); _music.percGain.gain.value = 0; _music.percGain.connect(music);
 
@@ -7925,13 +7925,13 @@
     (function spawnCardFloats() {
       const container = document.getElementById("cardFloats");
       if (!container) return;
-      const icons = ["🕯","🕸️","🌿","💀","🍖","🌾","🌑","🔥","🗡️","🪲"];
+      const icons = ["⛏️","💎","🌿","💀","⚔️","🏹","🌑","🔮","🗡️","👑"];
       for (let i = 0; i < 16; i++) {
         const el = document.createElement("div");
         el.className = "card-float";
         el.textContent = icons[i % icons.length];
         el.style.left = `${Math.random() * 100}vw`;
-        el.style.color = ["rgba(200,149,42,0.6)","rgba(148,163,184,0.5)","rgba(250,204,21,0.5)"][i % 3];
+        el.style.color = ["rgba(74,157,60,0.6)","rgba(184,115,51,0.5)","rgba(200,230,160,0.45)"][i % 3];
         const dur = 16 + Math.random() * 24;
         el.style.animationDuration = `${dur}s`;
         el.style.animationDelay = `${Math.random() * -35}s`;
