@@ -232,6 +232,17 @@ async function runEdition(port, edition) {
 
       const status = state.game.getGameStatus();
       const statusText = document.getElementById("statusText")?.textContent || "";
+      const editionKey = typeof APP_EDITION !== "undefined" ? APP_EDITION : "";
+      const saves = window.ChessUltimateStorage && editionKey
+        ? window.ChessUltimateStorage.listAllSaves(editionKey)
+        : [];
+      const newestSave = saves[0] || null;
+      const expectedLoadedHistory = newestSave && newestSave.gameCore && newestSave.gameCore.game
+        ? newestSave.gameCore.game.history.length
+        : -1;
+      const loadRestored = newestSave && typeof applySaveSnapshot === "function"
+        ? Boolean(applySaveSnapshot(newestSave) && state.game.history.length === expectedLoadedHistory)
+        : false;
       return {
         edition: ${JSON.stringify(edition.name)},
         url: location.href,
@@ -241,6 +252,9 @@ async function runEdition(port, edition) {
         historyLength: state.game.history.length,
         over: Boolean(status && status.over),
         result: status && status.result,
+        saveCount: saves.length,
+        autosaveCount: saves.filter((save) => save.type === "autosave").length,
+        loadRestored,
         errors: pageErrors,
       };
     })()`);
@@ -272,9 +286,13 @@ async function main() {
       const result = await runEdition(port, edition);
       results.push(result);
 
-      const ok = result.over && /checkmate|wins/i.test(result.result || "") && result.errors.length === 0;
+      const ok = result.over
+        && /checkmate|wins/i.test(result.result || "")
+        && result.autosaveCount > 0
+        && result.loadRestored
+        && result.errors.length === 0;
       const mark = ok ? "PASS" : "FAIL";
-      console.log(`[${mark}] ${edition.name}: ${result.result || result.statusText}`);
+      console.log(`[${mark}] ${edition.name}: ${result.result || result.statusText} (${result.autosaveCount} autosaves)`);
       if (!ok) {
         console.log(JSON.stringify(result, null, 2));
         if (stderr.trim()) console.log(stderr.trim());

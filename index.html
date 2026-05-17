@@ -387,6 +387,30 @@
       box-shadow: 0 4px 16px rgba(14,165,233,0.3);
     }
 
+    .save-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .save-btn {
+      border: 1px solid rgba(148,163,184,0.26);
+      border-radius: 9px;
+      background: rgba(15,23,42,0.68);
+      color: #e5edf8;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 9px 10px;
+      cursor: pointer;
+    }
+
+    .save-btn:hover {
+      border-color: rgba(56,189,248,0.55);
+      background: rgba(14,165,233,0.18);
+    }
+
     .main {
       display: grid;
       grid-template-columns: minmax(320px, 1fr) minmax(260px, 340px);
@@ -1972,6 +1996,10 @@
         </div>
       </div>
       <button class="start-btn" id="newGameBtn">Start New Game</button>
+      <div class="save-actions">
+        <button class="save-btn" id="saveGameBtn">Save</button>
+        <button class="save-btn" id="loadGameBtn">Load</button>
+      </div>
       <div class="p2p-panel" id="p2pPanel" style="display:none;">
         <div class="p2p-status" id="p2pStatus">Disconnected</div>
         <div class="p2p-controls">
@@ -2068,6 +2096,7 @@
     </div>
   </div>
 
+  <script src="appState.js"></script>
   <script>
     const GAME_CREDITS = "Made by TheHollyCow and Masternazz";
     const FILES = "abcdefgh";
@@ -2180,6 +2209,8 @@
       eloSlider: document.getElementById("eloSlider"),
       eloValue: document.getElementById("eloValue"),
       newGameBtn: document.getElementById("newGameBtn"),
+      saveGameBtn: document.getElementById("saveGameBtn"),
+      loadGameBtn: document.getElementById("loadGameBtn"),
       gameModeSelect: document.getElementById("gameModeSelect"),
       modeNote: document.getElementById("modeNote"),
       variantSelect: document.getElementById("variantSelect"),
@@ -2628,6 +2659,11 @@
       },
       unsupportedMode: false
     };
+
+    const APP_EDITION = "battle";
+    const APP_STORAGE = window.ChessUltimateStorage;
+    const APP_SETTINGS = APP_STORAGE ? APP_STORAGE.getSettings() : {};
+    let _lastAutosaveTurnKey = "";
 
     const MOVE_ANIMATION_MS = 320;
     const MOVE_GAP_MS = 180;
@@ -7154,6 +7190,229 @@
       updateDiscordPresence();
     }
 
+    function cloneSaveData(value) {
+      if (APP_STORAGE && APP_STORAGE.clone) return APP_STORAGE.clone(value);
+      return value == null ? value : JSON.parse(JSON.stringify(value));
+    }
+
+    function serializeChessGameData(game) {
+      if (!game) return null;
+      return {
+        variant: game.variant,
+        position: cloneSaveData(game.position),
+        history: cloneSaveData(game.history || []),
+        positionCount: Array.from((game.positionCount || new Map()).entries()),
+        cardResult: game.cardResult || null
+      };
+    }
+
+    function restoreChessGameData(data) {
+      const game = new ChessGame((data && data.variant) || "standard");
+      if (data && data.position) game.position = cloneSaveData(data.position);
+      game.history = cloneSaveData((data && data.history) || []);
+      game.positionCount = new Map((data && data.positionCount) || []);
+      if (data && data.cardResult) game.cardResult = data.cardResult;
+      if (game.positionCount.size === 0) game.recordPosition();
+      return game;
+    }
+
+    function serializeGameCore() {
+      if (!state.game) return null;
+      if (isFourPlayerVariant()) {
+        return {
+          kind: "four_player",
+          variant: state.game.variant,
+          board: cloneSaveData(state.game.board),
+          eliminated: Array.from(state.game.eliminated || []),
+          turnIndex: state.game.turnIndex || 0,
+          history: cloneSaveData(state.game.history || []),
+          result: state.game.result || null
+        };
+      }
+      if (isBughouseVariant()) {
+        return {
+          kind: "bughouse",
+          activeBoard: state.game.activeBoard,
+          result: state.game.result || null,
+          history: cloneSaveData(state.game.history || []),
+          boardA: serializeChessGameData(state.game.boardA),
+          boardB: serializeChessGameData(state.game.boardB)
+        };
+      }
+      return { kind: "chess", game: serializeChessGameData(state.game) };
+    }
+
+    function restoreGameCore(core) {
+      if (!core) return null;
+      if (core.kind === "four_player") {
+        const game = new FourPlayerGame(core.variant || state.variant);
+        game.board = cloneSaveData(core.board || game.board);
+        game.eliminated = new Set(core.eliminated || []);
+        game.turnIndex = core.turnIndex || 0;
+        game.history = cloneSaveData(core.history || []);
+        game.result = core.result || null;
+        return game;
+      }
+      if (core.kind === "bughouse") {
+        const game = new BughouseGame();
+        game.activeBoard = core.activeBoard || "A";
+        game.result = core.result || null;
+        game.history = cloneSaveData(core.history || []);
+        game.boardA = restoreChessGameData(core.boardA);
+        game.boardB = restoreChessGameData(core.boardB);
+        return game;
+      }
+      return restoreChessGameData(core.game);
+    }
+
+    function editionExtraSaveData() {
+      const extra = {};
+      if (state.cardGame) extra.cardGame = cloneSaveData(state.cardGame);
+      if (state.sanity) extra.sanity = cloneSaveData(state.sanity);
+      if (state.charlieActive) extra.charlieActive = cloneSaveData(state.charlieActive);
+      if (typeof state_tr !== "undefined") extra.terraria = cloneSaveData(state_tr);
+      return extra;
+    }
+
+    function applyEditionExtraSaveData(extra) {
+      if (!extra) return;
+      if ("cardGame" in extra) state.cardGame = cloneSaveData(extra.cardGame);
+      if ("sanity" in extra) state.sanity = cloneSaveData(extra.sanity);
+      if ("charlieActive" in extra) state.charlieActive = cloneSaveData(extra.charlieActive);
+      if ("terraria" in extra && typeof state_tr !== "undefined") Object.assign(state_tr, cloneSaveData(extra.terraria));
+    }
+
+    function fullTurnNumber() {
+      if (!state.game || !Array.isArray(state.game.history)) return 0;
+      return Math.floor(state.game.history.length / 2);
+    }
+
+    function buildSaveSnapshot(name, type) {
+      if (!state.game) return null;
+      const status = state.game.getGameStatus ? state.game.getGameStatus() : { over: false, result: "" };
+      return {
+        edition: APP_EDITION,
+        variant: state.variant,
+        type,
+        name,
+        fullTurn: fullTurnNumber(),
+        status,
+        gameMode: state.gameMode,
+        stateData: cloneSaveData({
+          playerColor: state.playerColor,
+          botColor: state.botColor,
+          orientation: state.orientation,
+          autoRotateMultiplayer: state.autoRotateMultiplayer,
+          cinematicFx: state.cinematicFx,
+          liveFeed: state.liveFeed,
+          moveBadges: state.moveBadges,
+          lastMoveTrail: state.lastMoveTrail,
+          gameOverSoundPlayed: state.gameOverSoundPlayed,
+          accuracy: state.accuracy
+        }),
+        gameCore: serializeGameCore(),
+        extra: editionExtraSaveData()
+      };
+    }
+
+    function saveCurrentGame(type = "manual", forcedName = "") {
+      if (!APP_STORAGE || !state.game) return null;
+      const manual = type !== "autosave";
+      const fallbackName = `${currentVariantInfo().label} - Turn ${fullTurnNumber()}`;
+      const name = forcedName || (manual ? window.prompt("Save name", fallbackName) : fallbackName);
+      if (manual && !name) return null;
+      const saved = APP_STORAGE.saveGame(buildSaveSnapshot(name, type), {
+        autosave: !manual,
+        limit: APP_SETTINGS.autosaveAmount
+      });
+      if (manual && saved && ui.statusText) {
+        ui.statusText.textContent = `Saved "${saved.name}".`;
+        ui.statusText.classList.remove("danger");
+      }
+      return saved;
+    }
+
+    function maybeAutosaveGame() {
+      if (!APP_STORAGE || !state.game || !Array.isArray(state.game.history)) return;
+      const interval = Math.max(1, Number(APP_SETTINGS.autosaveInterval || 1));
+      const halfMoves = state.game.history.length;
+      const status = state.game.getGameStatus ? state.game.getGameStatus() : null;
+      const isGameOver = Boolean(status && status.over);
+      if (!isGameOver && (halfMoves === 0 || halfMoves % 2 !== 0)) return;
+      const turn = fullTurnNumber();
+      if (!isGameOver && (turn <= 0 || turn % interval !== 0)) return;
+      const key = `${state.variant}:${state.gameMode}:${turn}:${isGameOver ? "gameover" : "turn"}`;
+      if (_lastAutosaveTurnKey === key) return;
+      _lastAutosaveTurnKey = key;
+      saveCurrentGame("autosave", isGameOver ? `Autosave game over - turn ${turn}` : `Autosave turn ${turn}`);
+    }
+
+    function setSideSelectionFromColor(color) {
+      const value = color === "b" ? "black" : color === "w" ? "white" : "random";
+      const input = document.querySelector(`input[name='side'][value='${value}']`);
+      if (input) input.checked = true;
+    }
+
+    function applySaveSnapshot(save) {
+      if (!save || !save.gameCore) return false;
+      state.variant = save.variant || "standard";
+      state.gameMode = save.gameMode || "bot";
+      if (ui.variantSelect) ui.variantSelect.value = state.variant;
+      if (ui.gameModeSelect) ui.gameModeSelect.value = state.gameMode;
+      const data = save.stateData || {};
+      state.playerColor = data.playerColor || "w";
+      state.botColor = data.botColor || oppositeColor(state.playerColor);
+      state.orientation = data.orientation || state.playerColor;
+      state.autoRotateMultiplayer = data.autoRotateMultiplayer !== false;
+      state.cinematicFx = data.cinematicFx !== false;
+      state.liveFeed = cloneSaveData(data.liveFeed || []);
+      state.moveBadges = cloneSaveData(data.moveBadges || []);
+      state.lastMoveTrail = cloneSaveData(data.lastMoveTrail || null);
+      state.gameOverSoundPlayed = Boolean(data.gameOverSoundPlayed);
+      state.accuracy = cloneSaveData(data.accuracy || {
+        w: { sum: 0, count: 0, value: 100 },
+        b: { sum: 0, count: 0, value: 100 }
+      });
+      state.selectedSquare = null;
+      state.selectedDropPiece = null;
+      state.botThinking = false;
+      state.moveInFlight = false;
+      state.game = restoreGameCore(save.gameCore);
+      state.unsupportedMode = !currentVariantInfo().supported;
+      setSideSelectionFromColor(state.playerColor);
+      applyEditionExtraSaveData(save.extra);
+      _lastAutosaveTurnKey = "";
+      updateModeNote();
+      renderAll();
+      return true;
+    }
+
+    function loadSavedGamePrompt() {
+      if (!APP_STORAGE) return;
+      const saves = APP_STORAGE.listAllSaves(APP_EDITION);
+      if (!saves.length) {
+        if (ui.statusText) ui.statusText.textContent = "No saves found.";
+        return;
+      }
+      const lines = saves.slice(0, 20).map((save, index) => {
+        const when = save.savedAt ? new Date(save.savedAt).toLocaleString() : "unknown time";
+        return `${index + 1}. ${save.name || "Untitled"} [${save.type}] ${save.variant} - ${when}`;
+      });
+      const pick = Number(window.prompt(`Load which save?\n\n${lines.join("\n")}`, "1"));
+      if (!Number.isInteger(pick) || pick < 1 || pick > Math.min(20, saves.length)) return;
+      applySaveSnapshot(saves[pick - 1]);
+    }
+
+    function applyLauncherDefaults() {
+      if (!APP_SETTINGS || APP_EDITION !== "battle") return;
+      if (APP_SETTINGS.battleStartVariant && ui.variantSelect.querySelector(`option[value='${APP_SETTINGS.battleStartVariant}']`)) {
+        ui.variantSelect.value = APP_SETTINGS.battleStartVariant;
+      }
+      const color = APP_SETTINGS.battleStartColor || "random";
+      const input = document.querySelector(`input[name='side'][value='${color}']`);
+      if (input) input.checked = true;
+    }
+
     function selectedSideOption() {
       const input = document.querySelector("input[name='side']:checked");
       return input ? input.value : "white";
@@ -7203,6 +7462,7 @@
       state.gameOverSoundPlayed = false;
       state.accuracy.w = { sum: 0, count: 0, value: 100 };
       state.accuracy.b = { sum: 0, count: 0, value: 100 };
+      _lastAutosaveTurnKey = "";
       setPlayersFromSelection(selectedSideOption());
       if (isLocalMultiplayerMode()) {
         state.playerColor = state.orientation;
@@ -7708,6 +7968,7 @@
           state.orientation = game.position.turn;
         }
         renderAll();
+        maybeAutosaveGame();
         if (move.captured) {
           const burstSquare = move.enPassant
             ? move.capturedSquare
@@ -7860,6 +8121,12 @@
       const annotationDepth = Math.max(2, picked.depth - 1);
       const annotation = analyzeMoveQuality(game, picked.move, annotationDepth);
       await delay(MOVE_GAP_MS);
+      if (!isBotMode() || !state.game || state.game !== game || game.isGameOver()
+          || game.position.turn !== state.botColor || state.moveInFlight) {
+        state.botThinking = false;
+        renderAll();
+        return;
+      }
       await applyAnnotatedMove(picked.move, annotation, state.botColor, "bot", "Bot:");
 
       state.botThinking = false;
@@ -7901,6 +8168,8 @@
       resumeAudio();
       startNewGame();
     });
+    if (ui.saveGameBtn) ui.saveGameBtn.addEventListener("click", () => saveCurrentGame("manual"));
+    if (ui.loadGameBtn) ui.loadGameBtn.addEventListener("click", loadSavedGamePrompt);
 
     /* ── Floating battle icons background ── */
     (function spawnCardFloats() {
@@ -7983,6 +8252,7 @@
     document.addEventListener("keydown", onFirstInteraction, true);
 
     p2pInitUI();
+    applyLauncherDefaults();
     startNewGame();
 
     /* ══════════════════════════════════════════
