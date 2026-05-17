@@ -112,6 +112,7 @@ Output: `build-out/ChessUltimate-win32-x64/ChessUltimate.exe` (zipped to `dist-p
 - Web Audio API synthesis for all music and SFX — zero bundled audio files.
 - Local achievements stored per edition in `localStorage`.
 - Discord Rich Presence is optional. Set `CHESS_ULTIMATE_DISCORD_CLIENT_ID` or place `discord-client-id.txt` next to the exe/repo with a Discord Application Client ID.
+- To diagnose Discord status locally, run `npm run test:discord`; app logs are written to Discord's `discord-presence.log` under Electron `userData`.
 - No server required for normal play.
 
 ## License

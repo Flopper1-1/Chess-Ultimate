@@ -150,10 +150,12 @@ async function clickEdition(port, edition) {
 
 async function runEdition(port, edition) {
   await clickEdition(port, edition);
-  const target = await waitForTarget(port, (entry) => entry.url.includes(edition.page));
-  const client = await connectDebugger(target.webSocketDebuggerUrl);
-  try {
-    return await evalInPage(client, `(async () => {
+  let lastError = null;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const target = await waitForTarget(port, (entry) => entry.url.includes(edition.page));
+    const client = await connectDebugger(target.webSocketDebuggerUrl);
+    try {
+      return await evalInPage(client, `(async () => {
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       const movesToPlay = ${JSON.stringify(FOOLS_MATE)};
       const needsCards = ${edition.needsCards ? "true" : "false"};
@@ -236,9 +238,15 @@ async function runEdition(port, edition) {
         errors: pageErrors,
       };
     })()`);
-  } finally {
-    client.close();
+    } catch (err) {
+      lastError = err;
+      if (!/Execution context was destroyed/i.test(String(err && err.message))) throw err;
+      await sleep(500);
+    } finally {
+      client.close();
+    }
   }
+  throw lastError || new Error(`Failed to run ${edition.name}`);
 }
 
 async function main() {

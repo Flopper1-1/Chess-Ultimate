@@ -80,24 +80,72 @@ class DiscordPresence {
     this.lastActivityKey = "";
     this.queuedActivity = null;
     this.currentEdition = null;
+    this.loginTimer = null;
+    this.reconnectMs = 15000;
+    this.lastError = "";
+    this.lastActivity = null;
+    this.lastActivityAt = null;
+    this.logPath = "";
+  }
+
+  setLogPath(file) {
+    this.logPath = file || "";
+  }
+
+  log(message) {
+    const line = `[${new Date().toISOString()}] ${message}`;
+    console.log(`[DiscordPresence] ${message}`);
+    if (!this.logPath) return;
+    try {
+      fs.mkdirSync(path.dirname(this.logPath), { recursive: true });
+      fs.appendFileSync(this.logPath, `${line}\n`, "utf8");
+    } catch (_) {
+      // Logging is best-effort.
+    }
   }
 
   init() {
     if (!this.enabled || this.client) return;
 
+    this.log(`Starting Discord RPC with client ID ${this.clientId}`);
     DiscordRPC.register(this.clientId);
     this.client = new DiscordRPC.Client({ transport: "ipc" });
     this.client.on("ready", () => {
       this.ready = true;
+      this.lastError = "";
+      this.log("Discord RPC ready");
       this.flush();
     });
     this.client.on("disconnected", () => {
       this.ready = false;
+      this.lastError = "Discord RPC disconnected";
+      this.log(this.lastError);
+      this.scheduleReconnect();
+    });
+    this.client.on("error", (err) => {
+      this.lastError = err && (err.message || String(err)) || "Discord RPC error";
+      this.log(this.lastError);
     });
     this.client.login({ clientId: this.clientId }).catch(() => {
-      this.enabled = false;
+      this.lastError = "Discord RPC login failed. Is Discord open with Activity Status enabled?";
+      this.log(this.lastError);
+      try {
+        if (this.client) this.client.destroy();
+      } catch (_) {}
       this.client = null;
+      this.ready = false;
+      this.scheduleReconnect();
     });
+  }
+
+  scheduleReconnect() {
+    if (!this.enabled || this.loginTimer) return;
+    this.loginTimer = setTimeout(() => {
+      this.loginTimer = null;
+      this.client = null;
+      this.ready = false;
+      this.init();
+    }, this.reconnectMs);
   }
 
   setLauncher(version) {
@@ -150,11 +198,49 @@ class DiscordPresence {
     if (!this.enabled || !this.ready || !this.client || !this.queuedActivity) return;
     const key = JSON.stringify(this.queuedActivity);
     if (key === this.lastActivityKey) return;
-    this.lastActivityKey = key;
-    this.client.setActivity(this.queuedActivity).catch(() => {});
+    this.client.setActivity(this.queuedActivity).then(() => {
+      this.lastActivityKey = key;
+      this.lastActivity = this.queuedActivity;
+      this.lastActivityAt = Date.now();
+      this.lastError = "";
+      this.log(`Activity set: ${this.queuedActivity.details} | ${this.queuedActivity.state}`);
+    }).catch((err) => {
+      this.lastError = err && (err.message || String(err)) || "Discord RPC setActivity failed";
+      this.log(this.lastError);
+      const fallback = { ...this.queuedActivity };
+      delete fallback.buttons;
+      this.client.setActivity(fallback).then(() => {
+        this.lastActivityKey = JSON.stringify(fallback);
+        this.lastActivity = fallback;
+        this.lastActivityAt = Date.now();
+        this.lastError = "";
+        this.log(`Activity set without buttons: ${fallback.details} | ${fallback.state}`);
+      }).catch((fallbackErr) => {
+        this.lastError = fallbackErr && (fallbackErr.message || String(fallbackErr)) || "Discord RPC fallback activity failed";
+        this.log(this.lastError);
+      });
+    });
+  }
+
+  getStatus() {
+    return {
+      enabled: this.enabled,
+      ready: this.ready,
+      hasClient: Boolean(this.client),
+      clientId: this.clientId,
+      currentEdition: this.currentEdition,
+      lastError: this.lastError,
+      lastActivityAt: this.lastActivityAt,
+      lastActivity: this.lastActivity,
+      logPath: this.logPath,
+    };
   }
 
   shutdown() {
+    if (this.loginTimer) {
+      clearTimeout(this.loginTimer);
+      this.loginTimer = null;
+    }
     if (!this.client) return;
     try {
       if (this.ready) this.client.clearActivity();
