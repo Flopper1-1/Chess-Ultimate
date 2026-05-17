@@ -1695,6 +1695,8 @@
       border-radius: 10px;
       background: rgba(18,12,4,0.45);
       scroll-behavior: smooth;
+      overscroll-behavior: contain;
+      overflow-anchor: none;
     }
 
     /* Terraria move log scrollbar */
@@ -1986,9 +1988,9 @@
         <div>
           <div style="font-weight: 600; margin-bottom: 6px;">Play as</div>
           <div class="side-picker">
-            <label><input type="radio" name="side" value="white" checked /> White</label>
+            <label><input type="radio" name="side" value="white" /> White</label>
             <label><input type="radio" name="side" value="black" /> Black</label>
-            <label><input type="radio" name="side" value="random" /> Random</label>
+            <label><input type="radio" name="side" value="random" checked /> Random</label>
           </div>
         </div>
         <div class="select-row">
@@ -5402,10 +5404,22 @@
         return null;
       }
 
+      const botColor = game.position.turn;
+      if (game.variant === "antichess") {
+        const sorted = legalMoves
+          .map((move) => ({ move, score: scoreAntichessBotMove(game, move, botColor) }))
+          .sort((a, b) => b.score - a.score);
+        return {
+          move: sorted[0].move,
+          expectedBestScore: sorted[0].score,
+          selectedScore: sorted[0].score,
+          depth: 1
+        };
+      }
+
       const depth = ["crazyhouse", "atomic", "antichess", "checkers_vs_chess"].includes(game.variant)
         ? 1
         : eloToSearchDepth(elo);
-      const botColor = game.position.turn;
       const scoredMoves = [];
 
       for (const move of orderMoves(game, legalMoves)) {
@@ -5531,6 +5545,33 @@
       if (elo < 900) return 1;
       if (elo < 1700) return 2;
       return 3;
+    }
+
+    function botCapturedPieceForMove(game, move) {
+      if (!move.captured) return null;
+      if (typeof move.captured === "string") return move.captured;
+      const board = game.position.board;
+      const captureSquare = (move.enPassant || (Number.isInteger(move.capturedSquare) && move.capturedSquare !== move.to))
+        ? move.capturedSquare
+        : move.to;
+      return Number.isInteger(captureSquare) ? board[captureSquare] : null;
+    }
+
+    function scoreAntichessBotMove(game, move, botColor) {
+      const capturedPiece = botCapturedPieceForMove(game, move);
+      const capturedValue = capturedPiece ? (PIECE_VALUE[pieceType(capturedPiece)] || 0) : 0;
+      const movedValue = PIECE_VALUE[pieceType(move.piece)] || 0;
+      const undo = game.applyMove(move);
+      let baitValue = 0;
+      for (const reply of game.generateLegalMoves()) {
+        const victim = botCapturedPieceForMove(game, reply);
+        if (victim && colorOf(victim) === botColor) {
+          baitValue = Math.max(baitValue, PIECE_VALUE[pieceType(victim)] || 0);
+        }
+      }
+      const ownPiecesAfter = game.position.board.filter((piece) => piece && colorOf(piece) === botColor).length;
+      game.undoMove(undo);
+      return baitValue * 120 - capturedValue * 45 - ownPiecesAfter * 8 + movedValue + Math.random() * 0.01;
     }
 
     function randomGaussian() {
@@ -6888,6 +6929,11 @@
       if (typeof planRenderOverlay === "function") planRenderOverlay();
     }
 
+    function scrollMoveLogToBottom() {
+      const wrap = ui.moveLogBody && ui.moveLogBody.closest(".move-table-wrap");
+      if (wrap) wrap.scrollTop = wrap.scrollHeight;
+    }
+
     function renderMoveLog() {
       ui.moveLogBody.innerHTML = "";
       if (!state.game) return;
@@ -6916,7 +6962,7 @@
         if (lastRow) {
           lastRow.classList.add("move-log-new");
           window.setTimeout(() => lastRow.classList.remove("move-log-new"), 800);
-          lastRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          scrollMoveLogToBottom();
         }
         return;
       }
@@ -6940,7 +6986,7 @@
         if (lastRow) {
           lastRow.classList.add("move-log-new");
           window.setTimeout(() => lastRow.classList.remove("move-log-new"), 800);
-          lastRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          scrollMoveLogToBottom();
         }
         return;
       }
@@ -6967,7 +7013,7 @@
       if (lastRow) {
         lastRow.classList.add("move-log-new");
         window.setTimeout(() => lastRow.classList.remove("move-log-new"), 800);
-        lastRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        scrollMoveLogToBottom();
       }
     }
 

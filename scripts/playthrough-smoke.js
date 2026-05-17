@@ -1,4 +1,6 @@
 const http = require("http");
+const os = require("os");
+const path = require("path");
 const { spawn, spawnSync } = require("child_process");
 
 const EDITIONS = [
@@ -102,8 +104,9 @@ function spawnElectron(port) {
   const command = require("electron");
   const env = { ...process.env };
   delete env.ELECTRON_RUN_AS_NODE;
+  const userDataDir = path.join(os.tmpdir(), `chess-ultimate-smoke-${process.pid}-${port}`);
 
-  return spawn(command, [`--remote-debugging-port=${port}`, "."], {
+  return spawn(command, [`--remote-debugging-port=${port}`, `--user-data-dir=${userDataDir}`, "."], {
     cwd: process.cwd(),
     env,
     stdio: ["ignore", "pipe", "pipe"],
@@ -201,7 +204,10 @@ async function runEdition(port, edition) {
         const legal = state.game.generateLegalMoves();
         const move = legal.find((candidate) => candidate.from === planned.from && candidate.to === planned.to);
         if (!move) {
-          throw new Error("Missing legal move " + planned.san + "; legal moves: " + legal.map((m) => indexToCoord(m.from) + "-" + indexToCoord(m.to)).join(", "));
+          throw new Error("Missing legal move " + planned.san
+            + "; turn=" + state.game.position.turn
+            + "; history=" + state.game.history.map((entry) => entry.annotatedText || formatMove(entry.move)).join(" ")
+            + "; legal moves: " + legal.map((m) => indexToCoord(m.from) + "-" + indexToCoord(m.to)).join(", "));
         }
 
         if (needsCards && state.cardGame) {

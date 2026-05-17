@@ -29,6 +29,7 @@ function createGameWindow(htmlFile) {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      backgroundThrottling: false,
       preload: path.join(__dirname, "preload.js"),
     },
     backgroundColor: "#07050f",
@@ -62,6 +63,7 @@ function createLauncher() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      backgroundThrottling: false,
       preload: path.join(__dirname, "preload.js"),
     },
     backgroundColor: "#07050f",

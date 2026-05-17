@@ -739,6 +739,12 @@
       box-shadow: inset 0 0 0 3px rgba(239,68,68,0.8), 0 0 12px rgba(239,68,68,0.4);
       animation: forcedPulse 0.9s ease-in-out infinite;
     }
+    .square.card-free-source .piece-glyph {
+      filter: drop-shadow(0 0 10px rgba(34,197,94,0.95)) drop-shadow(0 0 20px rgba(34,197,94,0.45));
+    }
+    .square.card-free-source {
+      box-shadow: inset 0 0 0 2px rgba(34,197,94,0.45), 0 0 12px rgba(34,197,94,0.22);
+    }
     @keyframes forcedPulse {
       0%, 100% { box-shadow: inset 0 0 0 3px rgba(239,68,68,0.8), 0 0 8px rgba(239,68,68,0.3); }
       50%       { box-shadow: inset 0 0 0 3px rgba(239,68,68,1.0), 0 0 18px rgba(239,68,68,0.6); }
@@ -1618,6 +1624,8 @@
       border-radius: 10px;
       background: rgba(25,4,4,0.7);
       scroll-behavior: smooth;
+      overscroll-behavior: contain;
+      overflow-anchor: none;
     }
 
     /* Joker's Gambit — deep red/gold casino scrollbar */
@@ -2318,9 +2326,9 @@
         <div>
           <div style="font-weight: 600; margin-bottom: 6px;">Play as</div>
           <div class="side-picker">
-            <label><input type="radio" name="side" value="white" checked /> White</label>
+            <label><input type="radio" name="side" value="white" /> White</label>
             <label><input type="radio" name="side" value="black" /> Black</label>
-            <label><input type="radio" name="side" value="random" /> Random</label>
+            <label><input type="radio" name="side" value="random" checked /> Random</label>
           </div>
         </div>
         <div class="select-row">
@@ -3065,7 +3073,7 @@
     };
     const JOKER_DEFS = [
       { id: "joker", name: "Joker", rarity: "common", icon: "J", desc: "+1 piece card every turn." },
-      { id: "anti_joker", name: "Anti-Joker", rarity: "uncommon", icon: "AJ", desc: "Opponent draws 1 fewer piece card every turn." },
+      { id: "anti_joker", name: "Anti-Joker", rarity: "rare", icon: "AJ", desc: "Opponent draws 1 fewer piece card every turn." },
       { id: "atomic", name: "Atomic", rarity: "rare", icon: "AT", desc: "Your captures explode adjacent non-pawn pieces like atomic chess." },
       { id: "crazyhouse", name: "Crazyhouse", rarity: "legendary", icon: "CH", desc: "Your captured pieces enter reserve and may be dropped with matching piece cards." },
       { id: "three_check", name: "Three-Check Chess", rarity: "legendary", icon: "3C", desc: "Win by giving 3 checks in a row. The streak resets when you do not check." },
@@ -5433,7 +5441,14 @@
     }
 
     function drawForTurn(color) {
-      return drawPieceCards(color, drawPerTurn(color));
+      const drawn = drawPieceCards(color, drawPerTurn(color));
+      return drawn + ensureRandomCardIfEmpty(color);
+    }
+
+    function ensureRandomCardIfEmpty(color) {
+      const player = cardPlayer(color);
+      if (!player || player.hand.length > 0) return 0;
+      return drawPieceCards(color, 1);
     }
 
     function cardById(color, cardId) {
@@ -5467,10 +5482,19 @@
       return Boolean(player && moves.length > 0 && !hasOpeningFreeMove(color) && !hasPlayableCardForMoves(color, moves));
     }
 
+    function cardBypassReason(color, moves) {
+      if (!state.cardGame || !state.game || state.game.position.turn !== color || moves.length === 0) return "";
+      if (state.game.isInCheck(color)) return "check";
+      ensureRandomCardIfEmpty(color);
+      if (noPlayableCardEmergency(color, moves)) return "no_playable";
+      return "";
+    }
+
     function filterMovesBySelectedCard(color, moves) {
       if (!state.cardGame || !state.game || state.game.position.turn !== color) return moves;
-      if (hasOpeningFreeMove(color)) return moves.map((move) => ({ ...move, cardFree: true }));
-      if (noPlayableCardEmergency(color, moves)) return moves.map((move) => ({ ...move, cardEmergency: true, cardFree: true }));
+      const bypass = cardBypassReason(color, moves);
+      if (bypass) return moves.map((move) => ({ ...move, cardFree: true, cardBypassReason: bypass, cardEmergency: bypass === "no_playable" }));
+      if (hasOpeningFreeMove(color)) return moves.map((move) => ({ ...move, cardFree: true, cardOpeningFree: true }));
       const selected = cardById(color, state.cardGame.selectedCardId);
       if (!selected) return [];
       return moves
@@ -5481,8 +5505,9 @@
     function playableMovesForHand(color, moves) {
       const player = cardPlayer(color);
       if (!player) return moves;
-      if (hasOpeningFreeMove(color)) return moves.map((move) => ({ ...move, cardFree: true }));
-      if (noPlayableCardEmergency(color, moves)) return moves.map((move) => ({ ...move, cardEmergency: true, cardFree: true }));
+      const bypass = cardBypassReason(color, moves);
+      if (bypass) return moves.map((move) => ({ ...move, cardFree: true, cardBypassReason: bypass, cardEmergency: bypass === "no_playable" }));
+      if (hasOpeningFreeMove(color)) return moves.map((move) => ({ ...move, cardFree: true, cardOpeningFree: true }));
       const playable = [];
       for (const move of moves) {
         const card = player.hand.find((entry) => cardMatchesMove(entry, move));
@@ -5509,7 +5534,9 @@
       const type = moveCardType(move);
       if (!type) return true;
       const refunded = hasJoker(color, "refunds") && player.lastPiecePlayed === type;
-      if (player.openingFree > 0) {
+      if (move.cardBypassReason) {
+        move.cardFree = true;
+      } else if (player.openingFree > 0) {
         player.openingFree -= 1;
         move.cardFree = true;
       } else if (!move.cardEmergency && !refunded) {
@@ -5796,7 +5823,7 @@
       ui.chanceBox.innerHTML = `<strong>Reward Chances</strong><div class="chances-grid">${RARITY_ORDER.map((rarity) => `<div class="chance-pill">${RARITY_LABEL[rarity]}<br>${Math.round(chances[rarity] * 100)}%</div>`).join("")}</div>`;
 
       ui.pieceHand.innerHTML = "";
-      if (player.hand.length === 0) ui.pieceHand.appendChild(renderEmptyNote("No piece cards. If no card can move, the turn becomes an emergency free move."));
+      if (player.hand.length === 0) ui.pieceHand.appendChild(renderEmptyNote("No piece cards. A random card is drawn before your next playable turn."));
       player.hand.forEach((card) => ui.pieceHand.appendChild(renderPieceCard(card, viewColor, playable || (state.cardGame.cloneMode && canUseJokerActions(viewColor)))));
 
       ui.jokerZone.innerHTML = "";
@@ -6741,10 +6768,22 @@
         return null;
       }
 
+      const scoredMoves = [];
+      if (game.variant === "antichess") {
+        const sorted = legalMoves
+          .map((move) => ({ move, score: scoreAntichessBotMove(game, move, botColor) }))
+          .sort((a, b) => b.score - a.score);
+        return {
+          move: sorted[0].move,
+          expectedBestScore: sorted[0].score,
+          selectedScore: sorted[0].score,
+          depth: 1
+        };
+      }
+
       const depth = ["crazyhouse", "atomic", "antichess", "checkers_vs_chess"].includes(game.variant)
         ? 1
         : eloToSearchDepth(elo);
-      const scoredMoves = [];
 
       for (const move of orderMoves(game, legalMoves)) {
         const undo = game.applyMove(move);
@@ -6869,6 +6908,33 @@
       if (elo < 900) return 1;
       if (elo < 1700) return 2;
       return 3;
+    }
+
+    function botCapturedPieceForMove(game, move) {
+      if (!move.captured) return null;
+      if (typeof move.captured === "string") return move.captured;
+      const board = game.position.board;
+      const captureSquare = (move.enPassant || (Number.isInteger(move.capturedSquare) && move.capturedSquare !== move.to))
+        ? move.capturedSquare
+        : move.to;
+      return Number.isInteger(captureSquare) ? board[captureSquare] : null;
+    }
+
+    function scoreAntichessBotMove(game, move, botColor) {
+      const capturedPiece = botCapturedPieceForMove(game, move);
+      const capturedValue = capturedPiece ? (PIECE_VALUE[pieceType(capturedPiece)] || 0) : 0;
+      const movedValue = PIECE_VALUE[pieceType(move.piece)] || 0;
+      const undo = game.applyMove(move);
+      let baitValue = 0;
+      for (const reply of game.generateLegalMoves()) {
+        const victim = botCapturedPieceForMove(game, reply);
+        if (victim && colorOf(victim) === botColor) {
+          baitValue = Math.max(baitValue, PIECE_VALUE[pieceType(victim)] || 0);
+        }
+      }
+      const ownPiecesAfter = game.position.board.filter((piece) => piece && colorOf(piece) === botColor).length;
+      game.undoMove(undo);
+      return baitValue * 120 - capturedValue * 45 - ownPiecesAfter * 8 + movedValue + Math.random() * 0.01;
     }
 
     function randomGaussian() {
@@ -8137,11 +8203,16 @@
       const visibilityColor = activeHumanColor();
       const fogVisible = isVariant("fog_of_war") ? visibleSquaresForColor(game, visibilityColor) : null;
 
-      const legalMoves = game.generateLegalMoves();
+      const legalMoves = state.cardGame && !isFourPlayerVariant() && !isBughouseVariant()
+        ? generatePlayableBalatroMoves(game, game.position.turn)
+        : game.generateLegalMoves();
       state.lastLegalMoves = legalMoves;
       const selected = state.selectedSquare;
       const targets = selected == null ? [] : legalMoves.filter((mv) => mv.from === selected);
       const dropTargets = state.selectedDropPiece ? legalMoves.filter((mv) => mv.dropPiece === state.selectedDropPiece) : [];
+      const cardFreeSources = state.cardGame
+        ? new Set(legalMoves.filter((mv) => mv.cardBypassReason && Number.isInteger(mv.from) && mv.from >= 0).map((mv) => mv.from))
+        : null;
 
       const HILL_SQUARES = new Set([27, 28, 35, 36]);
       const isKOTH = isVariant("king_of_the_hill");
@@ -8195,6 +8266,7 @@
             const pieceSpan = buildPieceSpan(piece, false);
             square.appendChild(pieceSpan);
 
+            if (cardFreeSources && cardFreeSources.has(index)) square.classList.add("card-free-source");
             if (antichessForcedFrom && antichessForcedFrom.has(index)) square.classList.add("forced-capture");
             if (checkersForcedFrom && checkersForcedFrom.has(index)) square.classList.add("forced-capture");
 
@@ -8241,6 +8313,11 @@
       if (typeof planRenderOverlay === "function") planRenderOverlay();
     }
 
+    function scrollMoveLogToBottom() {
+      const wrap = ui.moveLogBody && ui.moveLogBody.closest(".move-table-wrap");
+      if (wrap) wrap.scrollTop = wrap.scrollHeight;
+    }
+
     function renderMoveLog() {
       ui.moveLogBody.innerHTML = "";
       if (!state.game) return;
@@ -8269,7 +8346,7 @@
         if (lastRow) {
           lastRow.classList.add("move-log-new");
           window.setTimeout(() => lastRow.classList.remove("move-log-new"), 800);
-          lastRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          scrollMoveLogToBottom();
         }
         return;
       }
@@ -8293,7 +8370,7 @@
         if (lastRow) {
           lastRow.classList.add("move-log-new");
           window.setTimeout(() => lastRow.classList.remove("move-log-new"), 800);
-          lastRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          scrollMoveLogToBottom();
         }
         return;
       }
@@ -8320,7 +8397,7 @@
       if (lastRow) {
         lastRow.classList.add("move-log-new");
         window.setTimeout(() => lastRow.classList.remove("move-log-new"), 800);
-        lastRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        scrollMoveLogToBottom();
       }
     }
 
@@ -8399,10 +8476,13 @@
           const turn = game.position.turn;
           const rawMoves = generateBalatroLegalMoves(game);
           const player = cardPlayer(turn);
-          if (hasOpeningFreeMove(turn)) {
-            ui.statusText.textContent += ` Opening Theory: ${player.openingFree} free moves left.`;
-          } else if (noPlayableCardEmergency(turn, rawMoves)) {
+          const bypass = cardBypassReason(turn, rawMoves);
+          if (bypass === "check") {
+            ui.statusText.textContent += " In check: piece cards are ignored.";
+          } else if (bypass === "no_playable") {
             ui.statusText.textContent += " No playable card: emergency free move unlocked.";
+          } else if (hasOpeningFreeMove(turn)) {
+            ui.statusText.textContent += ` Opening Theory: ${player.openingFree} free moves left.`;
           } else if (!cardById(turn, state.cardGame.selectedCardId)) {
             ui.statusText.textContent += " Choose a piece card to reveal legal moves.";
           }
