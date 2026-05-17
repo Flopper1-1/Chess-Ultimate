@@ -1992,6 +1992,9 @@
             <option value="four_player_ffa">4-Player Chess (FFA)</option>
             <option value="bughouse">Bughouse</option>
           </select>
+          <select id="variantModSelect" class="variant-select" style="margin-top:4px;" title="Add a second rule layer">
+            <option value="">+ No modifier</option>
+          </select>
           <div class="variant-note" id="variantNote"></div>
         </div>
         <div class="control-toggles">
@@ -2231,6 +2234,7 @@
       gameModeSelect: document.getElementById("gameModeSelect"),
       modeNote: document.getElementById("modeNote"),
       variantSelect: document.getElementById("variantSelect"),
+      variantModSelect: document.getElementById("variantModSelect"),
       variantNote: document.getElementById("variantNote"),
       cinematicFxToggle: document.getElementById("cinematicFxToggle"),
       autoRotateToggle: document.getElementById("autoRotateToggle"),
@@ -4160,16 +4164,59 @@
       /* p2pConnectAnswerBtn is wired dynamically inside p2pHost() */
     }
 
+    /* Compatible modifier combos: base → allowed modifiers */
+    const VARIANT_COMBOS = {
+      standard:       ["chess960", "fog_of_war", "atomic", "crazyhouse", "three_check", "king_of_the_hill"],
+      chess960:       ["fog_of_war", "atomic", "crazyhouse", "three_check"],
+      fog_of_war:     ["chess960", "three_check", "crazyhouse"],
+      atomic:         ["chess960", "crazyhouse", "fog_of_war"],
+      crazyhouse:     ["chess960", "atomic", "fog_of_war", "three_check"],
+      three_check:    ["chess960", "fog_of_war", "crazyhouse", "king_of_the_hill"],
+      king_of_the_hill: ["three_check", "fog_of_war"],
+      antichess:      [],
+      checkers_vs_chess: [],
+      four_player_teams: [],
+      four_player_ffa:   [],
+      bughouse:          [],
+    };
+
+    const VARIANT_MOD_LABELS = {
+      chess960:         "Chess960 back rank",
+      fog_of_war:       "Fog of War",
+      atomic:           "Atomic explosions",
+      crazyhouse:       "Crazyhouse drops",
+      three_check:      "Three-check win",
+      king_of_the_hill: "King of the Hill win",
+    };
+
+    function populateModifierDropdown() {
+      const base = ui.variantSelect.value || "standard";
+      const mods = VARIANT_COMBOS[base] || [];
+      const current = ui.variantModSelect.value;
+      ui.variantModSelect.innerHTML = `<option value="">+ No modifier</option>`;
+      for (const mod of mods) {
+        const opt = document.createElement("option");
+        opt.value = mod;
+        opt.textContent = `+ ${VARIANT_MOD_LABELS[mod] || mod}`;
+        if (mod === current) opt.selected = true;
+        ui.variantModSelect.appendChild(opt);
+      }
+      ui.variantModSelect.style.display = mods.length > 0 ? "" : "none";
+    }
+
     function currentVariantInfo() {
-      return VARIANT_INFO[state.variant] || VARIANT_INFO.standard;
+      return VARIANT_INFO[state.variant.split("+")[0]] || VARIANT_INFO.standard;
     }
 
     function isVariant(name) {
-      return state.variant === name;
+      return state.variant === name || state.variant.startsWith(name + "+") || state.variant.endsWith("+" + name);
     }
 
     function selectedVariantOption() {
-      return ui.variantSelect.value || "standard";
+      const base = ui.variantSelect.value || "standard";
+      const mod = ui.variantModSelect ? ui.variantModSelect.value : "";
+      if (mod && mod !== base) return base + "+" + mod;
+      return base;
     }
 
     function selectedGameModeOption() {
@@ -4348,8 +4395,20 @@
         this.reset();
       }
 
+      /* True when this game uses the named rule (supports "base+mod" combos) */
+      hasRule(name) {
+        return this.variant === name
+          || this.variant.startsWith(name + "+")
+          || this.variant.endsWith("+" + name);
+      }
+
+      /* Base variant (first component) */
+      get baseVariant() {
+        return this.variant.split("+")[0];
+      }
+
       reset() {
-        this.position = initialGameState(this.variant);
+        this.position = initialGameState(this.baseVariant);
         this.history = [];
         this.positionCount = new Map();
         this.recordPosition();
@@ -4394,7 +4453,7 @@
       }
 
       getGameStatus() {
-        if (this.variant === "king_of_the_hill") {
+        if (this.hasRule("king_of_the_hill")) {
           const whiteKing = findKingSquare(this.position.board, "w");
           const blackKing = findKingSquare(this.position.board, "b");
           const hill = new Set([27, 28, 35, 36]);
@@ -4406,7 +4465,7 @@
           }
         }
 
-        if (this.variant === "three_check") {
+        if (this.hasRule("three_check")) {
           if (this.position.checksGiven.w >= 3) {
             return { over: true, result: "White wins by delivering three checks." };
           }
@@ -4415,7 +4474,7 @@
           }
         }
 
-        if (this.variant === "atomic") {
+        if (this.hasRule("atomic")) {
           const whiteKing = findKingSquare(this.position.board, "w");
           const blackKing = findKingSquare(this.position.board, "b");
           if (whiteKing === -1) {
@@ -4426,7 +4485,7 @@
           }
         }
 
-        if (this.variant === "antichess") {
+        if (this.hasRule("antichess")) {
           const turn = this.position.turn;
           const legal = this.generateLegalMoves();
           let whitePieces = 0;
@@ -4446,7 +4505,7 @@
           return { over: false, result: `${this.currentTurnName()} to move.` };
         }
 
-        if (this.variant === "checkers_vs_chess") {
+        if (this.hasRule("checkers_vs_chess")) {
           const legal = this.generateLegalMoves();
           let whiteCount = 0;
           let blackCount = 0;
@@ -4465,7 +4524,7 @@
         }
 
         const legal = this.generateLegalMoves();
-        const inCheck = this.variant === "antichess" ? false : this.isInCheck(this.position.turn);
+        const inCheck = this.hasRule("antichess") ? false : this.isInCheck(this.position.turn);
         const currentKey = this.hash;
         const repetitionCount = this.positionCount.get(currentKey) || 0;
 
@@ -4489,8 +4548,8 @@
       }
 
       generateLegalMoves() {
-        const pseudo = generatePseudoMoves(this.position, this.variant);
-        if (this.variant === "antichess") {
+        const pseudo = generatePseudoMoves(this.position, this.baseVariant);
+        if (this.hasRule("antichess")) {
           const captures = pseudo.filter((move) => move.captured);
           return captures.length > 0 ? captures : pseudo;
         }
@@ -4498,7 +4557,7 @@
         for (const move of pseudo) {
           const undo = this.applyMove(move);
           let kingInCheck = false;
-          if (this.variant !== "antichess" && this.variant !== "checkers_vs_chess") {
+          if (!this.hasRule("antichess") && !this.hasRule("checkers_vs_chess")) {
             kingInCheck = this.isInCheck(oppositeColor(this.position.turn));
           }
           this.undoMove(undo);
@@ -4579,12 +4638,12 @@
           updateCastlingRights(pos, move, movingPiece, undo.capturedPiece);
         }
 
-        if (this.variant === "chess960") {
+        if (this.hasRule("chess960")) {
           if (movingPiece === "K") pos.castlingSource.wKing = move.to;
           if (movingPiece === "k") pos.castlingSource.bKing = move.to;
         }
 
-        if (this.variant === "crazyhouse" && undo.capturedPiece) {
+        if (this.hasRule("crazyhouse") && undo.capturedPiece) {
           const capturedType = pieceType(undo.capturedPiece) === "k" ? "q" : pieceType(undo.capturedPiece);
           if (PIECE_DROP_TYPES.includes(capturedType)) {
             pos.reserves[moverColor][capturedType] += 1;
@@ -4598,7 +4657,7 @@
           pos.halfmoveClock += 1;
         }
 
-        if (this.variant === "atomic" && wasCapture) {
+        if (this.hasRule("atomic") && wasCapture) {
           const center = move.enPassant ? move.capturedSquare : move.to;
           const blast = [center, ...adjacentSquares(center)];
           for (const sq of blast) {
@@ -4610,7 +4669,7 @@
           }
         }
 
-        if (this.variant === "three_check") {
+        if (this.hasRule("three_check")) {
           const enemy = oppositeColor(moverColor);
           if (this.isInCheck(enemy)) {
             pos.checksGiven[moverColor] += 1;
@@ -4645,7 +4704,7 @@
         };
 
         const board = pos.board;
-        if (this.variant === "atomic" && undo.exploded && undo.exploded.length > 0) {
+        if (this.hasRule("atomic") && undo.exploded && undo.exploded.length > 0) {
           for (const blast of undo.exploded) {
             board[blast.square] = blast.piece;
           }
@@ -5287,7 +5346,7 @@
 
         const mobilityBonus = mobilityCount(game, "w") - mobilityCount(game, "b");
         score += mobilityBonus * 2;
-        if (game.variant === "antichess") {
+        if (game.hasRule("antichess")) {
           score = -score;
         }
         return score;
@@ -5296,7 +5355,7 @@
     function mobilityCount(game, color) {
       const snapshot = deepCopyPosition(game.position);
       game.position.turn = color;
-      const moves = generatePseudoMoves(game.position, game.variant).length;
+      const moves = generatePseudoMoves(game.position, game.baseVariant).length;
       game.position = snapshot;
       return moves;
     }
@@ -5376,7 +5435,7 @@
       }
 
       const botColor = game.position.turn;
-      if (game.variant === "antichess") {
+      if (game.hasRule("antichess")) {
         const sorted = legalMoves
           .map((move) => ({ move, score: scoreAntichessBotMove(game, move, botColor) }))
           .sort((a, b) => b.score - a.score);
@@ -7109,23 +7168,24 @@
         ui.variantNote.textContent = "Not playable yet in this build.";
         return;
       }
-      if (state.variant === "chess960") ui.variantNote.textContent = "Randomized back rank with Chess960 castling rules.";
-      else if (state.variant === "three_check") ui.variantNote.textContent = "First side to give 3 checks wins. Check counter shown in status.";
-      else if (state.variant === "atomic") ui.variantNote.textContent = "Captures explode adjacent non-pawn pieces. Boom! 💥";
-      else if (state.variant === "king_of_the_hill") ui.variantNote.textContent = "Move your king to d4/e4/d5/e5 to win instantly. 👑";
-      else if (state.variant === "fog_of_war") ui.variantNote.textContent = "Enemy pieces are hidden unless your pieces can see them.";
-      else if (state.variant === "antichess") ui.variantNote.textContent = "Captures are mandatory. Lose ALL pieces to win!";
-      else if (state.variant === "crazyhouse") ui.variantNote.textContent = "Captured pieces go to reserve and can be dropped anywhere.";
-      else if (state.variant === "checkers_vs_chess") ui.variantNote.textContent = "White plays chess pieces, Black plays checkers. Reach the back rank to king!";
-      else if (state.variant === "four_player_teams") ui.variantNote.textContent = "4-Player Chess (Teams) — pass-and-play on a 14×14 board. Red+Green vs Blue+Yellow. Last team standing wins!";
-      else if (state.variant === "four_player_ffa") ui.variantNote.textContent = "4-Player Chess FFA — 14×14 board. Capture a king to eliminate that player. Last one standing wins!";
-      else if (state.variant === "bughouse") ui.variantNote.textContent = "Bughouse — Two boards. Captures go to your partner's reserve. Drops allowed from reserve. Pass-and-play!";
-      else ui.variantNote.textContent = "";
+      const _vn = [];
+      if (isVariant("chess960"))         _vn.push("Chess960 back rank.");
+      if (isVariant("three_check"))      _vn.push("3 checks wins.");
+      if (isVariant("atomic"))           _vn.push("Captures explode adjacent pieces. 💥");
+      if (isVariant("king_of_the_hill")) _vn.push("King to d4/e4/d5/e5 wins. 👑");
+      if (isVariant("fog_of_war"))       _vn.push("Enemy pieces hidden unless visible.");
+      if (isVariant("antichess"))        _vn.push("Captures mandatory. Lose all pieces to win!");
+      if (isVariant("crazyhouse"))       _vn.push("Captured pieces drop back onto the board.");
+      if (isVariant("checkers_vs_chess"))_vn.push("White = chess, Black = checkers.");
+      if (isVariant("four_player_teams"))_vn.push("4-Player Teams — 14×14 board, Red+Green vs Blue+Yellow.");
+      if (isVariant("four_player_ffa"))  _vn.push("4-Player FFA — 14×14 board, last king standing wins.");
+      if (isVariant("bughouse"))         _vn.push("Bughouse — two boards, share captured pieces with partner.");
+      ui.variantNote.textContent = _vn.join(" + ") || "";
     }
 
     function renderReservePanel() {
       const game = state.game;
-      const show = Boolean(game && state.variant === "crazyhouse" && !isFourPlayerVariant() && !isBughouseVariant());
+      const show = Boolean(game && isVariant("crazyhouse") && !isFourPlayerVariant() && !isBughouseVariant());
       ui.reservePanel.classList.toggle("hidden", !show);
       if (!show) {
         ui.reserveOwnGrid.innerHTML = "";
@@ -8152,7 +8212,7 @@
           const burstSquare = move.enPassant
             ? move.capturedSquare
             : (Number.isInteger(move.capturedSquare) ? move.capturedSquare : move.to);
-          if (game.variant === "atomic" && undo.exploded && undo.exploded.length > 0) {
+          if (game.hasRule("atomic") && undo.exploded && undo.exploded.length > 0) {
             playAtomicExplosionFx(burstSquare, undo.exploded.map(e => e.square));
             synthExplosion();
           } else {
@@ -8176,15 +8236,15 @@
             }
           }
         }
-        if (game.variant === "antichess" && move.captured && state.cinematicFx) {
+        if (game.hasRule("antichess") && move.captured && state.cinematicFx) {
           playAntichessCaptureFx(move.to);
           synthMagicZap();
         }
-        if (move.dropPiece && game.variant === "crazyhouse" && state.cinematicFx) {
+        if (move.dropPiece && game.hasRule("crazyhouse") && state.cinematicFx) {
           playCrazyhouseDropFx(move.to);
           synthWhoosh();
         }
-        if (game.variant === "king_of_the_hill" && state.cinematicFx) {
+        if (game.hasRule("king_of_the_hill") && state.cinematicFx) {
           const moverKingSq = findKingSquare(game.position.board, oppositeColor(game.position.turn));
           if (statusAfterMove.over && statusAfterMove.result && statusAfterMove.result.includes("Hill")) {
             if (moverKingSq >= 0) { playKingOfHillFx(moverKingSq); synthVictoryJingle(); }
@@ -8195,11 +8255,11 @@
             else if (adjHill.has(moverKingSq)) { playKingApproachFx(moverKingSq); synthWhoosh(); }
           }
         }
-        if (game.variant === "fog_of_war" && state.cinematicFx) {
+        if (game.hasRule("fog_of_war") && state.cinematicFx) {
           playFogRevealFx(move.to);
           synthWhoosh();
         }
-        if (game.variant === "three_check") {
+        if (game.hasRule("three_check")) {
           const checksW = game.position.checksGiven.w;
           const checksB = game.position.checksGiven.b;
           if ((color === "w" && checksW > (undo.prevChecksGiven ? undo.prevChecksGiven.w : 0)) ||
@@ -8208,7 +8268,7 @@
             if (count > 0) { playThreeCheckFx(count); synthOminousStab(); }
           }
         }
-        if (game.variant === "checkers_vs_chess") {
+        if (game.hasRule("checkers_vs_chess")) {
           const movedTo = move.to;
           const pieceAtDest = game.position.board[movedTo];
           if (pieceAtDest && (pieceAtDest === "C" || pieceAtDest === "c")) {
@@ -8325,7 +8385,13 @@
       renderAll();
     });
 
+    populateModifierDropdown();
     ui.variantSelect.addEventListener("change", () => {
+      populateModifierDropdown();
+      state.variant = selectedVariantOption();
+      renderVariantNote();
+    });
+    ui.variantModSelect.addEventListener("change", () => {
       state.variant = selectedVariantOption();
       renderVariantNote();
     });
