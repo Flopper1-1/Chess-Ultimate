@@ -11,4 +11,3 @@ build-fresh/
 .DS_Store
 Thumbs.db
 AGENTS.md
-build-strip.js

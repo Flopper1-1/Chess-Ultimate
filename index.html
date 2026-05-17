@@ -410,6 +410,16 @@
       border-color: rgba(56,189,248,0.55);
       background: rgba(14,165,233,0.18);
     }
+    .review-note {
+      margin-top: 8px; border: 1px solid rgba(56,189,248,0.3); border-radius: 9px;
+      background: rgba(14,165,233,0.12); color: #dff7ff; padding: 8px 10px; font-size: 0.78rem;
+    }
+    .review-note button {
+      margin-left: 8px; border: 0; border-radius: 7px; background: #38bdf8; color: #04111c;
+      font-weight: 900; padding: 5px 8px; cursor: pointer;
+    }
+    .move-review-link { cursor: pointer; }
+    .move-review-link.reviewing { color: #38bdf8; text-shadow: 0 0 10px rgba(56,189,248,0.55); }
 
     .main {
       display: grid;
@@ -1999,6 +2009,8 @@
       <div class="save-actions">
         <button class="save-btn" id="saveGameBtn">Save</button>
         <button class="save-btn" id="loadGameBtn">Load</button>
+        <button class="save-btn" id="exportPgnBtn">Export PGN</button>
+        <button class="save-btn" id="importPgnBtn">Import PGN</button>
       </div>
       <div class="p2p-panel" id="p2pPanel" style="display:none;">
         <div class="p2p-status" id="p2pStatus">Disconnected</div>
@@ -2076,6 +2088,7 @@
             <tbody id="moveLogBody"></tbody>
           </table>
         </div>
+        <div class="review-note" id="reviewNote" style="display:none;"></div>
         <div class="legend">
           <div><b>Symbols:</b> <b>!!</b> brilliant, <b>!</b> strong, <b>?!</b> inaccuracy, <b>?</b> mistake, <b>??</b> blunder.</div>
           <div>Annotations are estimated by comparing the played move to the engine's best candidate at the current analysis depth.</div>
@@ -2097,6 +2110,7 @@
   </div>
 
   <script src="appState.js"></script>
+  <script src="pgn.js"></script>
   <script src="progress.js"></script>
   <script>
     const GAME_CREDITS = "Made by TheHollyCow and Masternazz";
@@ -2212,6 +2226,8 @@
       newGameBtn: document.getElementById("newGameBtn"),
       saveGameBtn: document.getElementById("saveGameBtn"),
       loadGameBtn: document.getElementById("loadGameBtn"),
+      exportPgnBtn: document.getElementById("exportPgnBtn"),
+      importPgnBtn: document.getElementById("importPgnBtn"),
       gameModeSelect: document.getElementById("gameModeSelect"),
       modeNote: document.getElementById("modeNote"),
       variantSelect: document.getElementById("variantSelect"),
@@ -2651,6 +2667,8 @@
       moveInFlight: false,
       liveFeed: [],
       lastLegalMoves: [],
+      initialPosition: null,
+      reviewPly: null,
       moveBadges: [],
       lastMoveTrail: null,
       gameOverSoundPlayed: false,
@@ -6729,7 +6747,8 @@
     }
 
     function renderBoard() {
-      const game = state.game;
+      const game = displayGame();
+      const reviewing = isReviewingMoveLog();
       if (!game) {
         const _ngOverlay = document.getElementById("planOverlay");
         ui.board.innerHTML = "";
@@ -6764,7 +6783,7 @@
       const visibilityColor = activeHumanColor();
       const fogVisible = isVariant("fog_of_war") ? visibleSquaresForColor(game, visibilityColor) : null;
 
-      const legalMoves = game.generateLegalMoves();
+      const legalMoves = reviewing ? [] : game.generateLegalMoves();
       state.lastLegalMoves = legalMoves;
       const selected = state.selectedSquare;
       const targets = selected == null ? [] : legalMoves.filter((mv) => mv.from === selected);
@@ -6877,8 +6896,10 @@
             square.appendChild(coord);
           }
 
-          square.addEventListener("click", onSquareClick);
-          square.addEventListener("pointerdown", onSquarePointerDown);
+          if (!reviewing) {
+            square.addEventListener("click", onSquareClick);
+            square.addEventListener("pointerdown", onSquarePointerDown);
+          }
           ui.board.appendChild(square);
         }
       }
@@ -6967,6 +6988,16 @@
         const blackUndo = history[i + 1];
         whiteCell.textContent = whiteUndo ? whiteUndo.annotatedText || formatMove(whiteUndo.move) : "";
         blackCell.textContent = blackUndo ? blackUndo.annotatedText || formatMove(blackUndo.move) : "";
+        if (whiteUndo) {
+          whiteCell.classList.add("move-review-link");
+          if (state.reviewPly === i + 1) whiteCell.classList.add("reviewing");
+          whiteCell.addEventListener("click", () => enterMoveReview(i + 1));
+        }
+        if (blackUndo) {
+          blackCell.classList.add("move-review-link");
+          if (state.reviewPly === i + 2) blackCell.classList.add("reviewing");
+          blackCell.addEventListener("click", () => enterMoveReview(i + 2));
+        }
 
         row.appendChild(moveNumberCell);
         row.appendChild(whiteCell);
@@ -7191,6 +7222,7 @@
       renderStatus();
       renderBoard();
       renderMoveLog();
+      renderReviewNote();
       renderReservePanel();
       renderLiveFeed();
       renderAccuracyMeter();
@@ -7301,6 +7333,59 @@
       return Math.floor(state.game.history.length / 2);
     }
 
+    function isReviewingMoveLog() {
+      return Number.isInteger(state.reviewPly);
+    }
+
+    function buildReviewGameAtPly(ply) {
+      if (!state.game || !state.initialPosition || isFourPlayerVariant() || isBughouseVariant()) return state.game;
+      const reviewGame = new ChessGame(state.variant);
+      reviewGame.position = cloneSaveData(state.initialPosition);
+      reviewGame.history = [];
+      reviewGame.positionCount = new Map();
+      reviewGame.recordPosition();
+      const history = state.game.history || [];
+      const limit = Math.max(0, Math.min(ply, history.length));
+      for (let i = 0; i < limit; i += 1) {
+        if (!history[i] || !history[i].move) break;
+        const undo = reviewGame.applyMove(cloneSaveData(history[i].move));
+        undo.annotatedText = history[i].annotatedText;
+        undo.annotation = history[i].annotation;
+      }
+      return reviewGame;
+    }
+
+    function displayGame() {
+      return isReviewingMoveLog() ? buildReviewGameAtPly(state.reviewPly) : state.game;
+    }
+
+    function enterMoveReview(ply) {
+      if (!state.game || isFourPlayerVariant() || isBughouseVariant()) return;
+      state.reviewPly = Math.max(0, Math.min(ply, state.game.history.length));
+      state.selectedSquare = null;
+      state.selectedDropPiece = null;
+      renderAll();
+    }
+
+    function exitMoveReview() {
+      state.reviewPly = null;
+      renderAll();
+    }
+
+    function renderReviewNote() {
+      const note = document.getElementById("reviewNote");
+      if (!note) return;
+      if (!isReviewingMoveLog()) {
+        note.style.display = "none";
+        note.innerHTML = "";
+        return;
+      }
+      note.style.display = "block";
+      note.innerHTML = `Reviewing after ply ${state.reviewPly}. Moves are locked while reviewing. <button type="button" id="exitReviewBtn">Return live</button>`;
+      const button = document.getElementById("exitReviewBtn");
+      if (button) button.addEventListener("click", exitMoveReview);
+    }
+
     function buildSaveSnapshot(name, type) {
       if (!state.game) return null;
       const status = state.game.getGameStatus ? state.game.getGameStatus() : { over: false, result: "" };
@@ -7318,6 +7403,8 @@
           orientation: state.orientation,
           autoRotateMultiplayer: state.autoRotateMultiplayer,
           cinematicFx: state.cinematicFx,
+          initialPosition: state.initialPosition,
+          reviewPly: state.reviewPly,
           liveFeed: state.liveFeed,
           moveBadges: state.moveBadges,
           lastMoveTrail: state.lastMoveTrail,
@@ -7379,6 +7466,8 @@
       state.orientation = data.orientation || state.playerColor;
       state.autoRotateMultiplayer = data.autoRotateMultiplayer !== false;
       state.cinematicFx = data.cinematicFx !== false;
+      state.initialPosition = cloneSaveData(data.initialPosition || null);
+      state.reviewPly = Number.isInteger(data.reviewPly) ? data.reviewPly : null;
       state.liveFeed = cloneSaveData(data.liveFeed || []);
       state.moveBadges = cloneSaveData(data.moveBadges || []);
       state.lastMoveTrail = cloneSaveData(data.lastMoveTrail || null);
@@ -7392,6 +7481,7 @@
       state.botThinking = false;
       state.moveInFlight = false;
       state.game = restoreGameCore(save.gameCore);
+      if (!state.initialPosition && state.game && state.game.position) state.initialPosition = cloneSaveData(state.game.position);
       state.unsupportedMode = !currentVariantInfo().supported;
       setSideSelectionFromColor(state.playerColor);
       applyEditionExtraSaveData(save.extra);
@@ -7415,6 +7505,54 @@
       const pick = Number(window.prompt(`Load which save?\n\n${lines.join("\n")}`, "1"));
       if (!Number.isInteger(pick) || pick < 1 || pick > Math.min(20, saves.length)) return;
       applySaveSnapshot(saves[pick - 1]);
+    }
+
+    function exportCurrentPGN() {
+      if (!window.ChessUltimatePGN || !state.game || isFourPlayerVariant() || isBughouseVariant()) return;
+      const status = state.game.getGameStatus ? state.game.getGameStatus() : { result: "*" };
+      const pgn = window.ChessUltimatePGN.exportHistory({
+        history: state.game.history || [],
+        formatMove,
+        result: status.result,
+        variant: state.variant,
+        edition: APP_EDITION
+      });
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pgn).catch(() => {});
+      }
+      window.prompt("PGN exported. It has also been copied if clipboard access is available.", pgn);
+    }
+
+    function importPGNPrompt() {
+      if (!window.ChessUltimatePGN) return;
+      if (isFourPlayerVariant() || isBughouseVariant()) {
+        window.alert("PGN import is available for 2-player chess variants.");
+        return;
+      }
+      const text = window.prompt("Paste PGN to import", "");
+      if (!text) return;
+      const tokens = window.ChessUltimatePGN.tokenize(text);
+      const previousMode = ui.gameModeSelect.value;
+      ui.gameModeSelect.value = "local_multiplayer";
+      startNewGame();
+      try {
+        for (const token of tokens) {
+          const legal = state.game.generateLegalMoves();
+          const move = window.ChessUltimatePGN.findMatchingMove(legal, token, { formatMove, indexToCoord });
+          if (!move) throw new Error(`Could not match PGN move "${token}".`);
+          const undo = state.game.applyMove(move);
+          undo.annotatedText = formatMove(move);
+        }
+        state.gameMode = "local_multiplayer";
+        renderAll();
+        ui.statusText.textContent = `Imported ${tokens.length} PGN moves.`;
+        ui.statusText.classList.remove("danger");
+      } catch (err) {
+        ui.gameModeSelect.value = previousMode;
+        startNewGame();
+        ui.statusText.textContent = err.message || "PGN import failed.";
+        ui.statusText.classList.add("danger");
+      }
     }
 
     function applyLauncherDefaults() {
@@ -7470,6 +7608,8 @@
       state.selectedDropPiece = null;
       state.liveFeed = [];
       state.moveBadges = [];
+      state.initialPosition = state.game && state.game.position ? cloneSaveData(state.game.position) : null;
+      state.reviewPly = null;
       state.botThinking = false;
       state.moveInFlight = false;
       state.lastMoveTrail = null;
@@ -8209,6 +8349,8 @@
     });
     if (ui.saveGameBtn) ui.saveGameBtn.addEventListener("click", () => saveCurrentGame("manual"));
     if (ui.loadGameBtn) ui.loadGameBtn.addEventListener("click", loadSavedGamePrompt);
+    if (ui.exportPgnBtn) ui.exportPgnBtn.addEventListener("click", exportCurrentPGN);
+    if (ui.importPgnBtn) ui.importPgnBtn.addEventListener("click", importPGNPrompt);
 
     /* ── Floating battle icons background ── */
     (function spawnCardFloats() {

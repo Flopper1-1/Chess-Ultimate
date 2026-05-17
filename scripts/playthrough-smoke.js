@@ -236,6 +236,39 @@ async function runEdition(port, edition) {
       const saves = window.ChessUltimateStorage && editionKey
         ? window.ChessUltimateStorage.listAllSaves(editionKey)
         : [];
+      const exportedPgn = window.ChessUltimatePGN
+        ? window.ChessUltimatePGN.exportHistory({
+            history: state.game.history,
+            formatMove,
+            result: status.result,
+            variant: state.variant,
+            edition: editionKey
+          })
+        : "";
+      let pgnRoundTrip = false;
+      if (exportedPgn && window.ChessUltimatePGN) {
+        const imported = new ChessGame("standard");
+        const tokens = window.ChessUltimatePGN.tokenize(exportedPgn);
+        for (const token of tokens) {
+          const legal = imported.generateLegalMoves();
+          const move = window.ChessUltimatePGN.findMatchingMove(legal, token, { formatMove, indexToCoord });
+          if (!move) throw new Error("PGN round-trip failed on " + token + " from " + exportedPgn);
+          imported.applyMove(move);
+        }
+        pgnRoundTrip = imported.history.length === state.game.history.length && imported.getGameStatus().over;
+      }
+      let reviewModeOk = false;
+      if (typeof enterMoveReview === "function" && typeof exitMoveReview === "function") {
+        enterMoveReview(2);
+        await wait(50);
+        const note = document.getElementById("reviewNote");
+        reviewModeOk = state.reviewPly === 2
+          && Array.isArray(state.lastLegalMoves)
+          && state.lastLegalMoves.length === 0
+          && note
+          && note.style.display !== "none";
+        exitMoveReview();
+      }
       const newestSave = saves[0] || null;
       const expectedLoadedHistory = newestSave && newestSave.gameCore && newestSave.gameCore.game
         ? newestSave.gameCore.game.history.length
@@ -256,6 +289,8 @@ async function runEdition(port, edition) {
         autosaveCount: saves.filter((save) => save.type === "autosave").length,
         loadRestored,
         progressReady: Boolean(window.ChessUltimateProgress && document.getElementById("cuProgressOpen")),
+        pgnRoundTrip,
+        reviewModeOk,
         errors: pageErrors,
       };
     })()`);
@@ -292,6 +327,8 @@ async function main() {
         && result.autosaveCount > 0
         && result.loadRestored
         && result.progressReady
+        && result.pgnRoundTrip
+        && result.reviewModeOk
         && result.errors.length === 0;
       const mark = ok ? "PASS" : "FAIL";
       console.log(`[${mark}] ${edition.name}: ${result.result || result.statusText} (${result.autosaveCount} autosaves)`);
