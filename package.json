@@ -1,7 +1,7 @@
 {
   "name": "chess-ultimate",
-  "version": "1.5.11",
-  "description": "Chess Ultimate — Battle Edition, Joker's Gambit, Wilderness & Terraria Chess",
+  "version": "1.5.12",
+  "description": "Chess Ultimate — Battle Edition, Joker's Gambit, Wilderness, Terraria Chess & Kerbal Space Chess",
   "main": "main.js",
   "config": {
     "discordClientId": "1505371720180039821"

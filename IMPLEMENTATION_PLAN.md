@@ -31,10 +31,8 @@ This file tracks the large idea-board prompt as an implementation checklist. Com
 
 ## Major Remaining Features
 
-- [ ] Terraria roguelike rework:
-  boss-specific rule mutations, boss tier unlock requirements, manual board placement UI, boss music intensity, reload boss, reduce-ELO shop purchase, Moon Lord victory/Champion achievement.
-- [ ] Kerbal Space Chess:
-  3D board, vertical movement, inertia, Kerbin/Mun zones, science victory, Kerbals, stations, satellites, science tree.
+- ~~Terraria roguelike rework: boss-specific rule mutations, boss tier unlock requirements, manual board placement UI, boss music intensity, reload boss, reduce-ELO shop purchase, Moon Lord victory/Champion achievement.~~
+- ~~Kerbal Space Chess: two-layer board (Surface/Orbit), vertical movement, inertia, Kerbin/Mun zones, science victory (20 points), Kerbals/stations/satellites, science tree upgrades.~~
 - [ ] Mergeable chess variants:
   variant-combo selector and compatible rule composition such as Chess960 + Fog of War or Crazyhouse + Atomic.
 - [ ] Full achievement/stat coverage tests for special achievements, card rarities, and variant exclusives.

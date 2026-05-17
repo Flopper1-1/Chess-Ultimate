@@ -77,17 +77,22 @@
     letter-spacing: 0.22em; text-transform: uppercase; margin-top: 8px;
   }
 
-  /* Cards grid — 2×2 for four editions */
+  /* Cards grid — 2×2 + 1 centered for five editions */
   .cards {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(2, 1fr);
     gap: clamp(8px, 1.4vw, 18px);
     width: 100%;
     max-width: 780px;
     flex: 1;
     min-height: 0;
     align-items: stretch;
+  }
+  .card.ksp {
+    grid-column: 1 / -1;
+    max-width: 380px;
+    margin: 0 auto;
+    width: 100%;
   }
 
   .card {
@@ -138,6 +143,15 @@
     border-color: rgba(74,157,60,0.6);
     box-shadow: 0 14px 56px rgba(74,157,60,0.22);
   }
+  .card.ksp {
+    background: linear-gradient(160deg, rgba(5,12,28,0.97), rgba(3,8,20,0.99));
+    border-color: rgba(74,155,212,0.22);
+    box-shadow: 0 8px 36px rgba(74,155,212,0.07);
+  }
+  .card.ksp:hover {
+    border-color: rgba(74,155,212,0.6);
+    box-shadow: 0 14px 56px rgba(74,155,212,0.22);
+  }
 
   .card-icon {
     font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1;
@@ -147,6 +161,7 @@
   .card.balatro   .card-icon { color: #f5c842; }
   .card.dontstarve .card-icon { color: #c8952a; }
   .card.terraria  .card-icon { color: #4a9d3c; }
+  .card.ksp       .card-icon { color: #4a9bd4; }
 
   .card-title {
     font-size: clamp(0.95rem, 1.6vw, 1.25rem);
@@ -156,6 +171,7 @@
   .card.balatro   .card-title { color: #fdf6e3; }
   .card.dontstarve .card-title { color: #e8d8a8; }
   .card.terraria  .card-title { color: #c8e6a0; }
+  .card.ksp       .card-title { color: #c8dcf0; }
 
   .card-desc {
     font-size: clamp(0.68rem, 1vw, 0.82rem);
@@ -173,6 +189,7 @@
   .card.balatro   .card-tag { background: rgba(245,200,66,0.15);  color: #fde68a; }
   .card.dontstarve .card-tag { background: rgba(200,149,42,0.15); color: #e8d8a8; }
   .card.terraria  .card-tag { background: rgba(74,157,60,0.15);   color: #8fbc5a; }
+  .card.ksp       .card-tag { background: rgba(74,155,212,0.15); color: #7ec8f0; }
 
   .card-btn {
     margin-top: 4px;
@@ -189,6 +206,7 @@
   .card.balatro     .card-btn { background: #f5c842; color: #1a0a00; }
   .card.dontstarve  .card-btn { background: #c8952a; color: #0a0806; }
   .card.terraria    .card-btn { background: #4a9d3c; color: #040a02; }
+  .card.ksp         .card-btn { background: #4a9bd4; color: #020d1e; }
 
   .version {
     font-size: 0.65rem; color: rgba(255,255,255,0.16);
@@ -303,10 +321,18 @@
       <div class="card-desc">Mine XP from captures. Level up your king through Spawn → Guide → Hardmode → Moon Lord.</div>
       <button class="card-btn" id="btnTerraria">Play</button>
     </div>
+
+    <div class="card ksp">
+      <div class="card-icon">🚀</div>
+      <div class="card-title">Kerbal Space Chess</div>
+      <div class="card-tag">Space</div>
+      <div class="card-desc">Two-layer board: Surface and Orbit. Launch pieces into space, earn science, unlock upgrades, and race to 20 Science Points.</div>
+      <button class="card-btn" id="btnKSP">Play</button>
+    </div>
   </div>
 
   <div class="version">
-    <div>Chess Ultimate v<span id="appVersion">1.5.11</span></div>
+    <div>Chess Ultimate v<span id="appVersion">1.5.12</span></div>
     <div class="credit">Made by TheHollyCow and Masternazz</div>
   </div>
 </div>
@@ -429,6 +455,7 @@
   document.getElementById("btnBalatro").addEventListener("click", () => launchGame("index2.html"));
   document.getElementById("btnDontStarve").addEventListener("click", () => launchGame("index3.html"));
   document.getElementById("btnTerraria").addEventListener("click", () => launchGame("index4.html"));
+  document.getElementById("btnKSP").addEventListener("click", () => launchGame("index5.html"));
   document.getElementById("btnClose").addEventListener("click", () => {
     if (window.electronAPI) window.electronAPI.closeApp();
   });

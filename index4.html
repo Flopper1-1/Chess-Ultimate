@@ -898,6 +898,11 @@
     }
     .tr-king-glow { animation: trKingFlash 0.6s ease-in-out 3; }
 
+    @keyframes trVictoryIn {
+      0%   { opacity:0; transform:scale(0.9); }
+      100% { opacity:1; transform:scale(1); }
+    }
+
     .ann-badge {
       position: absolute;
       top: 3px;
@@ -2884,6 +2889,31 @@
     const TR_PIECE_NAMES = { k: "King", q: "Queen", r: "Rook", b: "Bishop", n: "Knight", p: "Pawn" };
     const TR_START_ARMY = { k: 1, q: 1, r: 2, b: 2, n: 2, p: 0 };
 
+    /* Boss → rule mutation: variant applied for the duration of that fight */
+    const TR_BOSS_MUTATIONS = {
+      "Eye of Cthulhu":    { variant: "standard",   label: "Standard" },
+      "King Slime":        { variant: "standard",   label: "Standard" },
+      "Torch God":         { variant: "fog_of_war", label: "Fog of War" },
+      "Skeletron":         { variant: "atomic",     label: "Atomic Chess" },
+      "Queen Bee":         { variant: "standard",   label: "Standard" },
+      "Deerclops":         { variant: "fog_of_war", label: "Fog of War" },
+      "Wall of Flesh":     { variant: "atomic",     label: "Atomic Chess" },
+      "The Twins":         { variant: "crazyhouse", label: "Crazyhouse" },
+      "The Destroyer":     { variant: "atomic",     label: "Atomic Chess" },
+      "Skeletron Prime":   { variant: "crazyhouse", label: "Crazyhouse" },
+      "Plantera":          { variant: "fog_of_war", label: "Fog of War" },
+      "Queen Slime":       { variant: "crazyhouse", label: "Crazyhouse" },
+      "Golem":             { variant: "antichess",  label: "Antichess" },
+      "Duke Fishron":      { variant: "atomic",     label: "Atomic Chess" },
+      "Empress of Light":  { variant: "fog_of_war", label: "Fog of War" },
+      "Lunatic Cultist":   { variant: "antichess",  label: "Antichess" },
+      "Solar Pillar":      { variant: "atomic",     label: "Atomic Chess" },
+      "Vortex Pillar":     { variant: "fog_of_war", label: "Fog of War" },
+      "Nebula Pillar":     { variant: "crazyhouse", label: "Crazyhouse" },
+      "Stardust Pillar":   { variant: "antichess",  label: "Antichess" },
+      "Moon Lord":         { variant: "crazyhouse", label: "Crazyhouse — Final Battle" },
+    };
+
     const state_tr = {
       xp: { w: 0, b: 0 },
       kingLevel: { w: 1, b: 1 },
@@ -2998,6 +3028,10 @@
       return { k: army.k || 0, q: army.q || 0, r: army.r || 0, b: army.b || 0, n: army.n || 0, p: army.p || 0 };
     }
 
+    const TR_RELOAD_BOSS_COST = 20;
+    const TR_REDUCE_ELO_COST  = 30;
+    const TR_REDUCE_ELO_AMOUNT = 200;
+
     function trNewRun() {
       state_tr.run = {
         active: true,
@@ -3014,29 +3048,39 @@
         playerArmy: trCloneArmy(),
         botArmy: trCloneArmy(),
         prestige: 0,
-        eloDropCost: 75
+        eloDropCost: 75,
+        highestTierDefeated: 0,
+        pendingPlacement: false,
       };
       trResetOnNewGame(false);
       trStartRunLevel();
     }
 
+    const TR_BOSS_POOLS = {
+      1: ["Eye of Cthulhu", "King Slime", "Torch God"],
+      2: ["Skeletron", "Queen Bee", "Deerclops"],
+      3: ["Wall of Flesh"],
+      4: ["The Twins", "The Destroyer", "Skeletron Prime"],
+      5: ["Plantera", "Queen Slime"],
+      6: ["Golem", "Duke Fishron", "Empress of Light"],
+      7: ["Lunatic Cultist"],
+      8: ["Solar Pillar", "Vortex Pillar", "Nebula Pillar", "Stardust Pillar"],
+      9: ["Moon Lord"],
+    };
+
     function trCurrentBoss() {
       const run = state_tr.run;
       if (!run || run.level % 3 !== 0) return null;
-      const tier = Math.min(9, Math.max(1, Math.ceil(run.level / 3)));
-      const pools = {
-        1: ["Eye of Cthulhu", "King Slime", "Torch God"],
-        2: ["Skeletron", "Queen Bee", "Deerclops"],
-        3: ["Wall of Flesh"],
-        4: ["The Twins", "The Destroyer", "Skeletron Prime"],
-        5: ["Plantera", "Queen Slime"],
-        6: ["Golem", "Duke Fishron", "Empress of Light"],
-        7: ["Lunatic Cultist"],
-        8: ["Solar Pillar", "Vortex Pillar", "Nebula Pillar", "Stardust Pillar"],
-        9: ["Moon Lord"]
-      };
-      const pool = pools[tier] || pools[9];
+      const rawTier = Math.min(9, Math.max(1, Math.ceil(run.level / 3)));
+      /* Cap tier at one above highest defeated so player can't skip ahead */
+      const maxTier = Math.min(9, (run.highestTierDefeated || 0) + 1);
+      const tier = Math.min(rawTier, maxTier);
+      const pool = TR_BOSS_POOLS[tier] || TR_BOSS_POOLS[9];
       return pool[(run.level + tier) % pool.length];
+    }
+
+    function trBossMutation(bossName) {
+      return TR_BOSS_MUTATIONS[bossName] || { variant: "standard", label: "Standard" };
     }
 
     function trSetPiece(board, square, color, type) {
@@ -3091,9 +3135,13 @@
       ui.eloSlider.value = String(run.botElo);
       ui.eloValue.textContent = ui.eloSlider.value;
       setPlayersFromSelection("random");
-      state.variant = "standard";
-      if (ui.variantSelect) ui.variantSelect.value = "standard";
-      state.game = new ChessGame("standard");
+
+      /* Apply boss rule mutation */
+      const mutation = trBossMutation(run.boss);
+      const variant = mutation.variant || "standard";
+      state.variant = variant;
+      if (ui.variantSelect) ui.variantSelect.value = variant;
+      state.game = new ChessGame(variant);
       state.selectedSquare = null;
       state.selectedDropPiece = null;
       state.liveFeed = [];
@@ -3101,8 +3149,16 @@
       state.lastMoveTrail = null;
       state.gameOverSoundPlayed = false;
       trApplyRunArmies();
-      renderAll();
-      if (state.game.position.turn === state.botColor) queueBotMove();
+
+      /* Boost music tension at start of boss fight */
+      if (run.boss) {
+        _musicSetTension(0.7);
+        clearInterval(_music.decayTimer);
+      }
+
+      /* Open placement UI before play begins */
+      run.pendingPlacement = true;
+      trShowPlacementUI();
     }
 
     function trArmySummary(army) {
@@ -3117,7 +3173,11 @@
       ui.trRunPanel.style.display = run && state.gameMode === "bot" ? "grid" : "none";
       if (!run) return;
       ui.trRunLevel.textContent = `Game ${run.level}`;
-      ui.trRunBoss.textContent = run.boss ? `Boss: ${run.boss}` : "Build your army";
+      const mutation = trBossMutation(run.boss);
+      const bossLabel = run.boss
+        ? `Boss: ${run.boss}${mutation.variant !== "standard" ? ` [${mutation.label}]` : ""}`
+        : "Build your army";
+      ui.trRunBoss.textContent = bossLabel;
       ui.trRunLives.textContent = `Lives ${run.lives}`;
       ui.trRunElo.textContent = `ELO ${run.botElo}`;
       ui.trRunSilver.textContent = `${Math.floor(run.silver)} silver`;
@@ -3133,6 +3193,8 @@
       if (!ui.trShopGrid || !state_tr.run) return;
       const run = state_tr.run;
       ui.trShopGrid.innerHTML = "";
+
+      /* Piece purchases */
       for (const type of ["p", "n", "b", "r", "q", "k"]) {
         const card = document.createElement("div");
         card.className = "tr-shop-card";
@@ -3147,6 +3209,57 @@
         card.appendChild(btn);
         ui.trShopGrid.appendChild(card);
       }
+
+      /* Reduce ELO */
+      if (run.botElo > 200) {
+        const eloCard = document.createElement("div");
+        eloCard.className = "tr-shop-card";
+        eloCard.innerHTML = `<strong>Reduce ELO</strong>${TR_REDUCE_ELO_COST} silver<br>Bot -${TR_REDUCE_ELO_AMOUNT} ELO`;
+        const eloBtn = document.createElement("button");
+        eloBtn.type = "button";
+        eloBtn.textContent = "Buy";
+        eloBtn.disabled = run.silver < TR_REDUCE_ELO_COST;
+        eloBtn.addEventListener("click", () => trBuyReduceElo());
+        eloCard.appendChild(eloBtn);
+        ui.trShopGrid.appendChild(eloCard);
+      }
+
+      /* Reload Boss — only visible after a boss fight */
+      if (run.boss && run.resolvedLevel) {
+        const reloadCard = document.createElement("div");
+        reloadCard.className = "tr-shop-card";
+        reloadCard.innerHTML = `<strong>Reload Boss</strong>${TR_RELOAD_BOSS_COST} silver<br>Rematch ${run.boss}`;
+        const reloadBtn = document.createElement("button");
+        reloadBtn.type = "button";
+        reloadBtn.textContent = "Retry";
+        reloadBtn.disabled = run.silver < TR_RELOAD_BOSS_COST;
+        reloadBtn.addEventListener("click", () => trBuyReloadBoss());
+        reloadCard.appendChild(reloadBtn);
+        ui.trShopGrid.appendChild(reloadCard);
+      }
+    }
+
+    function trBuyReduceElo() {
+      const run = state_tr.run;
+      if (!run || run.silver < TR_REDUCE_ELO_COST || run.botElo <= 200) return;
+      run.silver -= TR_REDUCE_ELO_COST;
+      run.botElo = Math.max(200, run.botElo - TR_REDUCE_ELO_AMOUNT);
+      ui.eloSlider.value = String(run.botElo);
+      ui.eloValue.textContent = String(run.botElo);
+      run.lastResult = `ELO reduced to ${run.botElo}.`;
+      trRenderRunPanel();
+      maybeAutosaveGame();
+    }
+
+    function trBuyReloadBoss() {
+      const run = state_tr.run;
+      if (!run || !run.boss || run.silver < TR_RELOAD_BOSS_COST) return;
+      run.silver -= TR_RELOAD_BOSS_COST;
+      run.level = Math.max(1, run.level - 1); /* stay on same boss level */
+      run.lastResult = `Reloading boss: ${run.boss}`;
+      trRenderRunPanel();
+      trStartRunLevel();
+      maybeAutosaveGame();
     }
 
     function trBuyPiece(type) {
@@ -3206,7 +3319,15 @@
         run.wins += 1;
         run.level += 1;
         run.silver += run.boss ? 12 + trSilverBonus() : 4 + trSilverBonus();
-        if (run.boss) run.defeatedBosses.push(run.boss);
+        if (run.boss) {
+          run.defeatedBosses.push(run.boss);
+          const tier = Math.min(9, Math.max(1, Math.ceil((run.level - 1) / 3)));
+          run.highestTierDefeated = Math.max(run.highestTierDefeated || 0, tier);
+          if (run.boss === "Moon Lord") {
+            trHandleMoonLordVictory();
+            return;
+          }
+        }
         run.lastResult = run.boss ? `Boss defeated: ${run.boss}` : "Victory. Shop before the next board.";
       } else if (botWon) {
         run.lives = Math.max(0, run.lives - 1);
@@ -3236,6 +3357,193 @@
       state_tr.lastCapturerClass = { w: null, b: null };
       trUpdateXPBar("w");
       trUpdateXPBar("b");
+    }
+
+    /* ── Moon Lord victory ── */
+    function trHandleMoonLordVictory() {
+      const run = state_tr.run;
+      if (!run) return;
+      run.shopOpen = false;
+      run.active = false;
+      run.lastResult = "Moon Lord defeated! You are the CHAMPION!";
+      achUnlock("champion");
+      musicOnGameOver(true);
+      trRenderRunPanel();
+
+      const overlay = document.createElement("div");
+      overlay.id = "trVictoryOverlay";
+      overlay.style.cssText = [
+        "position:fixed","inset:0","background:rgba(0,0,0,0.88)",
+        "display:flex","flex-direction:column","align-items:center","justify-content:center",
+        "z-index:9999","animation:trVictoryIn 0.6s ease"
+      ].join(";");
+      overlay.innerHTML = `
+        <div style="font-size:4rem;margin-bottom:1rem;">👑</div>
+        <div style="font-size:2rem;color:#ffe066;font-weight:bold;text-shadow:0 0 24px #ffd700;margin-bottom:0.5rem;">Moon Lord Defeated!</div>
+        <div style="font-size:1.1rem;color:#c8e6a0;margin-bottom:0.5rem;">You have conquered Terraria Chess.</div>
+        <div style="font-size:0.9rem;color:#8fbc5a;margin-bottom:2rem;">Boards cleared: ${run.wins} &nbsp;|&nbsp; Bosses slain: ${run.defeatedBosses.length}</div>
+        <button id="trVictoryClose" type="button" style="padding:0.7rem 2rem;background:#4a9d3c;color:#040a02;border:none;border-radius:8px;font-size:1rem;font-weight:bold;cursor:pointer;">New Run</button>
+      `;
+      document.body.appendChild(overlay);
+      document.getElementById("trVictoryClose").addEventListener("click", () => {
+        overlay.remove();
+        trNewRun();
+      });
+    }
+
+    /* ── Manual placement UI ── */
+    function trShowPlacementUI() {
+      const run = state_tr.run;
+      if (!run) return;
+
+      const existing = document.getElementById("trPlacementOverlay");
+      if (existing) existing.remove();
+
+      const overlay = document.createElement("div");
+      overlay.id = "trPlacementOverlay";
+      overlay.style.cssText = [
+        "position:fixed","inset:0","background:rgba(0,0,0,0.82)",
+        "display:flex","flex-direction:column","align-items:center","justify-content:center",
+        "z-index:8000","gap:1rem"
+      ].join(";");
+
+      const mutation = trBossMutation(run.boss);
+      const bossLine = run.boss
+        ? `<div style="color:#ffe066;font-size:0.95rem;">Boss: <strong>${run.boss}</strong> — <em>${mutation.label}</em></div>`
+        : "";
+
+      overlay.innerHTML = `
+        <div style="font-size:1.4rem;color:#c8e6a0;font-weight:bold;">Place Your Army</div>
+        ${bossLine}
+        <div style="color:#8fbc5a;font-size:0.85rem;max-width:340px;text-align:center;">
+          Drag pieces to rearrange your back two ranks, then press <strong>Start</strong>.
+        </div>
+        <div id="trPlacementBoard" style="display:grid;grid-template-columns:repeat(8,48px);gap:2px;background:#1a2a12;border:2px solid #4a9d3c;border-radius:6px;padding:4px;"></div>
+        <div style="display:flex;gap:0.7rem;flex-wrap:wrap;justify-content:center;" id="trPlacementReserve"></div>
+        <div style="display:flex;gap:1rem;margin-top:0.5rem;">
+          <button id="trPlacementReset" type="button" style="padding:0.5rem 1.2rem;background:#2a3a22;color:#c8e6a0;border:1px solid #4a9d3c;border-radius:6px;cursor:pointer;">Reset</button>
+          <button id="trPlacementStart" type="button" style="padding:0.5rem 1.6rem;background:#4a9d3c;color:#040a02;border:none;border-radius:6px;font-weight:bold;cursor:pointer;">Start Battle</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      _trInitPlacementBoard(overlay, run);
+    }
+
+    function _trInitPlacementBoard(overlay, run) {
+      const playerColor = state.playerColor;
+      const isWhite = playerColor === "w";
+      const backRank = isWhite ? 7 : 0;
+      const frontRank = isWhite ? 6 : 1;
+      const placementRanks = [backRank, frontRank];
+
+      /* Build mutable army grid: 2 rows × 8 cols */
+      const grid = Array.from({ length: 16 }, () => null);
+      /* Pre-fill from current army using same logic as trPlaceArmy */
+      const army = run.playerArmy;
+      const counts = trCloneArmy(army);
+      const order = ["r","n","b","q","k","b","n","r"];
+      const pieces = [];
+      for (const type of order) { if (counts[type] > 0) { pieces.push(type); counts[type]--; } }
+      for (const type of ["k","q","r","b","n","p"]) { for (let i = 0; i < counts[type]; i++) pieces.push(type); }
+      if (!pieces.includes("k")) pieces.unshift("k");
+      pieces.slice(0, 16).forEach((t, i) => { grid[i] = t; });
+
+      const boardEl = overlay.querySelector("#trPlacementBoard");
+      const reserveEl = overlay.querySelector("#trPlacementReserve");
+      let dragSrc = null; /* { from: "grid"|"reserve", idx, type } */
+
+      const pieceGlyph = { k:"♚", q:"♛", r:"♜", b:"♝", n:"♞", p:"♟" };
+      const pieceGlyphW = { k:"♔", q:"♕", r:"♖", b:"♗", n:"♘", p:"♙" };
+      const glyphs = isWhite ? pieceGlyphW : pieceGlyph;
+
+      function renderBoard() {
+        boardEl.innerHTML = "";
+        for (let row = 0; row < 2; row++) {
+          for (let col = 0; col < 8; col++) {
+            const idx = row * 8 + col;
+            const type = grid[idx];
+            const sq = document.createElement("div");
+            const light = (row + col) % 2 === 0;
+            sq.style.cssText = `width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;cursor:${type ? "grab" : "default"};background:${light?"#4a9d3c":"#1a2a12"};border-radius:3px;user-select:none;`;
+            sq.textContent = type ? glyphs[type] : "";
+            sq.dataset.idx = idx;
+            sq.setAttribute("draggable", type ? "true" : "false");
+            sq.addEventListener("dragstart", e => {
+              if (!type) { e.preventDefault(); return; }
+              dragSrc = { from: "grid", idx, type };
+              sq.style.opacity = "0.5";
+            });
+            sq.addEventListener("dragend", () => { sq.style.opacity = "1"; });
+            sq.addEventListener("dragover", e => e.preventDefault());
+            sq.addEventListener("drop", e => {
+              e.preventDefault();
+              if (!dragSrc) return;
+              const destIdx = Number(sq.dataset.idx);
+              if (dragSrc.from === "grid") {
+                const tmp = grid[destIdx];
+                grid[destIdx] = grid[dragSrc.idx];
+                grid[dragSrc.idx] = tmp;
+              } else {
+                /* from reserve — swap in */
+                const displaced = grid[destIdx];
+                grid[destIdx] = dragSrc.type;
+                if (displaced) _trReserveAdd(displaced);
+                _trReserveRemove(dragSrc.type);
+              }
+              dragSrc = null;
+              renderBoard(); renderReserve();
+            });
+            boardEl.appendChild(sq);
+          }
+        }
+      }
+
+      /* Extra pieces overflow into a reserve strip */
+      let reserve = [];
+      function _trReserveAdd(t) { reserve.push(t); }
+      function _trReserveRemove(t) { const i = reserve.indexOf(t); if (i >= 0) reserve.splice(i, 1); }
+
+      function renderReserve() {
+        reserveEl.innerHTML = "";
+        reserve.forEach((type, ri) => {
+          const el = document.createElement("div");
+          el.style.cssText = `width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;background:#2a3a22;border:1px solid #4a9d3c;border-radius:4px;cursor:grab;`;
+          el.textContent = glyphs[type];
+          el.setAttribute("draggable", "true");
+          el.addEventListener("dragstart", () => { dragSrc = { from: "reserve", idx: ri, type }; });
+          reserveEl.appendChild(el);
+        });
+        if (reserve.length === 0) reserveEl.innerHTML = `<span style="color:#8fbc5a;font-size:0.8rem;">No overflow pieces</span>`;
+      }
+
+      overlay.querySelector("#trPlacementReset").addEventListener("click", () => {
+        _trInitPlacementBoard(overlay, run);
+      });
+
+      overlay.querySelector("#trPlacementStart").addEventListener("click", () => {
+        /* Write placed army back onto the board */
+        if (!state.game || !state.game.position) { overlay.remove(); return; }
+        const board = state.game.position.board;
+        placementRanks.forEach((rank, row) => {
+          for (let col = 0; col < 8; col++) {
+            const type = grid[row * 8 + col];
+            const sq = rank * 8 + col;
+            board[sq] = type ? (isWhite ? type.toUpperCase() : type) : null;
+          }
+        });
+        state.game.position.turn = "w";
+        state.game.history = [];
+        state.game.positionCount = new Map();
+        state.game.recordPosition();
+        state.initialPosition = cloneSaveData(state.game.position);
+        run.pendingPlacement = false;
+        overlay.remove();
+        renderAll();
+        if (state.game.position.turn === state.botColor) queueBotMove();
+      });
+
+      renderBoard();
+      renderReserve();
     }
 
     /* ══════════════════════════════════════════════════════════
@@ -8940,6 +9248,7 @@
       { id:"sacrifice",     icon:"🔥",  name:"The Sacrifice",      desc:"Sacrifice your queen." },
       { id:"en_passant",    icon:"👻",  name:"En Passant!",        desc:"Capture en passant." },
       { id:"speedrun",      icon:"⚡",  name:"Speedrun",           desc:"Win in under 15 moves." },
+      { id:"champion",      icon:"🌕",  name:"Champion",           desc:"Defeat the Moon Lord and complete a roguelike run." },
     ];
 
     const ACH_STORE_KEY = "chessUltimate_terraria_achievements";

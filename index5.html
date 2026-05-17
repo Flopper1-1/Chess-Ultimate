@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🚀 Kerbal Space Chess</title>
+  <style>
+    :root {
+      --bg-1: #050a14;
+      --bg-2: #080f1e;
+      --panel: rgba(5,10,20,0.92);
+      --panel-border: rgba(74,155,212,0.35);
+      --text: #c8dcf0;
+      --muted: #5a8ab0;
+      --accent: #4a9bd4;
+      --accent2: #e87c2a;
+      --accent-soft: rgba(74,155,212,0.2);
+      --light-sq: #2a5a8a;
+      --dark-sq: #0d1e30;
+      --orbit-light: #1a2840;
+      --orbit-dark: #080e18;
+      --selected: #e87c2a;
+      --target: #4a9bd4;
+      --danger: #cc3333;
+      --kerbin-tint: rgba(40,120,60,0.18);
+      --mun-tint: rgba(120,100,80,0.18);
+      --tile-size: clamp(28px, min(5.5vw,7vh), 58px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(5,10,20,0.8); }
+    ::-webkit-scrollbar-thumb { background: rgba(74,155,212,0.4); border-radius: 4px; }
+    * { scrollbar-width: thin; scrollbar-color: rgba(74,155,212,0.4) rgba(5,10,20,0.8); }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Courier New", Courier, monospace;
+      background: var(--bg-1);
+      color: var(--text);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Starfield ── */
+    .stars-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: #fff;
+      animation: twinkle var(--dur, 3s) ease-in-out infinite;
+      animation-delay: var(--del, 0s);
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: var(--min-op, 0.2); }
+      50%       { opacity: var(--max-op, 0.9); }
+    }
+
+    /* ── Titlebar ── */
+    .titlebar {
+      position: relative;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 14px;
+      background: rgba(5,10,20,0.95);
+      border-bottom: 1px solid var(--panel-border);
+      -webkit-app-region: drag;
+      flex-shrink: 0;
+    }
+    .titlebar h1 {
+      font-size: clamp(0.9rem, 1.8vw, 1.25rem);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #c8dcf0 30%, #4a9bd4 65%, #e87c2a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 700;
+    }
+    .titlebar-close {
+      -webkit-app-region: no-drag;
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.5);
+      cursor: pointer;
+      font-size: 0.75rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .titlebar-close:hover { background: #e81123; color: #fff; }
+
+    /* ── App shell ── */
+    .app {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 14px;
+      background: rgba(5,10,20,0.85);
+      border-bottom: 1px solid var(--panel-border);
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      flex-shrink: 0;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .status-turn {
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .status-ap {
+      color: var(--accent2);
+    }
+    .status-msg {
+      color: var(--text);
+      flex: 1;
+      text-align: center;
+    }
+
+    /* ── Main layout ── */
+    .main {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 230px;
+      min-width: 200px;
+      max-width: 250px;
+      flex-shrink: 0;
+      background: var(--panel);
+      border-right: 1px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      overflow-y: auto;
+      padding: 10px 8px;
+    }
+
+    .sidebar-section {
+      margin-bottom: 12px;
+    }
+    .sidebar-title {
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border-bottom: 1px solid var(--panel-border);
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    /* Science bars */
+    .science-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+    .science-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+    }
+    .science-bar-wrap {
+      height: 8px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .science-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+    .science-bar.white { background: linear-gradient(90deg, #4a9bd4, #7ec8f0); }
+    .science-bar.black { background: linear-gradient(90deg, #e87c2a, #f0aa60); }
+
+    /* Science tree */
+    .upgrade-btn {
+      display: block;
+      width: 100%;
+      margin-bottom: 5px;
+      padding: 5px 8px;
+      background: rgba(74,155,212,0.1);
+      border: 1px solid rgba(74,155,212,0.25);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.68rem;
+      cursor: pointer;
+      text-align: left;
+      letter-spacing: 0.04em;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .upgrade-btn:hover:not(:disabled) {
+      background: rgba(74,155,212,0.2);
+      border-color: var(--accent);
+    }
+    .upgrade-btn:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+    .upgrade-btn.owned {
+      background: rgba(74,155,212,0.22);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Action buttons */
+    .action-btn {
+      display: block;
+      width: 100%;
+      margin-bottom: 5px;
+      padding: 7px 8px;
+      border-radius: 7px;
+      border: 1px solid rgba(232,124,42,0.4);
+      background: rgba(232,124,42,0.1);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.75rem;
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      transition: background 0.15s, border-color 0.15s;
+      font-weight: 700;
+    }
+    .action-btn:hover:not(:disabled) {
+      background: rgba(232,124,42,0.22);
+      border-color: var(--accent2);
+    }
+    .action-btn:disabled { opacity: 0.35; cursor: default; }
+
+    .inertia-indicator {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 4px;
+      min-height: 1.2em;
+    }
+
+    /* Mission log */
+    .log-list {
+      list-style: none;
+      font-size: 0.68rem;
+      line-height: 1.7;
+      max-height: 160px;
+      overflow-y: auto;
+      color: var(--muted);
+    }
+    .log-list li:last-child { color: var(--text); }
+    .log-list li { border-bottom: 1px solid rgba(74,155,212,0.05); padding: 1px 0; }
+
+    /* New game button */
+    .new-game-btn {
+      display: block;
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--panel-border);
+      background: rgba(74,155,212,0.12);
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      font-weight: 700;
+      margin-top: 4px;
+      transition: background 0.15s;
+    }
+    .new-game-btn:hover { background: rgba(74,155,212,0.22); }
+
+    /* ── Board area ── */
+    .boards-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      padding: 14px 10px;
+      gap: 16px;
+    }
+
+    .boards-row {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .board-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .board-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .board-wrap {
+      position: relative;
+      display: inline-block;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, var(--tile-size));
+      grid-template-rows: repeat(8, var(--tile-size));
+      border: 2px solid var(--panel-border);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(74,155,212,0.1);
+    }
+
+    .sq {
+      width: var(--tile-size);
+      height: var(--tile-size);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.12s;
+      font-size: calc(var(--tile-size) * 0.62);
+      line-height: 1;
+      user-select: none;
+    }
+
+    /* Surface square colors */
+    .sq.surface-light { background: var(--light-sq); }
+    .sq.surface-dark  { background: var(--dark-sq); }
+    .sq.kerbin { box-shadow: inset 0 0 0 2px var(--kerbin-tint); }
+    .sq.mun    { box-shadow: inset 0 0 0 2px var(--mun-tint); }
+
+    /* Orbit square colors */
+    .sq.orbit-light { background: var(--orbit-light); }
+    .sq.orbit-dark  { background: var(--orbit-dark); }
+
+    .sq.selected { outline: 3px solid var(--selected); outline-offset: -3px; z-index: 2; }
+    .sq.legal-move::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(74,155,212,0.35);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+    .sq.legal-capture::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(220,60,60,0.35);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+    .sq.inertia-hint::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(232,124,42,0.25);
+      border-radius: 2px;
+      pointer-events: none;
+    }
+
+    .piece-glyph {
+      font-size: calc(var(--tile-size) * 0.68);
+      line-height: 1;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+      position: relative;
+      z-index: 1;
+    }
+    .piece-glyph.white-piece { filter: drop-shadow(0 0 3px rgba(180,220,255,0.6)); }
+    .piece-glyph.black-piece { filter: drop-shadow(0 0 3px rgba(255,100,50,0.5)); }
+
+    /* coord labels */
+    .coord-col, .coord-row {
+      position: absolute;
+      font-size: calc(var(--tile-size) * 0.22);
+      color: rgba(74,155,212,0.5);
+      line-height: 1;
+      pointer-events: none;
+      font-weight: 700;
+      z-index: 3;
+    }
+    .coord-col { bottom: 1px; right: 2px; }
+    .coord-row { top: 1px; left: 2px; }
+
+    /* Game over overlay */
+    .game-over-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(5,10,20,0.82);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 18px;
+      text-align: center;
+    }
+    .game-over-overlay.show { display: flex; }
+    .game-over-title {
+      font-size: clamp(1.6rem, 4vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #4a9bd4, #e87c2a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .game-over-result {
+      font-size: 1rem;
+      color: var(--text);
+      max-width: 440px;
+    }
+    .game-over-btn {
+      padding: 12px 32px;
+      border-radius: 10px;
+      border: 1px solid var(--accent);
+      background: rgba(74,155,212,0.15);
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .game-over-btn:hover { background: rgba(74,155,212,0.28); }
+
+    @keyframes bgDrift {
+      0%, 100% { opacity: 0.7; }
+      50%       { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Starfield -->
+<div class="stars-layer" id="starsLayer"></div>
+
+<!-- Titlebar -->
+<div class="titlebar">
+  <h1>🚀 Kerbal Space Chess</h1>
+  <button class="titlebar-close" id="btnClose" title="Close">✕</button>
+</div>
+
+<!-- App -->
+<div class="app">
+  <!-- Status -->
+  <div class="status-bar">
+    <span class="status-turn" id="statusTurn">White to move</span>
+    <span class="status-ap" id="statusAP">AP: 2</span>
+    <span class="status-msg" id="statusMsg">Select a piece to begin. Surface or Orbit.</span>
+    <span style="font-size:0.7rem;color:var(--muted)" id="statusPhase">SURFACE</span>
+  </div>
+
+  <div class="main">
+    <!-- Sidebar -->
+    <div class="sidebar">
+
+      <!-- Science -->
+      <div class="sidebar-section">
+        <div class="sidebar-title">Science</div>
+        <div class="science-row">
+          <div class="science-label">
+            <span>White</span>
+            <span id="sciW">0 / 20</span>
+          </div>
+          <div class="science-bar-wrap">
+            <div class="science-bar white" id="sciBarW" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="science-row">
+          <div class="science-label">
+            <span>Black</span>
+            <span id="sciB">0 / 20</span>
+          </div>
+          <div class="science-bar-wrap">
+            <div class="science-bar black" id="sciBarB" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Science Tree -->
+      <div class="sidebar-section">
+        <div class="sidebar-title">Science Tree</div>
+        <button class="upgrade-btn" id="upgFuel" title="Launch costs 0 AP">
+          🔧 Fuel Efficiency (5sci)
+        </button>
+        <button class="upgrade-btn" id="upgAlloys" title="+1 orbit move range">
+          ⚙️ Advanced Alloys (8sci)
+        </button>
+        <button class="upgrade-btn" id="upgProbe" title="Satellites ignore inertia">
+          📡 Probe Core (12sci)
+        </button>
+      </div>
+
+      <!-- Actions -->
+      <div class="sidebar-section">
+        <div class="sidebar-title">Actions</div>
+        <button class="action-btn" id="btnLaunch" disabled>🚀 Launch to Orbit (1AP)</button>
+        <button class="action-btn" id="btnLand"   disabled>🌍 Land from Orbit (1AP)</button>
+        <div class="inertia-indicator" id="inertiaIndicator">No orbital piece selected</div>
+      </div>
+
+      <!-- Pass -->
+      <div class="sidebar-section">
+        <button class="action-btn" id="btnPass" style="border-color:rgba(74,155,212,0.4);background:rgba(74,155,212,0.08);color:var(--accent)">
+          ⏭ Pass Turn
+        </button>
+        <button class="new-game-btn" id="btnNewGame">↺ New Game</button>
+      </div>
+
+      <!-- Mission Log -->
+      <div class="sidebar-section" style="flex:1">
+        <div class="sidebar-title">Mission Log</div>
+        <ul class="log-list" id="missionLog"></ul>
+      </div>
+
+    </div>
+
+    <!-- Boards -->
+    <div class="boards-area">
+      <div class="boards-row">
+        <!-- Surface Board -->
+        <div class="board-container">
+          <div class="board-label">🌍 Layer 0 — Kerbin Surface</div>
+          <div class="board-wrap">
+            <div class="board" id="surfaceBoard"></div>
+          </div>
+        </div>
+        <!-- Orbit Board -->
+        <div class="board-container">
+          <div class="board-label">🛸 Layer 1 — Low Orbit</div>
+          <div class="board-wrap">
+            <div class="board" id="orbitBoard"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;font-size:0.65rem;color:var(--muted);letter-spacing:0.08em">
+        <span>👨‍🚀 Kerbal = knight+EVA</span>
+        <span>🚀 Rocket = rook</span>
+        <span>🛸 Station = immovable relay</span>
+        <span>📡 Satellite = bishop+science</span>
+        <span style="color:rgba(40,180,80,0.7)">■ Kerbin zone (respawn)</span>
+        <span style="color:rgba(180,150,100,0.7)">■ Mun zone (+1sci/capture)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Game Over -->
+<div class="game-over-overlay" id="gameOverOverlay">
+  <div class="game-over-title" id="gameOverTitle">Mission Complete</div>
+  <div class="game-over-result" id="gameOverResult"></div>
+  <button class="game-over-btn" id="gameOverNewGame">Launch New Mission</button>
+</div>
+
+<script>
+/* ============================================================
+   KERBAL SPACE CHESS — index5.html
+   Self-contained, no external imports.
+   ============================================================ */
+
+// ── Stars ────────────────────────────────────────────────────
+(function buildStars() {
+  const layer = document.getElementById("starsLayer");
+  const COUNT = 180;
+  for (let i = 0; i < COUNT; i++) {
+    const s = document.createElement("div");
+    s.className = "star";
+    const size = Math.random() < 0.15 ? 2 : 1;
+    s.style.cssText = [
+      `width:${size}px`, `height:${size}px`,
+      `left:${(Math.random()*100).toFixed(2)}%`,
+      `top:${(Math.random()*100).toFixed(2)}%`,
+      `--dur:${(2.5+Math.random()*4).toFixed(1)}s`,
+      `--del:${(Math.random()*5).toFixed(1)}s`,
+      `--min-op:${(0.1+Math.random()*0.2).toFixed(2)}`,
+      `--max-op:${(0.7+Math.random()*0.3).toFixed(2)}`,
+    ].join(";");
+    layer.appendChild(s);
+  }
+})();
+
+// ── Audio ─────────────────────────────────────────────────────
+let audioCtx = null;
+let ambientNode = null;
+
+function getAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(_) {}
+  }
+  return audioCtx;
+}
+
+function startAmbient() {
+  const ctx = getAudio();
+  if (!ctx || ambientNode) return;
+  try {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 55;
+    gain.gain.value = 0.04;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    ambientNode = { osc, gain };
+  } catch(_) {}
+}
+
+function playBlip(freq = 880, dur = 0.09, vol = 0.12) {
+  const ctx = getAudio();
+  if (!ctx) return;
+  try {
+    if (ctx.state === "suspended") ctx.resume();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + dur);
+  } catch(_) {}
+}
+
+function playScienceBlip()  { playBlip(1320, 0.14, 0.1); }
+function playLaunchBlip()   { playBlip(660, 0.18, 0.1); setTimeout(()=>playBlip(880,0.1,0.08),120); }
+function playLandBlip()     { playBlip(440, 0.15, 0.1); }
+function playMoveBlip()     { playBlip(660, 0.06, 0.07); }
+function playCaptureBlip()  { playBlip(330, 0.12, 0.1); }
+
+// ── Chess Piece Glyphs ────────────────────────────────────────
+const WHITE_GLYPHS = { K:"♔", Q:"♕", R:"♖", B:"♗", N:"♘", P:"♙" };
+const BLACK_GLYPHS = { K:"♚", Q:"♛", R:"♜", B:"♝", N:"♞", P:"♟" };
+
+function pieceGlyph(p) {
+  if (!p) return "";
+  const type = p[1];
+  const color = p[0];
+  // KSP special pieces
+  if (type === "A") return "👨‍🚀"; // Kerbal
+  if (type === "T") return "🚀";   // Rocket
+  if (type === "S") return "🛸";   // Station
+  if (type === "D") return "📡";   // Satellite
+  return color === "w" ? (WHITE_GLYPHS[type]||"?") : (BLACK_GLYPHS[type]||"?");
+}
+
+function pieceColor(p) { return p ? p[0] : null; }
+function pieceType(p)  { return p ? p[1] : null; }
+function isKSP(p)      { return p && "ATSD".includes(p[1]); }
+
+// ── ChessGame (minimal, standard only) ───────────────────────
+// This is a self-contained minimal chess engine for Surface legality.
+const FILES = "abcdefgh";
+
+function sq(file, rank) { return rank * 8 + file; }
+function fileOf(idx)    { return idx % 8; }
+function rankOf(idx)    { return Math.floor(idx / 8); }
+
+function initBoard() {
+  const b = new Array(64).fill(null);
+  // White back rank (rank 0 = row index 0 = a1 in our view from White side bottom)
+  // We render rank 7 at top, rank 0 at bottom.
+  const backRank = ["R","N","B","Q","K","B","N","R"];
+  for (let f = 0; f < 8; f++) {
+    b[sq(f, 0)] = "w" + backRank[f];
+    b[sq(f, 1)] = "wP";
+    b[sq(f, 6)] = "bP";
+    b[sq(f, 7)] = "b" + backRank[f];
+  }
+  return b;
+}
+
+function cloneBoard(b) { return b.slice(); }
+
+const DIRS = {
+  R: [[0,1],[0,-1],[1,0],[-1,0]],
+  B: [[1,1],[1,-1],[-1,1],[-1,-1]],
+  Q: [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]],
+  N: [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]],
+  K: [[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]],
+};
+
+function slider(board, from, dirs, color, moves) {
+  for (const [df, dr] of dirs) {
+    let f = fileOf(from) + df, r = rankOf(from) + dr;
+    while (f >= 0 && f < 8 && r >= 0 && r < 8) {
+      const to = sq(f, r);
+      if (board[to]) {
+        if (pieceColor(board[to]) !== color) moves.push({ from, to, captured: board[to] });
+        break;
+      }
+      moves.push({ from, to, captured: null });
+      f += df; r += dr;
+    }
+  }
+}
+
+function stepMover(board, from, dirs, color, moves) {
+  for (const [df, dr] of dirs) {
+    const f = fileOf(from) + df, r = rankOf(from) + dr;
+    if (f < 0 || f >= 8 || r < 0 || r >= 8) continue;
+    const to = sq(f, r);
+    if (board[to] && pieceColor(board[to]) === color) continue;
+    moves.push({ from, to, captured: board[to] || null });
+  }
+}
+
+function pawnMoves(board, from, color, ep, moves) {
+  const dir = color === "w" ? 1 : -1;
+  const startRank = color === "w" ? 1 : 6;
+  const f = fileOf(from), r = rankOf(from);
+  // Forward
+  const f1 = sq(f, r + dir);
+  if (r + dir >= 0 && r + dir < 8 && !board[f1]) {
+    moves.push({ from, to: f1, captured: null, promo: (r + dir === 7 || r + dir === 0) });
+    // Double push
+    if (r === startRank) {
+      const f2 = sq(f, r + 2*dir);
+      if (!board[f2]) moves.push({ from, to: f2, captured: null, ep: true });
+    }
+  }
+  // Captures
+  for (const df of [-1, 1]) {
+    const nf = f + df, nr = r + dir;
+    if (nf < 0 || nf >= 8 || nr < 0 || nr >= 8) continue;
+    const to = sq(nf, nr);
+    if (board[to] && pieceColor(board[to]) !== color) {
+      moves.push({ from, to, captured: board[to], promo: (nr === 7 || nr === 0) });
+    }
+    // En passant
+    if (to === ep && !board[to]) {
+      const capSq = sq(nf, r);
+      moves.push({ from, to, captured: board[capSq], epCapture: capSq });
+    }
+  }
+}
+
+function pseudoLegal(board, color, ep) {
+  const moves = [];
+  for (let i = 0; i < 64; i++) {
+    const p = board[i];
+    if (!p || pieceColor(p) !== color) continue;
+    const t = pieceType(p);
+    if (t === "P") { pawnMoves(board, i, color, ep, moves); continue; }
+    if (t === "R") { slider(board, i, DIRS.R, color, moves); continue; }
+    if (t === "B") { slider(board, i, DIRS.B, color, moves); continue; }
+    if (t === "Q") { slider(board, i, DIRS.Q, color, moves); continue; }
+    if (t === "N") { stepMover(board, i, DIRS.N, color, moves); continue; }
+    if (t === "K") { stepMover(board, i, DIRS.K, color, moves); continue; }
+    // KSP pieces on surface use rook/bishop/knight logic
+    if (t === "A") { stepMover(board, i, DIRS.N, color, moves); continue; } // Kerbal=knight
+    if (t === "T") { slider(board, i, DIRS.R, color, moves); continue; }   // Rocket=rook
+    if (t === "D") { slider(board, i, DIRS.B, color, moves); continue; }   // Satellite=bishop
+    // Station immovable
+  }
+  return moves;
+}
+
+function findKing(board, color) {
+  for (let i = 0; i < 64; i++)
+    if (board[i] === color + "K") return i;
+  return -1;
+}
+
+function isAttacked(board, sq, byColor) {
+  // Check if byColor attacks sq
+  const opp = byColor;
+  // Use pseudo-legal from opp perspective
+  const moves = pseudoLegal(board, opp, -1);
+  return moves.some(m => m.to === sq);
+}
+
+function inCheck(board, color) {
+  const kingIdx = findKing(board, color);
+  if (kingIdx < 0) return false;
+  const opp = color === "w" ? "b" : "w";
+  return isAttacked(board, kingIdx, opp);
+}
+
+function applyMove(board, move, ep) {
+  const nb = cloneBoard(board);
+  nb[move.to] = nb[move.from];
+  nb[move.from] = null;
+  if (move.epCapture != null) nb[move.epCapture] = null;
+  if (move.promo) nb[move.to] = pieceColor(nb[move.to]) + "Q"; // auto-queen
+  let newEp = -1;
+  if (move.ep) {
+    newEp = move.to; // store ep square
+  }
+  return { board: nb, ep: newEp };
+}
+
+function legalMovesFrom(board, from, color, ep) {
+  const p = board[from];
+  if (!p || pieceColor(p) !== color) return [];
+  const pseudo = pseudoLegal(board, color, ep).filter(m => m.from === from);
+  return pseudo.filter(m => {
+    const result = applyMove(board, m, ep);
+    return !inCheck(result.board, color);
+  });
+}
+
+function isCheckmate(board, color, ep) {
+  if (!inCheck(board, color)) return false;
+  const moves = pseudoLegal(board, color, ep);
+  return moves.every(m => {
+    const result = applyMove(board, m, ep);
+    return inCheck(result.board, color);
+  });
+}
+
+function isStalemate(board, color, ep) {
+  if (inCheck(board, color)) return false;
+  const moves = pseudoLegal(board, color, ep);
+  return moves.every(m => {
+    const result = applyMove(board, m, ep);
+    return inCheck(result.board, color);
+  });
+}
+
+function castlingMoves(board, color, castling) {
+  const moves = [];
+  const rank = color === "w" ? 0 : 7;
+  const opp = color === "w" ? "b" : "w";
+  if (color === "w") {
+    if (castling.wk && board[sq(5,rank)] === null && board[sq(6,rank)] === null
+        && !isAttacked(board, sq(4,rank), opp) && !isAttacked(board, sq(5,rank), opp) && !isAttacked(board, sq(6,rank), opp)) {
+      moves.push({ from: sq(4,rank), to: sq(6,rank), castle: "k" });
+    }
+    if (castling.wq && board[sq(3,rank)] === null && board[sq(2,rank)] === null && board[sq(1,rank)] === null
+        && !isAttacked(board, sq(4,rank), opp) && !isAttacked(board, sq(3,rank), opp) && !isAttacked(board, sq(2,rank), opp)) {
+      moves.push({ from: sq(4,rank), to: sq(2,rank), castle: "q" });
+    }
+  } else {
+    if (castling.bk && board[sq(5,rank)] === null && board[sq(6,rank)] === null
+        && !isAttacked(board, sq(4,rank), opp) && !isAttacked(board, sq(5,rank), opp) && !isAttacked(board, sq(6,rank), opp)) {
+      moves.push({ from: sq(4,rank), to: sq(6,rank), castle: "k" });
+    }
+    if (castling.bq && board[sq(3,rank)] === null && board[sq(2,rank)] === null && board[sq(1,rank)] === null
+        && !isAttacked(board, sq(4,rank), opp) && !isAttacked(board, sq(3,rank), opp) && !isAttacked(board, sq(2,rank), opp)) {
+      moves.push({ from: sq(4,rank), to: sq(2,rank), castle: "q" });
+    }
+  }
+  return moves;
+}
+
+// ── Game State ────────────────────────────────────────────────
+let G = null;
+
+function initGameState() {
+  return {
+    surface: initBoard(),
+    orbit: new Array(64).fill(null),
+    ep: -1,
+    castling: { wk: true, wq: true, bk: true, bq: true },
+    turn: "w",         // "w" or "b"
+    ap: 2,             // action points remaining this turn
+    science: { w: 0, b: 0 },
+    upgrades: {
+      w: { fuel: false, alloys: false, probe: false },
+      b: { fuel: false, alloys: false, probe: false },
+    },
+    inertia: {},       // idx -> { dr, df }  (orbit only)
+    evaUsed: {},       // piece position key -> true (surface EVA used)
+    respawnBank: { w: [], b: [] },  // captured pieces in Kerbin zone
+    selectedSurface: null,
+    selectedOrbit: null,
+    legalSurface: [],
+    legalOrbit: [],
+    log: [],
+    gameOver: false,
+    gameOverMsg: "",
+  };
+}
+
+function newGame() {
+  G = initGameState();
+  renderAll();
+  logMsg("Mission started. Godspeed, Kerbals.");
+  updateUI();
+}
+
+// ── Science helpers ───────────────────────────────────────────
+const SCI_WIN = 20;
+
+function addScience(color, amount, reason) {
+  G.science[color] = Math.min(G.science[color] + amount, SCI_WIN + 5);
+  logMsg(`${color === "w" ? "White" : "Black"} +${amount} science (${reason})`);
+  playScienceBlip();
+  checkScienceVictory();
+}
+
+function checkScienceVictory() {
+  if (G.gameOver) return;
+  if (G.science.w >= SCI_WIN) { triggerGameOver("White wins — Science Victory! 🔬", true); return; }
+  if (G.science.b >= SCI_WIN) { triggerGameOver("Black wins — Science Victory! 🔬", true); }
+}
+
+function triggerGameOver(msg, science = false) {
+  G.gameOver = true;
+  G.gameOverMsg = msg;
+  document.getElementById("gameOverTitle").textContent = science ? "Science Victory!" : "Mission End";
+  document.getElementById("gameOverResult").textContent = msg;
+  document.getElementById("gameOverOverlay").classList.add("show");
+}
+
+// ── Zone helpers ──────────────────────────────────────────────
+function inKerbinZone(idx) { return fileOf(idx) < 4; }  // files a–d
+function inMunZone(idx)    { return fileOf(idx) >= 4; } // files e–h
+
+// ── Orbit move helpers ────────────────────────────────────────
+function orbitLegalMoves(fromIdx, color) {
+  const p = G.orbit[fromIdx];
+  if (!p || pieceColor(p) !== color) return [];
+  const t = pieceType(p);
+  const moves = [];
+  const range = G.upgrades[color].alloys ? 9 : 8; // +1 range: effectively unlimited anyway
+  const inertiaDir = G.inertia[fromIdx];
+  const hasProbe = G.upgrades[color].probe;
+  const isSatellite = t === "D";
+
+  // Determine movement dirs for this orbit piece
+  let dirs = [];
+  if (t === "T" || t === "R") dirs = DIRS.R;
+  else if (t === "B" || t === "D") dirs = DIRS.B;
+  else if (t === "Q") dirs = DIRS.Q;
+  else if (t === "K") dirs = DIRS.K.map(d => [d[0], d[1]]);
+  else if (t === "N" || t === "A") dirs = DIRS.N;
+  else if (t === "P") {
+    // Pawns in orbit move like rooks (simplified)
+    dirs = DIRS.R;
+  } else if (t === "S") {
+    return []; // Station immovable
+  } else dirs = DIRS.Q;
+
+  // Build candidate squares with inertia constraint
+  for (const [df, dr] of dirs) {
+    const ignoreInertia = (isSatellite && hasProbe) || !inertiaDir;
+    // If inertia set and this direction opposes it, at least 1 step in inertia dir first
+    // Simplified: if inertia active, must include inertia direction in movement
+    let f = fileOf(fromIdx) + df, r = rankOf(fromIdx) + dr;
+    let steps = 0;
+    while (f >= 0 && f < 8 && r >= 0 && r < 8 && steps < range) {
+      const to = sq(f, r);
+      const occupant = G.orbit[to];
+      if (occupant) {
+        if (pieceColor(occupant) !== color) {
+          moves.push({ from: fromIdx, to, capture: true, df, dr });
+        }
+        break;
+      }
+      // Inertia check: if inertia is set, must move in that direction at minimum
+      if (inertiaDir && !ignoreInertia) {
+        // Only allow moves that include the inertia direction component
+        // (i.e., df matches inertia.df or dr matches inertia.dr)
+        if (df !== inertiaDir.df || dr !== inertiaDir.dr) {
+          // Allow if this is the first step and inertia dir is satisfied elsewhere
+          // Simplified: block exact opposite direction
+          if (df === -inertiaDir.df && dr === -inertiaDir.dr) { break; }
+        }
+      }
+      moves.push({ from: fromIdx, to, capture: false, df, dr });
+      f += df; r += dr;
+      steps++;
+    }
+  }
+
+  return moves;
+}
+
+// Station relay: pieces landing adjacent to station get +1 AP bonus
+function checkStationRelay(orbitIdx, color) {
+  const f = fileOf(orbitIdx), r = rankOf(orbitIdx);
+  for (const [df, dr] of DIRS.K) {
+    const nf = f + df, nr = r + dr;
+    if (nf < 0 || nf >= 8 || nr < 0 || nr >= 8) continue;
+    const adj = G.orbit[sq(nf, nr)];
+    if (adj && pieceType(adj) === "S") {
+      G.ap += 1;
+      logMsg("Station relay — +1 AP!");
+      break;
+    }
+  }
+}
+
+// ── Coordinate display ────────────────────────────────────────
+function coordName(idx) {
+  return FILES[fileOf(idx)] + (rankOf(idx) + 1);
+}
+
+// ── Selection + highlight ─────────────────────────────────────
+function clearSelection() {
+  G.selectedSurface = null;
+  G.selectedOrbit = null;
+  G.legalSurface = [];
+  G.legalOrbit = [];
+}
+
+function selectSurface(idx) {
+  clearSelection();
+  const p = G.surface[idx];
+  if (!p || pieceColor(p) !== G.turn) return;
+  G.selectedSurface = idx;
+  const standard = legalMovesFrom(G.surface, idx, G.turn, G.ep);
+  const castle = castlingMoves(G.surface, G.turn, G.castling);
+  G.legalSurface = [...standard, ...castle.filter(c => c.from === idx)];
+  updateUI();
+}
+
+function selectOrbit(idx) {
+  clearSelection();
+  const p = G.orbit[idx];
+  if (!p || pieceColor(p) !== G.turn) return;
+  G.selectedOrbit = idx;
+  G.legalOrbit = orbitLegalMoves(idx, G.turn);
+  updateUI();
+}
+
+// ── Move execution ────────────────────────────────────────────
+function consumeAP(cost) {
+  G.ap -= cost;
+  if (G.ap <= 0) {
+    endTurn();
+  }
+}
+
+function endTurn() {
+  G.turn = G.turn === "w" ? "b" : "w";
+  G.ap = 2;
+  clearSelection();
+  // Check for checkmate/stalemate
+  if (isCheckmate(G.surface, G.turn, G.ep)) {
+    const winner = G.turn === "w" ? "Black" : "White";
+    addScience(G.turn === "w" ? "b" : "w", 10, "checkmate");
+    triggerGameOver(`${winner} wins by checkmate.`);
+    return;
+  }
+  if (isStalemate(G.surface, G.turn, G.ep)) {
+    triggerGameOver("Draw by stalemate.");
+    return;
+  }
+  renderAll();
+  updateUI();
+}
+
+function doSurfaceMove(move) {
+  const fromPiece = G.surface[move.from];
+  const toPiece   = G.surface[move.to];
+  const color = pieceColor(fromPiece);
+
+  // Apply
+  const result = applyMove(G.surface, move, G.ep);
+  G.surface = result.board;
+  G.ep = result.ep;
+
+  // Castling rook
+  if (move.castle) {
+    const rank = color === "w" ? 0 : 7;
+    if (move.castle === "k") {
+      G.surface[sq(5, rank)] = G.surface[sq(7, rank)];
+      G.surface[sq(7, rank)] = null;
+    } else {
+      G.surface[sq(3, rank)] = G.surface[sq(0, rank)];
+      G.surface[sq(0, rank)] = null;
+    }
+    // Update castling rights
+    if (color === "w") { G.castling.wk = false; G.castling.wq = false; }
+    else               { G.castling.bk = false; G.castling.bq = false; }
+  }
+
+  // Update castling rights on king/rook moves
+  if (fromPiece === "wK") { G.castling.wk = false; G.castling.wq = false; }
+  if (fromPiece === "bK") { G.castling.bk = false; G.castling.bq = false; }
+  if (fromPiece === "wR" && move.from === sq(0,0)) G.castling.wq = false;
+  if (fromPiece === "wR" && move.from === sq(7,0)) G.castling.wk = false;
+  if (fromPiece === "bR" && move.from === sq(0,7)) G.castling.bq = false;
+  if (fromPiece === "bR" && move.from === sq(7,7)) G.castling.bk = false;
+
+  // Capture science
+  if (toPiece) {
+    const capColor = pieceColor(toPiece);
+    const sciOwner = color;
+    let sciGain = 0;
+    if (inMunZone(move.to)) sciGain += 1;
+    if (pieceType(fromPiece) === "D") { sciGain += 2; }
+    if (sciGain > 0) addScience(sciOwner, sciGain, "capture");
+
+    // Respawn bank — Kerbin zone
+    if (inKerbinZone(move.to) && G.respawnBank[capColor].length === 0) {
+      G.respawnBank[capColor].push(toPiece);
+    }
+    playCaptureBlip();
+  } else {
+    playMoveBlip();
+  }
+
+  const san = coordName(move.from) + coordName(move.to);
+  logMsg(`${color === "w" ? "W" : "B"}: ${san}`);
+  clearSelection();
+  consumeAP(1);
+  renderAll();
+}
+
+function doOrbitMove(move) {
+  const fromPiece = G.orbit[move.from];
+  const color = pieceColor(fromPiece);
+
+  // Capture
+  if (G.orbit[move.to]) {
+    addScience(color, 3, "orbit capture");
+    playCaptureBlip();
+  } else {
+    playMoveBlip();
+  }
+
+  G.orbit[move.to] = G.orbit[move.from];
+  G.orbit[move.from] = null;
+  G.inertia[move.to] = { df: move.df, dr: move.dr };
+  delete G.inertia[move.from];
+
+  const san = `Orbit ${coordName(move.from)}→${coordName(move.to)}`;
+  logMsg(`${color === "w" ? "W" : "B"}: ${san}`);
+  clearSelection();
+  consumeAP(1);
+  renderAll();
+}
+
+function doLaunch(idx) {
+  const p = G.surface[idx];
+  if (!p || pieceColor(p) !== G.turn) { setStatusMsg("Select your piece on surface first."); return; }
+  if (pieceType(p) === "K") { setStatusMsg("Cannot launch the King!"); return; }
+
+  // Find empty orbit square (prefer same file)
+  const f = fileOf(idx);
+  let targetOrbit = -1;
+  for (let r = 0; r < 8; r++) {
+    const candidate = sq(f, r);
+    if (!G.orbit[candidate]) { targetOrbit = candidate; break; }
+  }
+  if (targetOrbit < 0) {
+    // find any empty
+    for (let i = 0; i < 64; i++) {
+      if (!G.orbit[i]) { targetOrbit = i; break; }
+    }
+  }
+  if (targetOrbit < 0) { setStatusMsg("Orbit is full!"); return; }
+
+  const cost = G.upgrades[G.turn].fuel ? 0 : 1;
+  if (G.ap < cost) { setStatusMsg(`Not enough AP to launch (need ${cost}).`); return; }
+
+  G.orbit[targetOrbit] = p;
+  G.surface[idx] = null;
+  G.inertia[targetOrbit] = null; // no inertia yet
+  addScience(G.turn, 1, "launch");
+  checkStationRelay(targetOrbit, G.turn);
+  playLaunchBlip();
+  logMsg(`${G.turn === "w" ? "W" : "B"}: Launched ${pieceGlyph(p)} to orbit ${coordName(targetOrbit)}`);
+  clearSelection();
+  if (cost > 0) consumeAP(cost);
+  else { renderAll(); updateUI(); }
+}
+
+function doLand(idx) {
+  const p = G.orbit[idx];
+  if (!p || pieceColor(p) !== G.turn) { setStatusMsg("Select your piece in orbit first."); return; }
+  if (G.ap < 1) { setStatusMsg("Not enough AP to land."); return; }
+
+  // Find empty surface square (prefer same file, rank 0 or 7 depending on color)
+  const f = fileOf(idx);
+  let targetSurface = -1;
+  const preferredRank = G.turn === "w" ? 0 : 7;
+  for (let r = preferredRank; r >= 0 && r < 8; r += G.turn === "w" ? 1 : -1) {
+    const candidate = sq(f, r);
+    if (!G.surface[candidate]) { targetSurface = candidate; break; }
+  }
+  if (targetSurface < 0) {
+    for (let i = 0; i < 64; i++) {
+      if (!G.surface[i]) { targetSurface = i; break; }
+    }
+  }
+  if (targetSurface < 0) { setStatusMsg("Surface is full!"); return; }
+
+  G.surface[targetSurface] = p;
+  G.orbit[idx] = null;
+  delete G.inertia[idx];
+  playLandBlip();
+  logMsg(`${G.turn === "w" ? "W" : "B"}: Landed ${pieceGlyph(p)} at ${coordName(targetSurface)}`);
+  clearSelection();
+  consumeAP(1);
+  renderAll();
+}
+
+// ── Mission log ───────────────────────────────────────────────
+function logMsg(msg) {
+  G.log.push(msg);
+  if (G.log.length > 60) G.log.shift();
+  const ul = document.getElementById("missionLog");
+  ul.innerHTML = G.log.map(l => `<li>${l}</li>`).join("");
+  ul.scrollTop = ul.scrollHeight;
+}
+
+function setStatusMsg(msg) {
+  document.getElementById("statusMsg").textContent = msg;
+}
+
+// ── Render ────────────────────────────────────────────────────
+function renderBoard(boardId, squares, selectedIdx, legalMoves, isOrbit) {
+  const el = document.getElementById(boardId);
+  el.innerHTML = "";
+
+  const legalSet = new Set(legalMoves.map(m => m.to));
+  const legalCaptureSet = new Set(legalMoves.filter(m => m.capture || m.captured).map(m => m.to));
+  const inertiaHints = new Set();
+  if (isOrbit && selectedIdx != null) {
+    const iv = G.inertia[selectedIdx];
+    if (iv && iv.df != null) {
+      // Hint squares in inertia direction
+      let f = fileOf(selectedIdx) + iv.df, r = rankOf(selectedIdx) + iv.dr;
+      for (let s = 0; s < 3 && f >= 0 && f < 8 && r >= 0 && r < 8; s++) {
+        inertiaHints.add(sq(f, r));
+        f += iv.df; r += iv.dr;
+      }
+    }
+  }
+
+  // Render rank 7 at top, rank 0 at bottom (white perspective)
+  for (let r = 7; r >= 0; r--) {
+    for (let f = 0; f < 8; f++) {
+      const idx = sq(f, r);
+      const div = document.createElement("div");
+      let cls = "sq";
+      if (isOrbit) {
+        cls += (f + r) % 2 === 0 ? " orbit-dark" : " orbit-light";
+      } else {
+        const isLight = (f + r) % 2 !== 0;
+        cls += isLight ? " surface-light" : " surface-dark";
+        if (inKerbinZone(idx)) cls += " kerbin";
+        else cls += " mun";
+      }
+      if (idx === selectedIdx) cls += " selected";
+      if (legalCaptureSet.has(idx)) cls += " legal-capture";
+      else if (legalSet.has(idx))   cls += " legal-move";
+      if (inertiaHints.has(idx) && !legalSet.has(idx)) cls += " inertia-hint";
+
+      div.className = cls;
+      div.dataset.idx = idx;
+
+      // Piece
+      const piece = squares[idx];
+      if (piece) {
+        const span = document.createElement("span");
+        span.className = "piece-glyph" + (pieceColor(piece) === "w" ? " white-piece" : " black-piece");
+        span.textContent = pieceGlyph(piece);
+        div.appendChild(span);
+      }
+
+      // Coord labels (corners)
+      if (f === 0) {
+        const rc = document.createElement("span");
+        rc.className = "coord-row";
+        rc.textContent = r + 1;
+        div.appendChild(rc);
+      }
+      if (r === 0) {
+        const fc = document.createElement("span");
+        fc.className = "coord-col";
+        fc.textContent = FILES[f];
+        div.appendChild(fc);
+      }
+
+      div.addEventListener("click", () => handleSquareClick(isOrbit, idx));
+      el.appendChild(div);
+    }
+  }
+}
+
+function renderAll() {
+  renderBoard("surfaceBoard", G.surface, G.selectedSurface, G.legalSurface, false);
+  renderBoard("orbitBoard",  G.orbit,   G.selectedOrbit,   G.legalOrbit,   true);
+}
+
+// ── UI update ─────────────────────────────────────────────────
+function updateUI() {
+  if (!G) return;
+  const turn = G.turn;
+  document.getElementById("statusTurn").textContent = `${turn === "w" ? "White" : "Black"} to move`;
+  document.getElementById("statusAP").textContent   = `AP: ${G.ap}`;
+
+  // Science bars
+  const sw = Math.min(G.science.w / SCI_WIN * 100, 100);
+  const sb = Math.min(G.science.b / SCI_WIN * 100, 100);
+  document.getElementById("sciBarW").style.width = sw + "%";
+  document.getElementById("sciBarB").style.width = sb + "%";
+  document.getElementById("sciW").textContent = `${G.science.w} / ${SCI_WIN}`;
+  document.getElementById("sciB").textContent = `${G.science.b} / ${SCI_WIN}`;
+
+  // Upgrades
+  const ups = G.upgrades[turn];
+  const sci = G.science[turn];
+  const upFuel   = document.getElementById("upgFuel");
+  const upAlloys = document.getElementById("upgAlloys");
+  const upProbe  = document.getElementById("upgProbe");
+
+  upFuel.disabled   = ups.fuel   || sci < 5;
+  upAlloys.disabled = ups.alloys || sci < 8;
+  upProbe.disabled  = ups.probe  || sci < 12;
+  if (ups.fuel)   { upFuel.classList.add("owned");   upFuel.textContent   = "✅ Fuel Efficiency"; }
+  if (ups.alloys) { upAlloys.classList.add("owned"); upAlloys.textContent = "✅ Advanced Alloys"; }
+  if (ups.probe)  { upProbe.classList.add("owned");  upProbe.textContent  = "✅ Probe Core"; }
+
+  // Action buttons
+  const hasSurfaceSel = G.selectedSurface != null;
+  const hasOrbitSel   = G.selectedOrbit   != null;
+  const launchCost = G.upgrades[turn].fuel ? 0 : 1;
+  document.getElementById("btnLaunch").disabled = !hasSurfaceSel || G.ap < launchCost;
+  document.getElementById("btnLand").disabled   = !hasOrbitSel   || G.ap < 1;
+  document.getElementById("btnLaunch").textContent = `🚀 Launch to Orbit (${launchCost}AP)`;
+
+  // Inertia
+  const inertiaEl = document.getElementById("inertiaIndicator");
+  if (hasOrbitSel) {
+    const iv = G.inertia[G.selectedOrbit];
+    if (iv && iv.df != null) {
+      const dnames = {
+        "0,1":"North","0,-1":"South","1,0":"East","-1,0":"West",
+        "1,1":"NE","1,-1":"SE","-1,1":"NW","-1,-1":"SW"
+      };
+      const key = `${iv.df},${iv.dr}`;
+      inertiaEl.textContent = `Inertia: ${dnames[key] || key}`;
+    } else {
+      inertiaEl.textContent = "Inertia: None (free)";
+    }
+  } else {
+    inertiaEl.textContent = hasOrbitSel ? "" : "No orbital piece selected";
+  }
+
+  // Phase indicator
+  const phase = G.selectedOrbit != null ? "ORBIT" : G.selectedSurface != null ? "SURFACE" : "";
+  document.getElementById("statusPhase").textContent = phase;
+}
+
+// ── Click handler ─────────────────────────────────────────────
+function handleSquareClick(isOrbit, idx) {
+  if (G.gameOver) return;
+  startAmbient();
+
+  if (isOrbit) {
+    // Orbit board clicked
+    if (G.selectedOrbit != null) {
+      // Check if legal move
+      const legal = G.legalOrbit.find(m => m.to === idx);
+      if (legal) {
+        doOrbitMove(legal);
+        return;
+      }
+    }
+    // Try to select orbit piece
+    const p = G.orbit[idx];
+    if (p && pieceColor(p) === G.turn) {
+      selectOrbit(idx);
+      renderAll();
+    } else {
+      clearSelection();
+      renderAll();
+      updateUI();
+    }
+  } else {
+    // Surface board clicked
+    if (G.selectedSurface != null) {
+      // Check if legal move
+      const legal = G.legalSurface.find(m => m.to === idx);
+      if (legal) {
+        doSurfaceMove(legal);
+        return;
+      }
+    }
+    // Try to select surface piece
+    const p = G.surface[idx];
+    if (p && pieceColor(p) === G.turn) {
+      selectSurface(idx);
+      renderAll();
+    } else {
+      clearSelection();
+      renderAll();
+      updateUI();
+    }
+  }
+}
+
+// ── Button wiring ─────────────────────────────────────────────
+document.getElementById("btnClose").addEventListener("click", () => {
+  if (window.electronAPI) window.electronAPI.closeApp();
+});
+
+document.getElementById("btnLaunch").addEventListener("click", () => {
+  if (G.selectedSurface != null) doLaunch(G.selectedSurface);
+  else setStatusMsg("Select a surface piece first.");
+});
+
+document.getElementById("btnLand").addEventListener("click", () => {
+  if (G.selectedOrbit != null) doLand(G.selectedOrbit);
+  else setStatusMsg("Select an orbit piece first.");
+});
+
+document.getElementById("btnPass").addEventListener("click", () => {
+  if (G.gameOver) return;
+  logMsg(`${G.turn === "w" ? "White" : "Black"} passes remaining AP.`);
+  clearSelection();
+  endTurn();
+});
+
+document.getElementById("btnNewGame").addEventListener("click", () => {
+  document.getElementById("gameOverOverlay").classList.remove("show");
+  newGame();
+});
+
+document.getElementById("gameOverNewGame").addEventListener("click", () => {
+  document.getElementById("gameOverOverlay").classList.remove("show");
+  newGame();
+});
+
+// Upgrades
+document.getElementById("upgFuel").addEventListener("click", () => {
+  if (G.science[G.turn] >= 5 && !G.upgrades[G.turn].fuel) {
+    G.science[G.turn] -= 5;
+    G.upgrades[G.turn].fuel = true;
+    logMsg(`${G.turn === "w" ? "White" : "Black"} unlocked Fuel Efficiency!`);
+    updateUI();
+  }
+});
+document.getElementById("upgAlloys").addEventListener("click", () => {
+  if (G.science[G.turn] >= 8 && !G.upgrades[G.turn].alloys) {
+    G.science[G.turn] -= 8;
+    G.upgrades[G.turn].alloys = true;
+    logMsg(`${G.turn === "w" ? "White" : "Black"} unlocked Advanced Alloys!`);
+    updateUI();
+  }
+});
+document.getElementById("upgProbe").addEventListener("click", () => {
+  if (G.science[G.turn] >= 12 && !G.upgrades[G.turn].probe) {
+    G.science[G.turn] -= 12;
+    G.upgrades[G.turn].probe = true;
+    logMsg(`${G.turn === "w" ? "White" : "Black"} unlocked Probe Core!`);
+    updateUI();
+  }
+});
+
+// ── Keyboard shortcuts ────────────────────────────────────────
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    clearSelection();
+    renderAll();
+    updateUI();
+  }
+  if (e.key === "n" || e.key === "N") {
+    document.getElementById("gameOverOverlay").classList.remove("show");
+    newGame();
+  }
+});
+
+// ── Boot ──────────────────────────────────────────────────────
+newGame();
+</script>
+</body>
+</html>
