@@ -255,6 +255,7 @@ async function runEdition(port, edition) {
         saveCount: saves.length,
         autosaveCount: saves.filter((save) => save.type === "autosave").length,
         loadRestored,
+        progressReady: Boolean(window.ChessUltimateProgress && document.getElementById("cuProgressOpen")),
         errors: pageErrors,
       };
     })()`);
@@ -290,6 +291,7 @@ async function main() {
         && /checkmate|wins/i.test(result.result || "")
         && result.autosaveCount > 0
         && result.loadRestored
+        && result.progressReady
         && result.errors.length === 0;
       const mark = ok ? "PASS" : "FAIL";
       console.log(`[${mark}] ${edition.name}: ${result.result || result.statusText} (${result.autosaveCount} autosaves)`);

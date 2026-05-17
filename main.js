@@ -1,8 +1,9 @@
-const { app, BrowserWindow, Menu, ipcMain } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, powerSaveBlocker } = require("electron");
 const path = require("path");
 const discordPresence = require("./discordPresence");
 
 let launcherWin = null;
+let powerSaveBlockerId = null;
 const APP_ICON = path.join(__dirname, "icon.png");
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 
@@ -77,6 +78,10 @@ function createLauncher() {
 app.whenReady().then(() => {
   if (!gotSingleInstanceLock) return;
 
+  if (powerSaveBlocker && powerSaveBlockerId == null) {
+    powerSaveBlockerId = powerSaveBlocker.start("prevent-display-sleep");
+  }
+
   if (process.platform === "darwin" && app.dock) {
     app.dock.setIcon(APP_ICON);
   }
@@ -131,6 +136,9 @@ app.on("second-instance", () => {
 });
 
 app.on("before-quit", () => {
+  if (powerSaveBlocker && powerSaveBlockerId != null && powerSaveBlocker.isStarted(powerSaveBlockerId)) {
+    powerSaveBlocker.stop(powerSaveBlockerId);
+  }
   discordPresence.shutdown();
 });
 

@@ -2097,6 +2097,7 @@
   </div>
 
   <script src="appState.js"></script>
+  <script src="progress.js"></script>
   <script>
     const GAME_CREDITS = "Made by TheHollyCow and Masternazz";
     const FILES = "abcdefgh";
@@ -6890,7 +6891,14 @@
       if (wrap) wrap.scrollTop = wrap.scrollHeight;
     }
 
+    function shouldStickMoveLogToBottom() {
+      const wrap = ui.moveLogBody && ui.moveLogBody.closest(".move-table-wrap");
+      if (!wrap) return false;
+      return wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight < 36;
+    }
+
     function renderMoveLog() {
+      const stickToBottom = shouldStickMoveLogToBottom();
       ui.moveLogBody.innerHTML = "";
       if (!state.game) return;
       const history = state.game.history;
@@ -6918,7 +6926,7 @@
         if (lastRow) {
           lastRow.classList.add("move-log-new");
           window.setTimeout(() => lastRow.classList.remove("move-log-new"), 800);
-          scrollMoveLogToBottom();
+          if (stickToBottom) scrollMoveLogToBottom();
         }
         return;
       }
@@ -6942,7 +6950,7 @@
         if (lastRow) {
           lastRow.classList.add("move-log-new");
           window.setTimeout(() => lastRow.classList.remove("move-log-new"), 800);
-          scrollMoveLogToBottom();
+          if (stickToBottom) scrollMoveLogToBottom();
         }
         return;
       }
@@ -6969,7 +6977,7 @@
       if (lastRow) {
         lastRow.classList.add("move-log-new");
         window.setTimeout(() => lastRow.classList.remove("move-log-new"), 800);
-        scrollMoveLogToBottom();
+        if (stickToBottom) scrollMoveLogToBottom();
       }
     }
 
@@ -7271,6 +7279,9 @@
       if (state.sanity) extra.sanity = cloneSaveData(state.sanity);
       if (state.charlieActive) extra.charlieActive = cloneSaveData(state.charlieActive);
       if (typeof state_tr !== "undefined") extra.terraria = cloneSaveData(state_tr);
+      if (window.ChessUltimateProgress && window.ChessUltimateProgress.exportData) {
+        extra.progress = window.ChessUltimateProgress.exportData();
+      }
       return extra;
     }
 
@@ -7280,6 +7291,9 @@
       if ("sanity" in extra) state.sanity = cloneSaveData(extra.sanity);
       if ("charlieActive" in extra) state.charlieActive = cloneSaveData(extra.charlieActive);
       if ("terraria" in extra && typeof state_tr !== "undefined") Object.assign(state_tr, cloneSaveData(extra.terraria));
+      if ("progress" in extra && window.ChessUltimateProgress && window.ChessUltimateProgress.importData) {
+        window.ChessUltimateProgress.importData(extra.progress);
+      }
     }
 
     function fullTurnNumber() {
@@ -7964,6 +7978,31 @@
           && !["antichess", "checkers_vs_chess"].includes(game.variant)
           && game.isInCheck(defender);
         if (checkNow && window._achOnCheck) window._achOnCheck();
+        if (window.ChessUltimateProgress) {
+          const progressPayload = {
+            edition: APP_EDITION,
+            variant: state.variant,
+            gameMode: state.gameMode,
+            elo: Number(ui.eloSlider.value),
+            playerColor: state.playerColor,
+            botColor: state.botColor,
+            color,
+            actor,
+            move,
+            annotation,
+            capturedPiece,
+            checkNow,
+            status: statusAfterMove,
+            historyLength: game.history.length,
+            explodedCount: (undo.exploded || []).length,
+            lastMoveWasDrop: Boolean(move.dropPiece),
+            playerChecksAgainst: state.game && state.game.position && state.game.position.checksGiven
+              ? state.game.position.checksGiven[oppositeColor(state.playerColor)] || 0
+              : 0
+          };
+          window.ChessUltimateProgress.recordMove(progressPayload);
+          if (statusAfterMove.over) window.ChessUltimateProgress.recordGameOver(progressPayload);
+        }
         if (isLocalMultiplayerMode() && state.autoRotateMultiplayer) {
           state.orientation = game.position.turn;
         }
