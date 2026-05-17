@@ -7,7 +7,7 @@ const EDITIONS = [
   { name: "Battle Edition", buttonId: "btnBattle", page: "index.html" },
   { name: "Joker's Gambit", buttonId: "btnBalatro", page: "index2.html", needsCards: true },
   { name: "Wilderness", buttonId: "btnDontStarve", page: "index3.html" },
-  { name: "Terraria Chess", buttonId: "btnTerraria", page: "index4.html" },
+  { name: "Terraria Chess", buttonId: "btnTerraria", page: "index4.html", terrariaRun: true },
 ];
 
 const FOOLS_MATE = [
@@ -162,6 +162,7 @@ async function runEdition(port, edition) {
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       const movesToPlay = ${JSON.stringify(FOOLS_MATE)};
       const needsCards = ${edition.needsCards ? "true" : "false"};
+      const needsTerrariaRun = ${edition.terrariaRun ? "true" : "false"};
       const pageErrors = [];
 
       window.addEventListener("error", (event) => {
@@ -183,6 +184,34 @@ async function runEdition(port, edition) {
         await wait(50);
       }
       if (!modeSelect || !variantSelect) throw new Error("Game controls not found");
+
+      let terrariaRunOk = !needsTerrariaRun;
+      const terrariaRunChecks = [];
+      if (needsTerrariaRun) {
+        const assertTr = (name, condition) => {
+          terrariaRunChecks.push({ name, ok: Boolean(condition) });
+          if (!condition) throw new Error("Terraria run smoke failed: " + name);
+        };
+        modeSelect.value = "bot";
+        modeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        variantSelect.value = "standard";
+        variantSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        document.getElementById("newGameBtn").click();
+        for (let i = 0; i < 160 && (!state.game || !state_tr || !state_tr.run); i += 1) await wait(50);
+        assertTr("run state active", Boolean(state_tr && state_tr.run && state_tr.run.active));
+        assertTr("standard only", state.variant === "standard" && variantSelect.value === "standard");
+        assertTr("run panel visible", document.getElementById("trRunPanel")?.style.display !== "none");
+        assertTr("starting armies applied", state.game.position.board.filter(Boolean).length >= 10);
+        const beforePawns = state_tr.run.playerArmy.p || 0;
+        state_tr.run.silver = 20;
+        trBuyPiece("p");
+        assertTr("shop buy pawn", (state_tr.run.playerArmy.p || 0) === beforePawns + 1);
+        state_tr.run.shopOpen = true;
+        const oldLevel = state_tr.run.level;
+        trStartRunLevel();
+        assertTr("next level keeps run", Boolean(state_tr.run && state_tr.run.level === oldLevel));
+        terrariaRunOk = terrariaRunChecks.every((entry) => entry.ok);
+      }
 
       modeSelect.value = "local_multiplayer";
       modeSelect.dispatchEvent(new Event("change", { bubbles: true }));
@@ -378,6 +407,8 @@ async function runEdition(port, edition) {
         reviewModeOk,
         dsJokerOk,
         dsJokerChecks,
+        terrariaRunOk,
+        terrariaRunChecks,
         errors: pageErrors,
       };
     })()`);
@@ -417,6 +448,7 @@ async function main() {
         && result.pgnRoundTrip
         && result.reviewModeOk
         && result.dsJokerOk
+        && result.terrariaRunOk
         && result.errors.length === 0;
       const mark = ok ? "PASS" : "FAIL";
       console.log(`[${mark}] ${edition.name}: ${result.result || result.statusText} (${result.autosaveCount} autosaves)`);

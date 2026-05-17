@@ -792,6 +792,78 @@
     .xp-label.hero  { color: #8fbc5a; }
     .xp-label.enemy { color: #b87333; }
 
+    .tr-run-panel {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin: 8px 0;
+      padding: 8px;
+      border: 1px solid rgba(74,157,60,0.35);
+      background: rgba(7,22,14,0.72);
+      box-shadow: inset 0 0 18px rgba(34,197,94,0.12);
+    }
+
+    .tr-run-stat {
+      min-height: 42px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.22);
+      padding: 6px;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .tr-run-stat strong {
+      display: block;
+      color: #e5ffd1;
+      font-size: 0.88rem;
+      margin-bottom: 2px;
+    }
+
+    .tr-run-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tr-run-actions button,
+    .tr-shop-card button {
+      border: 1px solid rgba(143,188,90,0.45);
+      background: rgba(28,64,32,0.75);
+      color: #f0ffe7;
+      padding: 7px 10px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .tr-run-actions button:disabled,
+    .tr-shop-card button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .tr-shop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      width: 100%;
+    }
+
+    .tr-shop-card {
+      border: 1px solid rgba(184,115,51,0.35);
+      background: rgba(38,24,14,0.62);
+      padding: 8px;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .tr-shop-card strong {
+      display: block;
+      color: #fef3c7;
+      font-size: 0.86rem;
+      margin-bottom: 4px;
+    }
+
     /* Terraria level-up banner */
     .tr-levelup-banner {
       position: fixed; top: 18%; left: 50%; transform: translateX(-50%);
@@ -2103,6 +2175,18 @@
             <span style="font-size:0.68rem;color:var(--muted);" id="xpNumB">0 XP</span>
           </div>
         </div>
+        <div class="tr-run-panel" id="trRunPanel" style="display:none;">
+          <div class="tr-run-stat"><strong id="trRunLevel">Game 1</strong><span id="trRunBoss">Forest board</span></div>
+          <div class="tr-run-stat"><strong id="trRunLives">Lives 3</strong><span id="trRunElo">ELO 800</span></div>
+          <div class="tr-run-stat"><strong id="trRunSilver">0 silver</strong><span id="trRunBonus">No bonus</span></div>
+          <div class="tr-run-stat"><strong id="trRunArmy">Army ready</strong><span id="trRunResult">Start the run</span></div>
+          <div class="tr-run-actions">
+            <button id="trShopToggleBtn" type="button">Shop</button>
+            <button id="trNextLevelBtn" type="button">Next Level</button>
+            <button id="trPrestigeBtn" type="button">Prestige</button>
+          </div>
+          <div class="tr-shop-grid" id="trShopGrid" style="display:none;"></div>
+        </div>
         <div class="board-stage">
           <aside class="accuracy-meter" aria-label="Accuracy meter">
             <h3>Accuracy</h3>
@@ -2317,7 +2401,20 @@
       reserveOwnHeading: document.getElementById("reserveOwnHeading"),
       reserveEnemyHeading: document.getElementById("reserveEnemyHeading"),
       reserveOwnGrid: document.getElementById("reserveOwnGrid"),
-      reserveEnemyGrid: document.getElementById("reserveEnemyGrid")
+      reserveEnemyGrid: document.getElementById("reserveEnemyGrid"),
+      trRunPanel: document.getElementById("trRunPanel"),
+      trRunLevel: document.getElementById("trRunLevel"),
+      trRunBoss: document.getElementById("trRunBoss"),
+      trRunLives: document.getElementById("trRunLives"),
+      trRunElo: document.getElementById("trRunElo"),
+      trRunSilver: document.getElementById("trRunSilver"),
+      trRunBonus: document.getElementById("trRunBonus"),
+      trRunArmy: document.getElementById("trRunArmy"),
+      trRunResult: document.getElementById("trRunResult"),
+      trShopToggleBtn: document.getElementById("trShopToggleBtn"),
+      trNextLevelBtn: document.getElementById("trNextLevelBtn"),
+      trPrestigeBtn: document.getElementById("trPrestigeBtn"),
+      trShopGrid: document.getElementById("trShopGrid")
     };
 
     /* ═══════════════════════════════════════════════════════════
@@ -2767,7 +2864,7 @@
        XP: P=10, N/B=20, R=30, Q=50. Levels at 50/100/150.
     ══════════════════════════════════════════════════════════ */
     const TR_CLASSES = { K:"Warrior", R:"Warrior", N:"Warrior", Q:"Mage", B:"Mage", P:"Ranger" };
-    const TR_XP_VALUE = { P:10, N:20, B:20, R:30, Q:50, K:0 };
+    const TR_XP_VALUE = { P:10, N:10, B:10, R:10, Q:30, K:0 };
     const TR_LEVELS = [
       { xp:0,   level:1, title:"Spawn",     icon:"⚔️" },
       { xp:50,  level:2, title:"Guide",     icon:"🌿" },
@@ -2775,11 +2872,24 @@
       { xp:150, level:4, title:"Moon Lord", icon:"👑" },
     ];
 
+    TR_LEVELS.splice(0, TR_LEVELS.length,
+      { xp:0, level:1, title:"Noobie", icon:"I" },
+      { xp:50, level:2, title:"Guide", icon:"II" },
+      { xp:250, level:3, title:"Hardmode", icon:"III" },
+      { xp:400, level:4, title:"Moon Lord", icon:"IV" },
+      { xp:750, level:5, title:"For the Worthy", icon:"V" },
+      { xp:1000, level:6, title:"Ultimate", icon:"VI" }
+    );
+    const TR_SHOP_COSTS = { k: 50, q: 35, r: 25, b: 25, n: 15, p: 7 };
+    const TR_PIECE_NAMES = { k: "King", q: "Queen", r: "Rook", b: "Bishop", n: "Knight", p: "Pawn" };
+    const TR_START_ARMY = { k: 1, q: 1, r: 2, b: 2, n: 2, p: 0 };
+
     const state_tr = {
       xp: { w: 0, b: 0 },
       kingLevel: { w: 1, b: 1 },
       combo: { w: 0, b: 0 },
       lastCapturerClass: { w: null, b: null },
+      run: null
     };
 
     function trGetLevel(xp) {
@@ -2838,12 +2948,21 @@
       }
     }
 
-    function trChangeXP(color, capturedPiece) {
+    function trChangeXP(color, capturedPiece, movingPiece) {
       if (!capturedPiece || typeof capturedPiece !== "string") return;
       const val = TR_XP_VALUE[capturedPiece.toUpperCase()] || 0;
       if (!val) return;
+      const mult = movingPiece && pieceType(movingPiece) === "k" ? 3 : 1;
       const prevXP = state_tr.xp[color];
-      state_tr.xp[color] += val;
+      state_tr.xp[color] += val * mult;
+      trCheckLevelUp(color, prevXP);
+      trUpdateXPBar(color);
+    }
+
+    function trAddXP(color, amount) {
+      if (!amount) return;
+      const prevXP = state_tr.xp[color];
+      state_tr.xp[color] += amount;
       trCheckLevelUp(color, prevXP);
       trUpdateXPBar(color);
     }
@@ -2860,6 +2979,244 @@
         state_tr.combo[color] = 0;
       }
       state_tr.lastCapturerClass[color] = cls || null;
+    }
+
+    function trIsRunMode() {
+      return state.gameMode === "bot" && state_tr.run;
+    }
+
+    function trSilverBonus() {
+      const xp = state_tr.xp[state.playerColor] || 0;
+      if (xp >= 1000) return 4 + Math.floor((xp - 1000) / 300);
+      if (xp >= 750) return 3;
+      if (xp >= 400) return 2;
+      if (xp >= 250) return 1;
+      return 0;
+    }
+
+    function trCloneArmy(army = TR_START_ARMY) {
+      return { k: army.k || 0, q: army.q || 0, r: army.r || 0, b: army.b || 0, n: army.n || 0, p: army.p || 0 };
+    }
+
+    function trNewRun() {
+      state_tr.run = {
+        active: true,
+        level: 1,
+        lives: 3,
+        silver: 0,
+        botSilver: 18,
+        botElo: 800,
+        wins: 0,
+        defeatedBosses: [],
+        shopOpen: false,
+        resolvedLevel: false,
+        lastResult: "Fresh run",
+        playerArmy: trCloneArmy(),
+        botArmy: trCloneArmy(),
+        prestige: 0,
+        eloDropCost: 75
+      };
+      trResetOnNewGame(false);
+      trStartRunLevel();
+    }
+
+    function trCurrentBoss() {
+      const run = state_tr.run;
+      if (!run || run.level % 3 !== 0) return null;
+      const tier = Math.min(9, Math.max(1, Math.ceil(run.level / 3)));
+      const pools = {
+        1: ["Eye of Cthulhu", "King Slime", "Torch God"],
+        2: ["Skeletron", "Queen Bee", "Deerclops"],
+        3: ["Wall of Flesh"],
+        4: ["The Twins", "The Destroyer", "Skeletron Prime"],
+        5: ["Plantera", "Queen Slime"],
+        6: ["Golem", "Duke Fishron", "Empress of Light"],
+        7: ["Lunatic Cultist"],
+        8: ["Solar Pillar", "Vortex Pillar", "Nebula Pillar", "Stardust Pillar"],
+        9: ["Moon Lord"]
+      };
+      const pool = pools[tier] || pools[9];
+      return pool[(run.level + tier) % pool.length];
+    }
+
+    function trSetPiece(board, square, color, type) {
+      board[square] = color === "w" ? type.toUpperCase() : type;
+    }
+
+    function trPlaceArmy(color, army) {
+      if (!state.game || !state.game.position) return;
+      const board = state.game.position.board;
+      const backRank = color === "w" ? 7 : 0;
+      const frontRank = color === "w" ? 6 : 1;
+      const order = ["r", "n", "b", "q", "k", "b", "n", "r"];
+      const pieces = [];
+      const counts = trCloneArmy(army);
+      for (const type of order) {
+        if (counts[type] > 0) {
+          pieces.push(type);
+          counts[type] -= 1;
+        }
+      }
+      for (const type of ["k", "q", "r", "b", "n", "p"]) {
+        for (let i = 0; i < counts[type]; i += 1) pieces.push(type);
+      }
+      if (!pieces.includes("k")) pieces.unshift("k");
+      pieces.slice(0, 16).forEach((type, idx) => {
+        const rank = idx < 8 ? backRank : frontRank;
+        const file = idx % 8;
+        trSetPiece(board, rank * 8 + file, color, type);
+      });
+    }
+
+    function trApplyRunArmies() {
+      if (!state.game || !state_tr.run) return;
+      const board = state.game.position.board;
+      for (let i = 0; i < 64; i += 1) board[i] = null;
+      trPlaceArmy(state.playerColor, state_tr.run.playerArmy);
+      trPlaceArmy(state.botColor, state_tr.run.botArmy);
+      state.game.position.turn = "w";
+      state.game.history = [];
+      state.game.positionCount = new Map();
+      state.game.recordPosition();
+      state.initialPosition = cloneSaveData(state.game.position);
+    }
+
+    function trStartRunLevel() {
+      const run = state_tr.run;
+      if (!run) return;
+      run.shopOpen = false;
+      run.resolvedLevel = false;
+      run.boss = trCurrentBoss();
+      run.botElo = Math.min(3000, 800 + (run.level - 1) * 125);
+      ui.eloSlider.value = String(run.botElo);
+      ui.eloValue.textContent = ui.eloSlider.value;
+      setPlayersFromSelection("random");
+      state.variant = "standard";
+      if (ui.variantSelect) ui.variantSelect.value = "standard";
+      state.game = new ChessGame("standard");
+      state.selectedSquare = null;
+      state.selectedDropPiece = null;
+      state.liveFeed = [];
+      state.moveBadges = [];
+      state.lastMoveTrail = null;
+      state.gameOverSoundPlayed = false;
+      trApplyRunArmies();
+      renderAll();
+      if (state.game.position.turn === state.botColor) queueBotMove();
+    }
+
+    function trArmySummary(army) {
+      return Object.entries(TR_PIECE_NAMES)
+        .map(([type, name]) => `${name[0]}${army[type] || 0}`)
+        .join(" ");
+    }
+
+    function trRenderRunPanel() {
+      const run = state_tr.run;
+      if (!ui.trRunPanel) return;
+      ui.trRunPanel.style.display = run && state.gameMode === "bot" ? "grid" : "none";
+      if (!run) return;
+      ui.trRunLevel.textContent = `Game ${run.level}`;
+      ui.trRunBoss.textContent = run.boss ? `Boss: ${run.boss}` : "Build your army";
+      ui.trRunLives.textContent = `Lives ${run.lives}`;
+      ui.trRunElo.textContent = `ELO ${run.botElo}`;
+      ui.trRunSilver.textContent = `${Math.floor(run.silver)} silver`;
+      ui.trRunBonus.textContent = `Silver bonus +${trSilverBonus()}`;
+      ui.trRunArmy.textContent = trArmySummary(run.playerArmy);
+      ui.trRunResult.textContent = run.lastResult || "";
+      ui.trNextLevelBtn.disabled = !run.shopOpen || run.lives <= 0;
+      ui.trPrestigeBtn.disabled = (state_tr.xp[state.playerColor] || 0) < 1450 || run.lives >= 3;
+      trRenderShop();
+    }
+
+    function trRenderShop() {
+      if (!ui.trShopGrid || !state_tr.run) return;
+      const run = state_tr.run;
+      ui.trShopGrid.innerHTML = "";
+      for (const type of ["p", "n", "b", "r", "q", "k"]) {
+        const card = document.createElement("div");
+        card.className = "tr-shop-card";
+        const cost = TR_SHOP_COSTS[type];
+        const limitHit = type === "k" && (run.playerArmy.k || 0) >= 2;
+        card.innerHTML = `<strong>${TR_PIECE_NAMES[type]}</strong>${cost} silver<br>Owned: ${run.playerArmy[type] || 0}`;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = "Buy";
+        btn.disabled = run.silver < cost || limitHit;
+        btn.addEventListener("click", () => trBuyPiece(type));
+        card.appendChild(btn);
+        ui.trShopGrid.appendChild(card);
+      }
+    }
+
+    function trBuyPiece(type) {
+      const run = state_tr.run;
+      if (!run) return;
+      const cost = TR_SHOP_COSTS[type] || 0;
+      if (run.silver < cost) return;
+      if (type === "k" && (run.playerArmy.k || 0) >= 2) return;
+      run.silver -= cost;
+      run.playerArmy[type] = (run.playerArmy[type] || 0) + 1;
+      run.lastResult = `Bought ${TR_PIECE_NAMES[type]}.`;
+      trRenderRunPanel();
+      maybeAutosaveGame();
+    }
+
+    function trBotAutoShop() {
+      const run = state_tr.run;
+      if (!run) return;
+      const plan = ["q", "r", "b", "n", "p"];
+      for (const type of plan) {
+        const cost = TR_SHOP_COSTS[type];
+        while (run.botSilver >= cost && (run.botArmy[type] || 0) < (type === "p" ? 8 : 3)) {
+          run.botSilver -= cost;
+          run.botArmy[type] = (run.botArmy[type] || 0) + 1;
+        }
+      }
+    }
+
+    function trAwardSilver(amount, reason) {
+      const run = state_tr.run;
+      if (!run || amount === 0) return;
+      const bonus = amount > 0 ? trSilverBonus() : 0;
+      run.silver = Math.max(0, run.silver + amount + bonus);
+      run.lastResult = `${reason}: ${amount + bonus > 0 ? "+" : ""}${amount + bonus} silver`;
+    }
+
+    function trHandleMoveEconomy(move, annotation, color, actor, checkNow, statusAfterMove, capturedPiece) {
+      if (!trIsRunMode() || actor !== "human" || color !== state.playerColor) return;
+      if (capturedPiece) {
+        trAwardSilver(pieceType(capturedPiece) === "q" ? 3 : 1, "Capture");
+      }
+      if (checkNow) trAwardSilver(3, "Check");
+      if (annotation && annotation.symbol === "!!") trAwardSilver(6, "Brilliant");
+      else if (annotation && annotation.symbol === "!") trAwardSilver(1, "Great move");
+      if (statusAfterMove.over && /checkmate/i.test(statusAfterMove.result || "")) trAwardSilver(3, "Checkmate");
+    }
+
+    function trHandleRunGameOver(statusAfterMove) {
+      const run = state_tr.run;
+      if (!run || run.resolvedLevel || !statusAfterMove.over) return;
+      run.resolvedLevel = true;
+      run.shopOpen = true;
+      const result = statusAfterMove.result || "";
+      const playerWon = (state.playerColor === "w" && /White wins/i.test(result)) || (state.playerColor === "b" && /Black wins/i.test(result));
+      const botWon = (state.botColor === "w" && /White wins/i.test(result)) || (state.botColor === "b" && /Black wins/i.test(result));
+      if (playerWon) {
+        run.wins += 1;
+        run.level += 1;
+        run.silver += run.boss ? 12 + trSilverBonus() : 4 + trSilverBonus();
+        if (run.boss) run.defeatedBosses.push(run.boss);
+        run.lastResult = run.boss ? `Boss defeated: ${run.boss}` : "Victory. Shop before the next board.";
+      } else if (botWon) {
+        run.lives = Math.max(0, run.lives - 1);
+        run.lastResult = run.lives > 0 ? "Life lost. Shop, then retry." : "Run over. Start a new run.";
+      } else {
+        run.lastResult = "Draw. No life lost.";
+      }
+      run.botSilver += 10 + run.level;
+      trBotAutoShop();
+      trRenderRunPanel();
     }
 
     function _trShowBanner(text, className, duration) {
@@ -4277,7 +4634,7 @@
 
     function updateModeNote() {
       if (isBotMode()) {
-        ui.modeNote.textContent = "Play against the built-in engine.";
+        ui.modeNote.textContent = "Terraria roguelike run: 3 lives, shop between boards, standard chess only.";
         p2pShowPanel(false);
       } else if (isLocalMultiplayerMode()) {
         ui.modeNote.textContent = "Two humans on one board. Auto-rotate switches perspective each turn.";
@@ -7186,6 +7543,10 @@
     }
 
     function renderVariantNote() {
+      if (state.gameMode === "bot") {
+        ui.variantNote.textContent = "Terraria roguelike uses standard chess only. Build armies through the shop.";
+        return;
+      }
       const variant = currentVariantInfo();
       if (!variant.supported) {
         ui.variantNote.textContent = "Not playable yet in this build.";
@@ -7308,6 +7669,7 @@
       renderReservePanel();
       renderLiveFeed();
       renderAccuracyMeter();
+      trRenderRunPanel();
       ui.eloValue.textContent = ui.eloSlider.value;
       updateDiscordPresence();
     }
@@ -7666,7 +8028,8 @@
       state.gameMode = selectedGameModeOption();
       state.cinematicFx = Boolean(ui.cinematicFxToggle.checked);
       state.autoRotateMultiplayer = Boolean(ui.autoRotateToggle.checked);
-      state.variant = selectedVariantOption();
+      state.variant = state.gameMode === "bot" ? "standard" : selectedVariantOption();
+      if (state.gameMode === "bot" && ui.variantSelect) ui.variantSelect.value = "standard";
       const variantCfg = currentVariantInfo();
       state.unsupportedMode = !variantCfg.supported;
 
@@ -7691,7 +8054,10 @@
       state.accuracy.w = { sum: 0, count: 0, value: 100 };
       state.accuracy.b = { sum: 0, count: 0, value: 100 };
       _lastAutosaveTurnKey = "";
-      trResetOnNewGame();
+      if (state.gameMode !== "bot") {
+        state_tr.run = null;
+        trResetOnNewGame();
+      }
       setPlayersFromSelection(selectedSideOption());
       if (isLocalMultiplayerMode()) {
         state.playerColor = state.orientation;
@@ -7699,6 +8065,12 @@
         if (state.autoRotateMultiplayer) {
           state.orientation = "w";
         }
+      }
+
+      if (state.gameMode === "bot") {
+        trNewRun();
+        updateModeNote();
+        return;
       }
 
       renderAll();
@@ -8169,7 +8541,7 @@
 
         /* ── Terraria: XP and class combo ── */
         if (didCapture) {
-          trChangeXP(color, capturedPiece);
+          trChangeXP(color, capturedPiece, move.piece);
           trCheckCombo(color, move.piece);
           synthTrOrePickup();
         }
@@ -8201,6 +8573,11 @@
         const checkNow = !statusAfterMove.over
           && !["antichess", "checkers_vs_chess"].includes(game.variant)
           && game.isInCheck(defender);
+        if (statusAfterMove.over && /checkmate/i.test(statusAfterMove.result || "")) {
+          trAddXP(color, pieceType(move.piece) === "k" ? 150 : 50);
+        }
+        trHandleMoveEconomy(move, annotation, color, actor, checkNow, statusAfterMove, capturedPiece);
+        trHandleRunGameOver(statusAfterMove);
         if (checkNow && window._achOnCheck) window._achOnCheck();
         if (window.ChessUltimateProgress) {
           const progressPayload = {
@@ -8413,6 +8790,33 @@
       state.variant = selectedVariantOption();
       renderVariantNote();
     });
+
+    if (ui.trShopToggleBtn) {
+      ui.trShopToggleBtn.addEventListener("click", () => {
+        if (!ui.trShopGrid) return;
+        ui.trShopGrid.style.display = ui.trShopGrid.style.display === "none" ? "grid" : "none";
+      });
+    }
+    if (ui.trNextLevelBtn) {
+      ui.trNextLevelBtn.addEventListener("click", () => {
+        if (!state_tr.run || !state_tr.run.shopOpen || state_tr.run.lives <= 0) return;
+        trStartRunLevel();
+        maybeAutosaveGame();
+      });
+    }
+    if (ui.trPrestigeBtn) {
+      ui.trPrestigeBtn.addEventListener("click", () => {
+        const run = state_tr.run;
+        if (!run || (state_tr.xp[state.playerColor] || 0) < 1450 || run.lives >= 3) return;
+        state_tr.xp[state.playerColor] -= 450;
+        run.lives = Math.min(3, run.lives + 1);
+        run.prestige += 1;
+        run.botElo = Math.max(200, run.botElo - 1000);
+        run.lastResult = "Prestiged: +1 life and easier bot.";
+        trRenderRunPanel();
+        maybeAutosaveGame();
+      });
+    }
 
     ui.cinematicFxToggle.addEventListener("change", () => {
       state.cinematicFx = Boolean(ui.cinematicFxToggle.checked);
