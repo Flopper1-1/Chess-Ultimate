@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu, ipcMain } = require("electron");
 const path = require("path");
+const discordPresence = require("./discordPresence");
 
 let launcherWin = null;
 const APP_ICON = path.join(__dirname, "icon.png");
@@ -30,6 +31,11 @@ function createGameWindow(htmlFile) {
   });
   win.loadFile(htmlFile);
   win.once("ready-to-show", () => win.show());
+  win.on("closed", () => {
+    const gameStillOpen = BrowserWindow.getAllWindows().some(w => w !== launcherWin && !w.isDestroyed());
+    if (!gameStillOpen) discordPresence.setLauncher(app.getVersion());
+  });
+  discordPresence.setGame(htmlFile);
   Menu.setApplicationMenu(null);
 
   /* ESC exits fullscreen (optional UX) */
@@ -66,7 +72,14 @@ app.whenReady().then(() => {
     app.dock.setIcon(APP_ICON);
   }
 
+  discordPresence.init();
+  discordPresence.setLauncher(app.getVersion());
+
   ipcMain.handle("get-app-version", () => app.getVersion());
+  ipcMain.on("discord-presence-update", (event, payload) => {
+    if (!payload || typeof payload !== "object") return;
+    discordPresence.updateGame(payload);
+  });
 
   createLauncher();
 
@@ -75,7 +88,10 @@ app.whenReady().then(() => {
     if (launcherWin && !launcherWin.isDestroyed()) launcherWin.hide();
   });
 
-  ipcMain.on("close-app", () => app.quit());
+  ipcMain.on("close-app", () => {
+    discordPresence.shutdown();
+    app.quit();
+  });
 
   ipcMain.on("back-to-menu", () => {
     /* Close all game windows, show/recreate launcher */
@@ -88,11 +104,16 @@ app.whenReady().then(() => {
     } else {
       createLauncher();
     }
+    discordPresence.setLauncher(app.getVersion());
   });
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createLauncher();
   });
+});
+
+app.on("before-quit", () => {
+  discordPresence.shutdown();
 });
 
 app.on("window-all-closed", () => {

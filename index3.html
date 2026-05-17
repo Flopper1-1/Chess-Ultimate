@@ -7184,6 +7184,27 @@
       }
     }
 
+    function updateDiscordPresence() {
+      if (!window.electronAPI || !window.electronAPI.updateDiscordPresence) return;
+      const game = state.game;
+      const status = game ? game.getGameStatus() : null;
+      const isGameOver = Boolean(status && status.over);
+      const modeLabels = {
+        bot: "Vs Bot",
+        local_multiplayer: "Local Multiplayer",
+        p2p_multiplayer: "Online P2P"
+      };
+      window.electronAPI.updateDiscordPresence({
+        variant: currentVariantInfo().label,
+        gameMode: state.gameMode,
+        mode: modeLabels[state.gameMode] || state.gameMode,
+        status: isGameOver ? status.result : (ui.statusText ? ui.statusText.textContent : ""),
+        isGameOver,
+        turn: game && !isGameOver ? game.currentTurnName() : "",
+        moveCount: game && Array.isArray(game.history) ? game.history.length : 0
+      });
+    }
+
     function renderAll() {
       renderVariantNote();
       renderStatus();
@@ -7193,6 +7214,7 @@
       renderLiveFeed();
       renderAccuracyMeter();
       ui.eloValue.textContent = ui.eloSlider.value;
+      updateDiscordPresence();
     }
 
     function selectedSideOption() {

@@ -63,6 +63,7 @@
 - **Balatro card system** — piece hands, jokers, luck cards, reward chances, rarity rolls, and card-driven movement.
 - **Don't Starve sanity mechanic** — sanity bars, darkness states, Charlie pressure, and survival-flavored consequences.
 - **Terraria XP system** — class-based XP bars, king level progression, and combo chains.
+- **Discord Rich Presence** — optional activity status for launcher, edition, variant, mode, move count, and results.
 
 ## 🎵 Soundtracks
 
@@ -110,6 +111,7 @@ Output: `build-out/ChessUltimate-win32-x64/ChessUltimate.exe` (zipped to `dist-p
 - Electron desktop app with isolated preload APIs.
 - Web Audio API synthesis for all music and SFX — zero bundled audio files.
 - Local achievements stored per edition in `localStorage`.
+- Discord Rich Presence is optional. Set `CHESS_ULTIMATE_DISCORD_CLIENT_ID` or place `discord-client-id.txt` next to the exe/repo with a Discord Application Client ID.
 - No server required for normal play.
 
 ## License

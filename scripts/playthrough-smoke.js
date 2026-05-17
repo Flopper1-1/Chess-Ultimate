@@ -126,18 +126,22 @@ async function clickEdition(port, edition) {
   const launcher = await waitForTarget(port, (target) => /launcher\.html/.test(target.url));
   const client = await connectDebugger(launcher.webSocketDebuggerUrl);
   try {
-    await evalInPage(client, `(async () => {
+    try {
+      await evalInPage(client, `(async () => {
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       for (let i = 0; i < 120; i += 1) {
         const button = document.getElementById(${JSON.stringify(edition.buttonId)});
         if (button) {
-          button.click();
+          setTimeout(() => button.click(), 0);
           return true;
         }
         await wait(50);
       }
       throw new Error("Launcher button not found: ${edition.buttonId}");
     })()`);
+    } catch (err) {
+      if (!/Execution context was destroyed/i.test(String(err && err.message))) throw err;
+    }
   } finally {
     client.close();
   }

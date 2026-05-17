@@ -5,4 +5,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   backToMenu: ()     => ipcRenderer.send("back-to-menu"),
   closeApp:   ()     => ipcRenderer.send("close-app"),
   getAppVersion: ()  => ipcRenderer.invoke("get-app-version"),
+  updateDiscordPresence: (payload) => ipcRenderer.send("discord-presence-update", payload),
 });
