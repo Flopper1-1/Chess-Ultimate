@@ -1,8 +1,11 @@
 {
   "name": "chess-ultimate",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "Chess Ultimate — Battle Edition, Joker's Gambit, Wilderness & Terraria Chess",
   "main": "main.js",
+  "config": {
+    "discordClientId": "1505371720180039821"
+  },
   "scripts": {
     "start": "electron .",
     "test:playthrough": "node scripts/playthrough-smoke.js",

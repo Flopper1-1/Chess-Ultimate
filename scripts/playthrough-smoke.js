@@ -130,14 +130,15 @@ async function clickEdition(port, edition) {
       await evalInPage(client, `(async () => {
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
       for (let i = 0; i < 120; i += 1) {
-        const button = document.getElementById(${JSON.stringify(edition.buttonId)});
-        if (button) {
-          setTimeout(() => button.click(), 0);
+        if (window.electronAPI && typeof window.electronAPI.openGame === "function") {
+          window.electronAPI.openGame(${JSON.stringify(edition.page)});
           return true;
         }
+        const button = document.getElementById(${JSON.stringify(edition.buttonId)});
+        if (button) return true;
         await wait(50);
       }
-      throw new Error("Launcher button not found: ${edition.buttonId}");
+      throw new Error("Launcher API not found for ${edition.buttonId}");
     })()`);
     } catch (err) {
       if (!/Execution context was destroyed/i.test(String(err && err.message))) throw err;
@@ -168,8 +169,14 @@ async function runEdition(port, edition) {
 
       while (document.readyState !== "complete") await wait(50);
 
-      const modeSelect = document.getElementById("gameModeSelect");
-      const variantSelect = document.getElementById("variantSelect");
+      let modeSelect = null;
+      let variantSelect = null;
+      for (let i = 0; i < 200; i += 1) {
+        modeSelect = document.getElementById("gameModeSelect");
+        variantSelect = document.getElementById("variantSelect");
+        if (modeSelect && variantSelect) break;
+        await wait(50);
+      }
       if (!modeSelect || !variantSelect) throw new Error("Game controls not found");
 
       modeSelect.value = "local_multiplayer";
