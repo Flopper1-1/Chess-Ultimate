@@ -2021,6 +2021,61 @@
   .ach-card.locked .ach-icon, .ach-card.locked .ach-name { opacity: 0.3; filter: grayscale(1); }
   .ach-modal-close { margin-top: 20px; width: 100%; padding: 10px; background: rgba(200,149,42,0.12); border: 1px solid rgba(200,149,42,0.3); color: #c8952a; border-radius: 10px; cursor: pointer; font-weight: 700; }
   .ach-modal-close:hover { background: rgba(200,149,42,0.22); }
+
+  /* ── CU shared modals ── */
+  .cu-modal-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 10000;
+    background: rgba(0,0,0,0.78); backdrop-filter: blur(5px);
+    align-items: center; justify-content: center;
+  }
+  .cu-modal-backdrop.open { display: flex; }
+  .cu-modal-panel {
+    background: rgba(10,18,40,0.97); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px; padding: 28px; min-width: 340px; max-width: 560px;
+    width: 92%; max-height: 80vh; display: flex; flex-direction: column; gap: 14px;
+  }
+  .cu-modal-panel h3 { margin: 0; font-size: 1.1rem; color: #e2f4ff; }
+  .cu-modal-input {
+    width: 100%; padding: 9px 12px; background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.18); border-radius: 8px;
+    color: #fff; font-size: 0.9rem; box-sizing: border-box;
+  }
+  .cu-modal-textarea {
+    width: 100%; min-height: 140px; padding: 9px 12px;
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px; color: #cde; font-size: 0.78rem; resize: vertical;
+    box-sizing: border-box; font-family: monospace;
+  }
+  .cu-modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .cu-modal-btn {
+    padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer;
+    font-weight: 700; font-size: 0.88rem;
+  }
+  .cu-modal-btn.primary { background: #c8952a; color: #0a0800; }
+  .cu-modal-btn.primary:hover { background: #a87422; }
+  .cu-modal-btn.secondary { background: rgba(255,255,255,0.09); color: #cde; border: 1px solid rgba(255,255,255,0.18); }
+  .cu-modal-btn.secondary:hover { background: rgba(255,255,255,0.16); }
+  .cu-modal-save-list { overflow-y: auto; max-height: 380px; display: flex; flex-direction: column; gap: 8px; }
+  .cu-modal-save-card {
+    padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09); cursor: pointer; transition: background 0.15s;
+  }
+  .cu-modal-save-card:hover { background: rgba(200,149,42,0.1); border-color: rgba(200,149,42,0.3); }
+  .cu-modal-save-card .save-name { font-weight: 700; color: #e2f4ff; font-size: 0.9rem; }
+  .cu-modal-save-card .save-meta { font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-top: 3px; }
+  .cu-modal-save-card .save-badge {
+    display: inline-block; padding: 1px 7px; border-radius: 99px; font-size: 0.65rem;
+    font-weight: 700; margin-left: 6px; vertical-align: middle;
+    background: rgba(200,149,42,0.18); color: #c8952a;
+  }
+  .cu-modal-save-card .save-badge.manual { background: rgba(134,239,172,0.18); color: #86efac; }
+  .cu-modal-error { color: #f87171; font-size: 0.82rem; min-height: 1.2em; }
+  .cu-tutorial-steps { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .cu-tutorial-steps li {
+    padding: 10px 14px; background: rgba(255,255,255,0.05);
+    border-left: 3px solid var(--accent, #c8952a);
+    border-radius: 0 8px 8px 0; font-size: 0.88rem; color: rgba(255,255,255,0.85); line-height: 1.5;
+  }
   </style>
 </head>
 <body>
@@ -2037,6 +2092,66 @@
       <button class="ach-modal-close" id="achModalClose">Close</button>
     </div>
   </div>
+
+  <!-- Save name modal -->
+  <div id="cuSaveModal" class="cu-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="cu-modal-panel">
+      <h3>Save Game</h3>
+      <input id="cuSaveNameInput" class="cu-modal-input" type="text" placeholder="Save name" />
+      <div class="cu-modal-actions">
+        <button class="cu-modal-btn secondary" id="cuSaveCancelBtn">Cancel</button>
+        <button class="cu-modal-btn primary" id="cuSaveConfirmBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load browser modal -->
+  <div id="cuLoadModal" class="cu-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="cu-modal-panel">
+      <h3>Load Save</h3>
+      <div class="cu-modal-save-list" id="cuLoadList"></div>
+      <div class="cu-modal-actions">
+        <button class="cu-modal-btn secondary" id="cuLoadCancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PGN export modal -->
+  <div id="cuPgnExportModal" class="cu-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="cu-modal-panel">
+      <h3>Export PGN</h3>
+      <textarea id="cuPgnExportText" class="cu-modal-textarea" readonly></textarea>
+      <div class="cu-modal-actions">
+        <button class="cu-modal-btn secondary" id="cuPgnExportCloseBtn">Close</button>
+        <button class="cu-modal-btn primary" id="cuPgnExportCopyBtn">Copy &amp; Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PGN import modal -->
+  <div id="cuPgnImportModal" class="cu-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="cu-modal-panel">
+      <h3>Import PGN</h3>
+      <textarea id="cuPgnImportText" class="cu-modal-textarea" placeholder="Paste PGN here…"></textarea>
+      <div class="cu-modal-error" id="cuPgnImportError"></div>
+      <div class="cu-modal-actions">
+        <button class="cu-modal-btn secondary" id="cuPgnImportCancelBtn">Cancel</button>
+        <button class="cu-modal-btn primary" id="cuPgnImportConfirmBtn">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tutorial modal -->
+  <div id="cuTutorialModal" class="cu-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="cu-modal-panel">
+      <h3 id="cuTutorialTitle">How to Play</h3>
+      <ul class="cu-tutorial-steps" id="cuTutorialSteps"></ul>
+      <div class="cu-modal-actions">
+        <button class="cu-modal-btn secondary" id="cuTutorialCloseBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
   <div id="introSplash" aria-hidden="true">
     <div class="splash-title">WILDERNESS CHESS</div>
     <div class="splash-sub">Don't Starve Edition — Sanity or Checkmate</div>
@@ -7648,8 +7763,17 @@
       if (!APP_STORAGE || !state.game) return null;
       const manual = type !== "autosave";
       const fallbackName = `${currentVariantInfo().label} - Turn ${fullTurnNumber()}`;
-      const name = forcedName || (manual ? window.prompt("Save name", fallbackName) : fallbackName);
-      if (manual && !name) return null;
+      if (manual && !forcedName) {
+        const modal = document.getElementById("cuSaveModal");
+        const input = document.getElementById("cuSaveNameInput");
+        input.value = fallbackName;
+        modal.classList.add("open");
+        input.focus();
+        input.select();
+        return null;
+      }
+      const name = forcedName || fallbackName;
+      if (!name) return null;
       const saved = APP_STORAGE.saveGame(buildSaveSnapshot(name, type), {
         autosave: !manual,
         limit: APP_SETTINGS.autosaveAmount
@@ -7726,13 +7850,24 @@
         if (ui.statusText) ui.statusText.textContent = "No saves found.";
         return;
       }
-      const lines = saves.slice(0, 20).map((save, index) => {
+      const list = document.getElementById("cuLoadList");
+      list.innerHTML = saves.slice(0, 20).map((save, index) => {
         const when = save.savedAt ? new Date(save.savedAt).toLocaleString() : "unknown time";
-        return `${index + 1}. ${save.name || "Untitled"} [${save.type}] ${save.variant} - ${when}`;
+        const badgeCls = save.type === "manual" ? "save-badge manual" : "save-badge";
+        const badgeLabel = save.type === "manual" ? "Manual" : "Auto";
+        return `<div class="cu-modal-save-card" data-idx="${index}">
+          <div class="save-name">${save.name || "Untitled"}<span class="${badgeCls}">${badgeLabel}</span></div>
+          <div class="save-meta">${save.variant || "standard"} &mdash; ${when}</div>
+        </div>`;
+      }).join("");
+      list.querySelectorAll(".cu-modal-save-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          const idx = Number(card.dataset.idx);
+          document.getElementById("cuLoadModal").classList.remove("open");
+          applySaveSnapshot(saves[idx]);
+        });
       });
-      const pick = Number(window.prompt(`Load which save?\n\n${lines.join("\n")}`, "1"));
-      if (!Number.isInteger(pick) || pick < 1 || pick > Math.min(20, saves.length)) return;
-      applySaveSnapshot(saves[pick - 1]);
+      document.getElementById("cuLoadModal").classList.add("open");
     }
 
     function exportCurrentPGN() {
@@ -7745,19 +7880,24 @@
         variant: state.variant,
         edition: APP_EDITION
       });
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(pgn).catch(() => {});
-      }
-      window.prompt("PGN exported. It has also been copied if clipboard access is available.", pgn);
+      document.getElementById("cuPgnExportText").value = pgn;
+      document.getElementById("cuPgnExportModal").classList.add("open");
     }
 
     function importPGNPrompt() {
       if (!window.ChessUltimatePGN) return;
       if (isFourPlayerVariant() || isBughouseVariant()) {
-        window.alert("PGN import is available for 2-player chess variants.");
+        const errEl = document.getElementById("cuPgnImportError");
+        if (errEl) errEl.textContent = "PGN import is available for 2-player chess variants.";
+        document.getElementById("cuPgnImportModal").classList.add("open");
         return;
       }
-      const text = window.prompt("Paste PGN to import", "");
+      document.getElementById("cuPgnImportText").value = "";
+      document.getElementById("cuPgnImportError").textContent = "";
+      document.getElementById("cuPgnImportModal").classList.add("open");
+    }
+
+    function _executePGNImport(text) {
       if (!text) return;
       const tokens = window.ChessUltimatePGN.tokenize(text);
       const previousMode = ui.gameModeSelect.value;
@@ -7775,9 +7915,12 @@
         renderAll();
         ui.statusText.textContent = `Imported ${tokens.length} PGN moves.`;
         ui.statusText.classList.remove("danger");
+        document.getElementById("cuPgnImportModal").classList.remove("open");
       } catch (err) {
         ui.gameModeSelect.value = previousMode;
         startNewGame();
+        const errEl = document.getElementById("cuPgnImportError");
+        if (errEl) errEl.textContent = err.message || "PGN import failed.";
         ui.statusText.textContent = err.message || "PGN import failed.";
         ui.statusText.classList.add("danger");
       }
@@ -8813,6 +8956,52 @@
         else { overlay.classList.remove("fading"); }
       }, 500);
     });
+
+    /* ══════════════════════════════════════════
+       CU MODAL WIRING
+    ══════════════════════════════════════════ */
+    (function() {
+      function cuCloseOnEscOrBackdrop(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.remove("open"); });
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape" && modal.classList.contains("open")) modal.classList.remove("open"); });
+      }
+      ["cuSaveModal","cuLoadModal","cuPgnExportModal","cuPgnImportModal","cuTutorialModal"].forEach(cuCloseOnEscOrBackdrop);
+
+      document.getElementById("cuSaveConfirmBtn").addEventListener("click", () => {
+        const name = document.getElementById("cuSaveNameInput").value.trim();
+        if (!name) return;
+        document.getElementById("cuSaveModal").classList.remove("open");
+        saveCurrentGame("manual", name);
+      });
+      document.getElementById("cuSaveNameInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.getElementById("cuSaveConfirmBtn").click();
+      });
+      document.getElementById("cuSaveCancelBtn").addEventListener("click", () => {
+        document.getElementById("cuSaveModal").classList.remove("open");
+      });
+      document.getElementById("cuLoadCancelBtn").addEventListener("click", () => {
+        document.getElementById("cuLoadModal").classList.remove("open");
+      });
+      document.getElementById("cuPgnExportCopyBtn").addEventListener("click", () => {
+        const text = document.getElementById("cuPgnExportText").value;
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(() => {});
+        document.getElementById("cuPgnExportModal").classList.remove("open");
+      });
+      document.getElementById("cuPgnExportCloseBtn").addEventListener("click", () => {
+        document.getElementById("cuPgnExportModal").classList.remove("open");
+      });
+      document.getElementById("cuPgnImportConfirmBtn").addEventListener("click", () => {
+        _executePGNImport(document.getElementById("cuPgnImportText").value.trim());
+      });
+      document.getElementById("cuPgnImportCancelBtn").addEventListener("click", () => {
+        document.getElementById("cuPgnImportModal").classList.remove("open");
+      });
+      document.getElementById("cuTutorialCloseBtn").addEventListener("click", () => {
+        document.getElementById("cuTutorialModal").classList.remove("open");
+      });
+    })();
 
     /* ══════════════════════════════════════════
        DYNAMIC TILE SIZE — board always fits the panel

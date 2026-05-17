@@ -1917,6 +1917,68 @@
   .ach-card.locked .ach-icon, .ach-card.locked .ach-name { opacity: 0.3; filter: grayscale(1); }
   .ach-modal-close { margin-top: 20px; width: 100%; padding: 10px; background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; border-radius: 10px; cursor: pointer; font-weight: 700; }
   .ach-modal-close:hover { background: rgba(56,189,248,0.22); }
+
+  /* ── CU shared modals ── */
+  .cu-modal-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 10000;
+    background: rgba(0,0,0,0.78); backdrop-filter: blur(5px);
+    align-items: center; justify-content: center;
+  }
+  .cu-modal-backdrop.open { display: flex; }
+  .cu-modal-panel {
+    background: rgba(10,18,40,0.97); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px; padding: 28px; min-width: 340px; max-width: 560px;
+    width: 92%; max-height: 80vh; display: flex; flex-direction: column; gap: 14px;
+  }
+  .cu-modal-panel h3 { margin: 0; font-size: 1.1rem; color: #e2f4ff; }
+  .cu-modal-input {
+    width: 100%; padding: 9px 12px; background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.18); border-radius: 8px;
+    color: #fff; font-size: 0.9rem; box-sizing: border-box;
+  }
+  .cu-modal-textarea {
+    width: 100%; min-height: 140px; padding: 9px 12px;
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px; color: #cde; font-size: 0.78rem; resize: vertical;
+    box-sizing: border-box; font-family: monospace;
+  }
+  .cu-modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .cu-modal-btn {
+    padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer;
+    font-weight: 700; font-size: 0.88rem;
+  }
+  .cu-modal-btn.primary { background: #3b82f6; color: #fff; }
+  .cu-modal-btn.primary:hover { background: #2563eb; }
+  .cu-modal-btn.secondary { background: rgba(255,255,255,0.09); color: #cde; border: 1px solid rgba(255,255,255,0.18); }
+  .cu-modal-btn.secondary:hover { background: rgba(255,255,255,0.16); }
+  .cu-modal-save-list { overflow-y: auto; max-height: 380px; display: flex; flex-direction: column; gap: 8px; }
+  .cu-modal-save-card {
+    padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09); cursor: pointer; transition: background 0.15s;
+  }
+  .cu-modal-save-card:hover { background: rgba(56,189,248,0.1); border-color: rgba(56,189,248,0.3); }
+  .cu-modal-save-card .save-name { font-weight: 700; color: #e2f4ff; font-size: 0.9rem; }
+  .cu-modal-save-card .save-meta { font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-top: 3px; }
+  .cu-modal-save-card .save-badge {
+    display: inline-block; padding: 1px 7px; border-radius: 99px; font-size: 0.65rem;
+    font-weight: 700; margin-left: 6px; vertical-align: middle;
+    background: rgba(56,189,248,0.18); color: #7dd3fc;
+  }
+  .cu-modal-save-card .save-badge.manual { background: rgba(134,239,172,0.18); color: #86efac; }
+  .cu-modal-error { color: #f87171; font-size: 0.82rem; min-height: 1.2em; }
+  .cu-tutorial-steps { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .cu-tutorial-steps li {
+    padding: 10px 14px; background: rgba(255,255,255,0.05);
+    border-left: 3px solid var(--accent, #3b82f6);
+    border-radius: 0 8px 8px 0; font-size: 0.88rem; color: rgba(255,255,255,0.85); line-height: 1.5;
+  }
+  #variantHelpBtn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--accent, #3b82f6);
+    background: transparent; color: var(--accent, #3b82f6); font-size: 0.75rem;
+    font-weight: 700; cursor: pointer; margin-left: 6px; vertical-align: middle; flex-shrink: 0;
+  }
+  #variantHelpBtn:hover { background: rgba(59,130,246,0.15); }
   </style>
 </head>
 <body>
@@ -1929,6 +1991,66 @@
       <button class="ach-modal-close" id="achModalClose">Close</button>
     </div>
   </div>
+
+  <!-- Save name modal -->
+  <div id="cuSaveModal" class="cu-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="cu-modal-panel">
+      <h3>Save Game</h3>
+      <input id="cuSaveNameInput" class="cu-modal-input" type="text" placeholder="Save name" />
+      <div class="cu-modal-actions">
+        <button class="cu-modal-btn secondary" id="cuSaveCancelBtn">Cancel</button>
+        <button class="cu-modal-btn primary" id="cuSaveConfirmBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load browser modal -->
+  <div id="cuLoadModal" class="cu-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="cu-modal-panel">
+      <h3>Load Save</h3>
+      <div class="cu-modal-save-list" id="cuLoadList"></div>
+      <div class="cu-modal-actions">
+        <button class="cu-modal-btn secondary" id="cuLoadCancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PGN export modal -->
+  <div id="cuPgnExportModal" class="cu-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="cu-modal-panel">
+      <h3>Export PGN</h3>
+      <textarea id="cuPgnExportText" class="cu-modal-textarea" readonly></textarea>
+      <div class="cu-modal-actions">
+        <button class="cu-modal-btn secondary" id="cuPgnExportCloseBtn">Close</button>
+        <button class="cu-modal-btn primary" id="cuPgnExportCopyBtn">Copy &amp; Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PGN import modal -->
+  <div id="cuPgnImportModal" class="cu-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="cu-modal-panel">
+      <h3>Import PGN</h3>
+      <textarea id="cuPgnImportText" class="cu-modal-textarea" placeholder="Paste PGN here…"></textarea>
+      <div class="cu-modal-error" id="cuPgnImportError"></div>
+      <div class="cu-modal-actions">
+        <button class="cu-modal-btn secondary" id="cuPgnImportCancelBtn">Cancel</button>
+        <button class="cu-modal-btn primary" id="cuPgnImportConfirmBtn">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Variant tutorial modal -->
+  <div id="cuTutorialModal" class="cu-modal-backdrop" role="dialog" aria-modal="true">
+    <div class="cu-modal-panel">
+      <h3 id="cuTutorialTitle">How to Play</h3>
+      <ul class="cu-tutorial-steps" id="cuTutorialSteps"></ul>
+      <div class="cu-modal-actions">
+        <button class="cu-modal-btn secondary" id="cuTutorialCloseBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
   <div id="introSplash" aria-hidden="true">
     <div class="splash-title">CHESS ULTIMATE</div>
     <div class="splash-sub">Battle Edition</div>
@@ -1995,7 +2117,7 @@
           <select id="variantModSelect" class="variant-select" style="margin-top:4px;" title="Add a second rule layer">
             <option value="">+ No modifier</option>
           </select>
-          <div class="variant-note" id="variantNote"></div>
+          <div class="variant-note" id="variantNote"></div><button id="variantHelpBtn" title="How to play this variant" style="display:none;">?</button>
         </div>
         <div class="control-toggles">
           <label class="toggle-chip">
@@ -7480,8 +7602,17 @@
       if (!APP_STORAGE || !state.game) return null;
       const manual = type !== "autosave";
       const fallbackName = `${currentVariantInfo().label} - Turn ${fullTurnNumber()}`;
-      const name = forcedName || (manual ? window.prompt("Save name", fallbackName) : fallbackName);
-      if (manual && !name) return null;
+      if (manual && !forcedName) {
+        const modal = document.getElementById("cuSaveModal");
+        const input = document.getElementById("cuSaveNameInput");
+        input.value = fallbackName;
+        modal.classList.add("open");
+        input.focus();
+        input.select();
+        return null; /* actual save happens via modal confirm */
+      }
+      const name = forcedName || fallbackName;
+      if (!name) return null;
       const saved = APP_STORAGE.saveGame(buildSaveSnapshot(name, type), {
         autosave: !manual,
         limit: APP_SETTINGS.autosaveAmount
@@ -7558,13 +7689,24 @@
         if (ui.statusText) ui.statusText.textContent = "No saves found.";
         return;
       }
-      const lines = saves.slice(0, 20).map((save, index) => {
+      const list = document.getElementById("cuLoadList");
+      list.innerHTML = saves.slice(0, 20).map((save, index) => {
         const when = save.savedAt ? new Date(save.savedAt).toLocaleString() : "unknown time";
-        return `${index + 1}. ${save.name || "Untitled"} [${save.type}] ${save.variant} - ${when}`;
+        const badgeCls = save.type === "manual" ? "save-badge manual" : "save-badge";
+        const badgeLabel = save.type === "manual" ? "Manual" : "Auto";
+        return `<div class="cu-modal-save-card" data-idx="${index}">
+          <div class="save-name">${save.name || "Untitled"}<span class="${badgeCls}">${badgeLabel}</span></div>
+          <div class="save-meta">${save.variant || "standard"} &mdash; ${when}</div>
+        </div>`;
+      }).join("");
+      list.querySelectorAll(".cu-modal-save-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          const idx = Number(card.dataset.idx);
+          document.getElementById("cuLoadModal").classList.remove("open");
+          applySaveSnapshot(saves[idx]);
+        });
       });
-      const pick = Number(window.prompt(`Load which save?\n\n${lines.join("\n")}`, "1"));
-      if (!Number.isInteger(pick) || pick < 1 || pick > Math.min(20, saves.length)) return;
-      applySaveSnapshot(saves[pick - 1]);
+      document.getElementById("cuLoadModal").classList.add("open");
     }
 
     function exportCurrentPGN() {
@@ -7577,19 +7719,24 @@
         variant: state.variant,
         edition: APP_EDITION
       });
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(pgn).catch(() => {});
-      }
-      window.prompt("PGN exported. It has also been copied if clipboard access is available.", pgn);
+      document.getElementById("cuPgnExportText").value = pgn;
+      document.getElementById("cuPgnExportModal").classList.add("open");
     }
 
     function importPGNPrompt() {
       if (!window.ChessUltimatePGN) return;
       if (isFourPlayerVariant() || isBughouseVariant()) {
-        window.alert("PGN import is available for 2-player chess variants.");
+        const errEl = document.getElementById("cuPgnImportError");
+        if (errEl) errEl.textContent = "PGN import is available for 2-player chess variants.";
+        document.getElementById("cuPgnImportModal").classList.add("open");
         return;
       }
-      const text = window.prompt("Paste PGN to import", "");
+      document.getElementById("cuPgnImportText").value = "";
+      document.getElementById("cuPgnImportError").textContent = "";
+      document.getElementById("cuPgnImportModal").classList.add("open");
+    }
+
+    function _executePGNImport(text) {
       if (!text) return;
       const tokens = window.ChessUltimatePGN.tokenize(text);
       const previousMode = ui.gameModeSelect.value;
@@ -7607,9 +7754,12 @@
         renderAll();
         ui.statusText.textContent = `Imported ${tokens.length} PGN moves.`;
         ui.statusText.classList.remove("danger");
+        document.getElementById("cuPgnImportModal").classList.remove("open");
       } catch (err) {
         ui.gameModeSelect.value = previousMode;
         startNewGame();
+        const errEl = document.getElementById("cuPgnImportError");
+        if (errEl) errEl.textContent = err.message || "PGN import failed.";
         ui.statusText.textContent = err.message || "PGN import failed.";
         ui.statusText.classList.add("danger");
       }
@@ -8641,6 +8791,160 @@
         else { overlay.classList.remove("fading"); }
       }, 500);
     });
+
+    /* ══════════════════════════════════════════
+       CU MODAL WIRING
+    ══════════════════════════════════════════ */
+    (function() {
+      function cuCloseOnEscOrBackdrop(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.remove("open"); });
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape" && modal.classList.contains("open")) modal.classList.remove("open"); });
+      }
+      ["cuSaveModal","cuLoadModal","cuPgnExportModal","cuPgnImportModal","cuTutorialModal"].forEach(cuCloseOnEscOrBackdrop);
+
+      /* Save modal */
+      document.getElementById("cuSaveConfirmBtn").addEventListener("click", () => {
+        const name = document.getElementById("cuSaveNameInput").value.trim();
+        if (!name) return;
+        document.getElementById("cuSaveModal").classList.remove("open");
+        saveCurrentGame("manual", name);
+      });
+      document.getElementById("cuSaveNameInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.getElementById("cuSaveConfirmBtn").click();
+      });
+      document.getElementById("cuSaveCancelBtn").addEventListener("click", () => {
+        document.getElementById("cuSaveModal").classList.remove("open");
+      });
+
+      /* Load modal */
+      document.getElementById("cuLoadCancelBtn").addEventListener("click", () => {
+        document.getElementById("cuLoadModal").classList.remove("open");
+      });
+
+      /* PGN export modal */
+      document.getElementById("cuPgnExportCopyBtn").addEventListener("click", () => {
+        const text = document.getElementById("cuPgnExportText").value;
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).catch(() => {});
+        document.getElementById("cuPgnExportModal").classList.remove("open");
+      });
+      document.getElementById("cuPgnExportCloseBtn").addEventListener("click", () => {
+        document.getElementById("cuPgnExportModal").classList.remove("open");
+      });
+
+      /* PGN import modal */
+      document.getElementById("cuPgnImportConfirmBtn").addEventListener("click", () => {
+        _executePGNImport(document.getElementById("cuPgnImportText").value.trim());
+      });
+      document.getElementById("cuPgnImportCancelBtn").addEventListener("click", () => {
+        document.getElementById("cuPgnImportModal").classList.remove("open");
+      });
+
+      /* Tutorial modal */
+      document.getElementById("cuTutorialCloseBtn").addEventListener("click", () => {
+        document.getElementById("cuTutorialModal").classList.remove("open");
+      });
+    })();
+
+    /* ══════════════════════════════════════════
+       VARIANT TUTORIALS
+    ══════════════════════════════════════════ */
+    const VARIANT_TUTORIALS = {
+      atomic: {
+        title: "Atomic Chess",
+        steps: [
+          "When a piece captures, it explodes! Both the capturing piece and all adjacent non-pawn pieces are removed.",
+          "You can win by exploding the enemy king — checkmate is NOT required.",
+          "Pawns on adjacent squares to the explosion survive (they are shielded).",
+          "You cannot make a capture if it would explode your own king."
+        ]
+      },
+      crazyhouse: {
+        title: "Crazyhouse",
+        steps: [
+          "Captured pieces go into your reserve (shown in the panel on the right).",
+          "On your turn you can DROP a reserve piece onto any empty square instead of moving.",
+          "Pawns cannot be dropped on rank 1 or rank 8.",
+          "Checkmate by dropping a piece counts as a win — and unlocks the 'Crazycheck!' achievement."
+        ]
+      },
+      fog_of_war: {
+        title: "Fog of War",
+        steps: [
+          "You can only see squares your pieces can move to — the rest are hidden in fog.",
+          "Enemy pieces lurking in the fog are invisible until you can see their square.",
+          "Think carefully about where enemy pieces might be hiding!",
+          "Captures and checks still work normally — you just can't see them coming."
+        ]
+      },
+      three_check: {
+        title: "Three-Check Chess",
+        steps: [
+          "Give check 3 times to win — you don't need checkmate!",
+          "The check counter is shown in the status bar.",
+          "Delivering check on your final move still wins instantly.",
+          "Earn the 'Five-Check' achievement by winning when your opponent has 2 checks already."
+        ]
+      },
+      king_of_the_hill: {
+        title: "King of the Hill",
+        steps: [
+          "Move your king to the center squares (d4, e4, d5, e5) to win instantly.",
+          "Checkmate still wins too — you have two ways to victory.",
+          "Your opponent will fight hard to control the center and block your king.",
+          "Pieces that control the center are especially valuable in this variant."
+        ]
+      },
+      antichess: {
+        title: "Antichess",
+        steps: [
+          "Your goal is to LOSE all your pieces, or have no legal moves.",
+          "If you can capture, you MUST — captures are mandatory.",
+          "There is no check or checkmate — the king is just a regular piece.",
+          "Stalemate counts as a win for the stalemated player."
+        ]
+      },
+      chess960: {
+        title: "Chess960",
+        steps: [
+          "The back rank is randomized at the start — bishops on opposite colors, king between rooks.",
+          "Castling works the same as standard chess, but the king and rook end on the same squares (c1/g1).",
+          "Opening theory doesn't apply — every game is a fresh puzzle.",
+          "960 different starting positions means near-infinite variety."
+        ]
+      }
+    };
+
+    function cuOpenTutorialModal(tutorial) {
+      if (!tutorial) return;
+      document.getElementById("cuTutorialTitle").textContent = tutorial.title;
+      document.getElementById("cuTutorialSteps").innerHTML = tutorial.steps.map((s) => `<li>${s}</li>`).join("");
+      document.getElementById("cuTutorialModal").classList.add("open");
+    }
+
+    (function() {
+      const helpBtn = document.getElementById("variantHelpBtn");
+      if (!helpBtn) return;
+      helpBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const tutorial = VARIANT_TUTORIALS[state.variant];
+        if (tutorial) cuOpenTutorialModal(tutorial);
+      });
+      /* Show/hide help button based on active variant */
+      const origUpdateModeNote = typeof updateModeNote === "function" ? updateModeNote : null;
+      function refreshVariantHelpBtn() {
+        helpBtn.style.display = VARIANT_TUTORIALS[state.variant] ? "inline-flex" : "none";
+      }
+      if (origUpdateModeNote) {
+        window._origUpdateModeNote = origUpdateModeNote;
+        window.updateModeNote = function() {
+          window._origUpdateModeNote.apply(this, arguments);
+          refreshVariantHelpBtn();
+        };
+      }
+      refreshVariantHelpBtn();
+    })();
 
     /* ══════════════════════════════════════════
        DYNAMIC TILE SIZE — board always fits the panel

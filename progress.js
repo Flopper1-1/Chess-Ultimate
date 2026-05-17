@@ -338,7 +338,7 @@
       .cu-progress-tabs { display: flex; gap: 8px; }
       .cu-progress-tab, .cu-progress-close { border: 1px solid rgba(148,163,184,0.25); border-radius: 8px; background: rgba(148,163,184,0.12); color: #fff; padding: 9px 12px; cursor: pointer; font-weight: 800; }
       .cu-progress-tab.active { background: #38bdf8; color: #04111c; }
-      .cu-progress-list { max-height: min(580px, calc(100vh - 210px)); overflow: auto; display: grid; gap: 10px; }
+      .cu-progress-list { max-height: min(580px, calc(100vh - 260px)); overflow: auto; display: grid; gap: 10px; }
       .cu-ach-row, .cu-stat-row { border: 1px solid rgba(148,163,184,0.18); border-radius: 10px; background: rgba(15,23,42,0.72); padding: 12px; display: grid; gap: 4px; }
       .cu-ach-row.unlocked { border-color: rgba(56,189,248,0.38); background: rgba(14,165,233,0.12); }
       .cu-ach-title { display: flex; align-items: center; gap: 10px; font-weight: 900; }
@@ -348,6 +348,10 @@
       .cu-progress-toast span { font-size: 1.45rem; grid-row: span 2; }
       .cu-progress-toast strong { font-size: 0.92rem; }
       .cu-progress-toast small { color: rgba(226,232,240,0.62); }
+      .cu-progress-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; }
+      .cu-progress-filter-input, .cu-progress-filter-select { padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.07); color: #fff; font-size: 0.82rem; outline: none; }
+      .cu-progress-filter-input { flex: 1; min-width: 140px; }
+      .cu-progress-filter-select { min-width: 110px; }
     `;
     document.head.appendChild(style);
 
@@ -368,6 +372,30 @@
               <button class="cu-progress-tab" type="button" data-tab="stats">Stats</button>
             </div>
           </div>
+          <div class="cu-progress-filters" id="cuProgressFilters">
+            <input id="cuAchSearch" class="cu-progress-filter-input" type="search" placeholder="Search name or description…" />
+            <select id="cuAchDifficulty" class="cu-progress-filter-select">
+              <option value="">All Difficulties</option>
+              <option value="Trivial">Trivial</option>
+              <option value="Easy">Easy</option>
+              <option value="Mild">Mild</option>
+              <option value="Hard">Hard</option>
+              <option value="Insane">Insane</option>
+              <option value="Accidental">Accidental</option>
+            </select>
+            <select id="cuAchStatus" class="cu-progress-filter-select">
+              <option value="">All Status</option>
+              <option value="unlocked">Unlocked</option>
+              <option value="locked">Locked</option>
+            </select>
+            <select id="cuAchSource" class="cu-progress-filter-select">
+              <option value="">All Sources</option>
+              <option value="Standard">Standard</option>
+              <option value="Variants">Variants</option>
+              <option value="Balatro">Balatro</option>
+              <option value="Wilderness">Wilderness</option>
+            </select>
+          </div>
           <div class="cu-progress-list" id="cuProgressList"></div>
         </div>
       </div>`;
@@ -378,10 +406,17 @@
       if (event.target === modal) closeModal();
     });
     modal.querySelector("#cuProgressSearch").addEventListener("input", renderOpenModal);
+    modal.querySelector("#cuAchSearch").addEventListener("input", renderOpenModal);
+    modal.querySelector("#cuAchDifficulty").addEventListener("change", renderOpenModal);
+    modal.querySelector("#cuAchStatus").addEventListener("change", renderOpenModal);
+    modal.querySelector("#cuAchSource").addEventListener("change", renderOpenModal);
     modal.querySelectorAll(".cu-progress-tab").forEach((button) => {
       button.addEventListener("click", () => {
         modal.querySelectorAll(".cu-progress-tab").forEach((tab) => tab.classList.remove("active"));
         button.classList.add("active");
+        /* Show/hide achievement filters based on active tab */
+        const filters = modal.querySelector("#cuProgressFilters");
+        if (filters) filters.style.display = button.dataset.tab === "achievements" ? "flex" : "none";
         renderOpenModal();
       });
     });
@@ -414,26 +449,61 @@
     if (modal) modal.classList.remove("open");
   }
 
+  function achSource(achievement) {
+    if (achievement.edition === "balatro") return "Balatro";
+    if (achievement.edition === "wilderness") return "Wilderness";
+    const variants = achievement.variants || [];
+    if (variants.length === 0) return "Standard";
+    const isStandardOnly = variants.every((v) => v === "standard" || v === "chess960");
+    return isStandardOnly ? "Standard" : "Variants";
+  }
+
   function renderOpenModal() {
     const modal = document.getElementById("cuProgressModal");
     if (!modal || !modal.classList.contains("open")) return;
     const list = modal.querySelector("#cuProgressList");
     const search = String(modal.querySelector("#cuProgressSearch").value || "").trim().toLowerCase();
     const activeTab = modal.querySelector(".cu-progress-tab.active")?.dataset.tab || "achievements";
+
+    /* Show/hide filter bar */
+    const filters = modal.querySelector("#cuProgressFilters");
+    if (filters) filters.style.display = activeTab === "achievements" ? "flex" : "none";
+
     if (activeTab === "achievements") {
+      const achSearch = String((modal.querySelector("#cuAchSearch") || {}).value || "").trim().toLowerCase();
+      const diffFilter = String((modal.querySelector("#cuAchDifficulty") || {}).value || "");
+      const statusFilter = String((modal.querySelector("#cuAchStatus") || {}).value || "");
+      const sourceFilter = String((modal.querySelector("#cuAchSource") || {}).value || "");
+
       const rows = ACHIEVEMENTS.filter((achievement) => {
-        const haystack = `${achievement.name} ${achievement.desc} ${achievement.difficulty}`.toLowerCase();
-        return !search || haystack.includes(search);
+        /* Global search box */
+        if (search) {
+          const hay = `${achievement.name} ${achievement.desc} ${achievement.difficulty}`.toLowerCase();
+          if (!hay.includes(search)) return false;
+        }
+        /* Per-field filters */
+        if (achSearch) {
+          const hay = `${achievement.name} ${achievement.desc}`.toLowerCase();
+          if (!hay.includes(achSearch)) return false;
+        }
+        if (diffFilter && achievement.difficulty !== diffFilter) return false;
+        if (statusFilter) {
+          const unlocked = Boolean(data.achievements[achievement.id]);
+          if (statusFilter === "unlocked" && !unlocked) return false;
+          if (statusFilter === "locked" && unlocked) return false;
+        }
+        if (sourceFilter && achSource(achievement) !== sourceFilter) return false;
+        return true;
       }).map((achievement) => {
         const unlocked = Boolean(data.achievements[achievement.id]);
         const when = unlocked ? new Date(data.achievements[achievement.id].unlockedAt).toLocaleString() : "Locked";
         return `<div class="cu-ach-row ${unlocked ? "unlocked" : "locked"}">
           <div class="cu-ach-title"><span>${achievement.icon}</span><span>${achievement.name}</span></div>
           <div>${achievement.desc}</div>
-          <div class="cu-ach-meta">${achievement.difficulty} • ${when}</div>
+          <div class="cu-ach-meta">${achievement.difficulty} • ${achSource(achievement)} • ${when}</div>
         </div>`;
       });
-      list.innerHTML = rows.join("") || `<div class="cu-stat-row">No achievements match that search.</div>`;
+      list.innerHTML = rows.join("") || `<div class="cu-stat-row">No achievements match those filters.</div>`;
       return;
     }
 

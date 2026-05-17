@@ -38,6 +38,6 @@ This file tracks the large idea-board prompt as an implementation checklist. Com
 
 ## Later Polish
 
-- [ ] Replace prompt-based save/load/import UX with full modal browsers.
-- [ ] Add searchable achievement/stat filters by edition, difficulty, rarity, and source.
-- [ ] Add visual tutorials for complex DLC rules without blocking play.
+- ~~Replace prompt-based save/load/import UX with full modal browsers (Save name, Load browser, PGN export, PGN import — all 4 editions).~~
+- ~~Add searchable achievement/stat filters by name, difficulty, status, and source in the progress modal.~~
+- ~~Add visual tutorials for complex DLC rules: variant help button in Battle Edition (Atomic, Crazyhouse, Fog, Three-check, KotH, Antichess, Chess960), boss mutation tutorials in Terraria, Joker tutorials in Don't Starve.~~
