@@ -746,6 +746,30 @@
       opacity: 0.95;
     }
 
+    .square.ds-special-source {
+      box-shadow: inset 0 0 0 3px rgba(134,239,172,0.8), 0 0 22px rgba(34,197,94,0.45);
+    }
+
+    .ds-effect-badge {
+      position: absolute;
+      right: 3px;
+      top: 3px;
+      z-index: 4;
+      min-width: 18px;
+      padding: 1px 4px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.45);
+      background: rgba(20,10,20,0.72);
+      color: #fef3c7;
+      font-family: "Segoe UI", sans-serif;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 1.15;
+      pointer-events: none;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+
     .square .coord {
       position: absolute;
       left: 3px;
@@ -3142,22 +3166,22 @@
       { id: "checklist", name: "Checklist", rarity: "rare", icon: "CK", desc: "Each check gives +1 card per turn, stacking up to +3." },
       { id: "terror_joker", name: "Terror Joker", rarity: "legendary", icon: "TJ", desc: "Use: discard this joker to reset opponent draw bonuses and remove 2 random jokers." },
       { id: "wilson", name: "Wilson", rarity: "common", icon: "Wi", unlock: "dontstarve", desc: "Don't Starve: gain +1 piece card for every captured piece." },
-      { id: "woodie", name: "Woodie", rarity: "uncommon", icon: "Wo", unlock: "dontstarve", desc: "Don't Starve: planned active - move a pawn like a rook once, not into promotion." },
-      { id: "warly", name: "Warly", rarity: "uncommon", icon: "Wa", unlock: "dontstarve", desc: "Don't Starve: planned active - protect a non-king piece for 1 turn." },
+      { id: "woodie", name: "Woodie", rarity: "uncommon", icon: "Wo", unlock: "dontstarve", desc: "Use: discard to move a pawn like a rook once. It cannot enter promotion." },
+      { id: "warly", name: "Warly", rarity: "uncommon", icon: "Wa", unlock: "dontstarve", desc: "Use: discard to make one non-king piece uncapturable for 1 turn." },
       { id: "walter", name: "Walter", rarity: "uncommon", icon: "Wt", unlock: "dontstarve", desc: "Don't Starve: whenever one of your pieces becomes threatened, draw 1 card." },
       { id: "wes", name: "Wes", rarity: "rare", icon: "We", unlock: "dontstarve", desc: "Use: discard this Joker to gain a random Joker with equal rarity odds." },
-      { id: "wigfrid", name: "Wigfrid", rarity: "rare", icon: "Wg", unlock: "dontstarve", desc: "Don't Starve: planned active - promote a pawn to any non-queen piece." },
-      { id: "wortox", name: "Wortox", rarity: "rare", icon: "Wx", unlock: "dontstarve", desc: "Don't Starve: planned active - teleport a piece with strict safety limits." },
-      { id: "wolfgang", name: "Wolfgang", rarity: "ultra", icon: "Wf", unlock: "dontstarve", desc: "Don't Starve: captures may also move 1 tile in any direction." },
+      { id: "wigfrid", name: "Wigfrid", rarity: "rare", icon: "Wg", unlock: "dontstarve", desc: "Use: discard to promote one pawn into a knight, bishop, or rook." },
+      { id: "wortox", name: "Wortox", rarity: "rare", icon: "Wx", unlock: "dontstarve", desc: "Use: discard to teleport one piece to a safe empty square." },
+      { id: "wolfgang", name: "Wolfgang", rarity: "ultra", icon: "Wf", unlock: "dontstarve", desc: "Your pieces may capture 1 tile in any direction." },
       { id: "wickerbottom", name: "Wickerbottom", rarity: "ultra", icon: "Wk", unlock: "dontstarve", desc: "Use: discard to permanently boost Ultra-Rare and Legendary odds." },
-      { id: "webber", name: "Webber", rarity: "ultra", icon: "Wb", unlock: "dontstarve", desc: "Don't Starve: planned - captured pieces leave capturable webs." },
-      { id: "winona", name: "Winona", rarity: "ultra", icon: "Wn", unlock: "dontstarve", desc: "Don't Starve: planned - build a catapult that attacks once." },
-      { id: "wormwood", name: "Wormwood", rarity: "ultra", icon: "Wr", unlock: "dontstarve", desc: "Don't Starve: planned - captures create one-use flower protection." },
-      { id: "wurt", name: "Wurt", rarity: "ultra", icon: "Wu", unlock: "dontstarve", desc: "Don't Starve: planned - captures leave dangerous tentacle puddles." },
-      { id: "wendy", name: "Wendy", rarity: "legendary", icon: "Wd", unlock: "dontstarve", desc: "Don't Starve: planned active - haunt a piece for 7 turns." },
-      { id: "wx78", name: "WX-78", rarity: "legendary", icon: "WX", unlock: "dontstarve", desc: "Don't Starve: planned active - steal the opponent's next non-checking turn." },
-      { id: "maxwell", name: "Maxwell", rarity: "legendary", icon: "Mx", unlock: "dontstarve", desc: "Don't Starve: planned active - apply Survival sanity for 20 turns." },
-      { id: "wanda", name: "Wanda", rarity: "legendary", icon: "Wd", unlock: "dontstarve", desc: "Don't Starve: planned active - king moves like a queen for 3 turns but cannot capture." }
+      { id: "webber", name: "Webber", rarity: "ultra", icon: "Wb", unlock: "dontstarve", desc: "Captured pieces leave capturable web traps behind." },
+      { id: "winona", name: "Winona", rarity: "ultra", icon: "Wn", unlock: "dontstarve", desc: "Use: discard to place a catapult that fires after 6 turns." },
+      { id: "wormwood", name: "Wormwood", rarity: "ultra", icon: "Wr", unlock: "dontstarve", desc: "Captures create one-use flower protection on that square." },
+      { id: "wurt", name: "Wurt", rarity: "ultra", icon: "Wu", unlock: "dontstarve", desc: "Captures leave tentacles that strike nearby pieces after 1 turn." },
+      { id: "wendy", name: "Wendy", rarity: "legendary", icon: "Wd", unlock: "dontstarve", desc: "Use: discard to haunt one piece for 7 turns. Its capturer dies too." },
+      { id: "wx78", name: "WX-78", rarity: "legendary", icon: "WX", unlock: "dontstarve", desc: "Use: discard to steal your opponent's next non-checking turn." },
+      { id: "maxwell", name: "Maxwell", rarity: "legendary", icon: "Mx", unlock: "dontstarve", desc: "Use: discard to apply Survival sanity pressure for 20 turns." },
+      { id: "wanda", name: "Wanda", rarity: "legendary", icon: "Wd", unlock: "dontstarve", desc: "Use: discard to make your king move like a non-capturing queen for 3 turns." }
     ];
     const LUCK_DEFS = [
       { id: "clover_3", name: "3 Leaf Clover", rarity: "common", icon: "3L", desc: "Increases Uncommon chance by 10%." },
@@ -3167,6 +3191,7 @@
     ];
     const JOKER_BY_ID = Object.fromEntries(JOKER_DEFS.map((def) => [def.id, def]));
     const LUCK_BY_ID = Object.fromEntries(LUCK_DEFS.map((def) => [def.id, def]));
+    const ACTIVE_JOKERS = new Set(["black_market", "cloning", "terror_joker", "wes", "wickerbottom", "woodie", "warly", "wigfrid", "wortox", "winona", "wendy", "wx78", "maxwell", "wanda"]);
 
     const state = {
       game: null,
@@ -4546,6 +4571,7 @@
       copy.rewardQueue = [];
       copy.cloneMode = false;
       copy.selectedCardId = null;
+      if (copy.dsEffects) copy.dsEffects.activeMode = null;
       return copy;
     }
 
@@ -5110,6 +5136,7 @@
           },
           capturedPiece: move.captured ? board[move.capturedSquare ?? move.to] : null,
           pushedPiece: move.heavyPush ? board[move.to] : null,
+          dsRemovedToken: null,
           exploded: []
         };
 
@@ -5153,6 +5180,10 @@
           } else {
             board[move.to] = move.promotion ? promotePiece(movingPiece, move.promotion) : movingPiece;
           }
+        }
+
+        if (move.capturedToken && move.capturedToken.kind) {
+          undo.dsRemovedToken = dsRemoveTokenAt(move.capturedToken.kind, move.to);
         }
 
         pos.enPassant = -1;
@@ -5235,6 +5266,10 @@
           for (const blast of undo.exploded) {
             board[blast.square] = blast.piece;
           }
+        }
+
+        if (undo.dsRemovedToken) {
+          dsRestoreToken(undo.dsRemovedToken);
         }
 
         if (move.dropPiece) {
@@ -5392,6 +5427,39 @@
       };
     }
 
+    function createDsEffects() {
+      return {
+        activeMode: null,
+        protected: [],
+        webs: [],
+        flowers: [],
+        tentacles: [],
+        catapults: [],
+        ghosted: [],
+        wx78: null,
+        maxwell: null,
+        wanda: { w: 0, b: 0 }
+      };
+    }
+
+    function ensureDsEffects() {
+      if (!state.cardGame) return createDsEffects();
+      const current = state.cardGame.dsEffects || {};
+      const base = createDsEffects();
+      state.cardGame.dsEffects = {
+        ...base,
+        ...current,
+        protected: Array.isArray(current.protected) ? current.protected : [],
+        webs: Array.isArray(current.webs) ? current.webs : [],
+        flowers: Array.isArray(current.flowers) ? current.flowers : [],
+        tentacles: Array.isArray(current.tentacles) ? current.tentacles : [],
+        catapults: Array.isArray(current.catapults) ? current.catapults : [],
+        ghosted: Array.isArray(current.ghosted) ? current.ghosted : [],
+        wanda: { ...base.wanda, ...(current.wanda || {}) }
+      };
+      return state.cardGame.dsEffects;
+    }
+
     function initCardGame() {
       state.cardGame = {
         nextId: 0,
@@ -5400,6 +5468,7 @@
         rewardQueue: [],
         cloneMode: false,
         checkStreak: { w: 0, b: 0 },
+        dsEffects: createDsEffects(),
         players: { w: createCardPlayer(), b: createCardPlayer() }
       };
       drawPieceCards("w", STARTING_HAND_SIZE);
@@ -5525,6 +5594,104 @@
       return drawPieceCards(color, 1);
     }
 
+    function currentPly() {
+      return state.game && Array.isArray(state.game.history) ? state.game.history.length : 0;
+    }
+
+    function showCardStatus(message, danger = false) {
+      if (!ui.statusText) return;
+      ui.statusText.textContent = message;
+      ui.statusText.classList.toggle("danger", Boolean(danger));
+    }
+
+    function dsStartActiveMode(color, jokerId, defId, hint) {
+      if (!state.cardGame || !state.game || state.game.position.turn !== color) {
+        showCardStatus("Use that Joker on your turn.", true);
+        return false;
+      }
+      discardJoker(color, jokerId);
+      const fx = ensureDsEffects();
+      fx.activeMode = { color, jokerId, defId, selectedFrom: null };
+      state.selectedSquare = null;
+      state.selectedDropPiece = null;
+      showCardStatus(hint || "Choose a square for the Joker effect.");
+      renderAll();
+      p2pSendCardSync();
+      return true;
+    }
+
+    function dsActiveMode() {
+      const fx = state.cardGame && state.cardGame.dsEffects;
+      return fx && fx.activeMode ? fx.activeMode : null;
+    }
+
+    function dsClearActiveMode() {
+      const fx = state.cardGame && state.cardGame.dsEffects;
+      if (fx) fx.activeMode = null;
+      state.selectedSquare = null;
+      state.selectedDropPiece = null;
+    }
+
+    function dsCleanExpiredEffects() {
+      if (!state.cardGame) return;
+      const fx = ensureDsEffects();
+      const ply = currentPly();
+      fx.protected = fx.protected.filter((entry) => !Number.isFinite(entry.expiresAt) || entry.expiresAt > ply);
+      fx.ghosted = fx.ghosted.filter((entry) => !Number.isFinite(entry.expiresAt) || entry.expiresAt > ply);
+      fx.flowers = fx.flowers.filter((entry) => state.game && state.game.position && state.game.position.board[entry.square]);
+      if (fx.maxwell && Number.isFinite(fx.maxwell.expiresAt) && fx.maxwell.expiresAt <= ply) fx.maxwell = null;
+      for (const color of ["w", "b"]) {
+        if (Number.isFinite(fx.wanda[color]) && fx.wanda[color] <= ply) fx.wanda[color] = 0;
+      }
+    }
+
+    function dsTokenAt(square) {
+      if (!state.cardGame) return null;
+      const fx = ensureDsEffects();
+      if (fx.webs.some((entry) => entry.square === square)) return { kind: "web", label: "WEB" };
+      if (fx.tentacles.some((entry) => entry.square === square)) return { kind: "tentacle", label: "TNT" };
+      if (fx.catapults.some((entry) => entry.square === square)) return { kind: "catapult", label: "CAT" };
+      return null;
+    }
+
+    function dsRemoveTokenAt(kind, square) {
+      const fx = ensureDsEffects();
+      const key = kind === "web" ? "webs" : kind === "tentacle" ? "tentacles" : kind === "catapult" ? "catapults" : "";
+      if (!key) return null;
+      const idx = fx[key].findIndex((entry) => entry.square === square);
+      if (idx < 0) return null;
+      return { key, token: fx[key].splice(idx, 1)[0] };
+    }
+
+    function dsRestoreToken(removed) {
+      if (!removed || !removed.key || !removed.token) return;
+      const fx = ensureDsEffects();
+      fx[removed.key].push(removed.token);
+    }
+
+    function dsIsProtectedSquare(square, attackerColor) {
+      if (!state.cardGame) return false;
+      const fx = ensureDsEffects();
+      const flower = fx.flowers.find((entry) => entry.square === square);
+      if (flower && state.game && state.game.position.board[square]) return true;
+      return fx.protected.some((entry) => entry.square === square && entry.color !== attackerColor);
+    }
+
+    function dsIsGhostedSquare(square) {
+      if (!state.cardGame) return false;
+      return ensureDsEffects().ghosted.find((entry) => entry.square === square) || null;
+    }
+
+    function dsEffectBadge(index) {
+      if (!state.cardGame) return "";
+      const fx = ensureDsEffects();
+      if (fx.protected.some((entry) => entry.square === index)) return "SAFE";
+      if (fx.ghosted.some((entry) => entry.square === index)) return "GHO";
+      if (fx.flowers.some((entry) => entry.square === index)) return "FLR";
+      const token = dsTokenAt(index);
+      return token ? token.label : "";
+    }
+
     function cardById(color, cardId) {
       const player = cardPlayer(color);
       if (!player) return null;
@@ -5608,6 +5775,11 @@
       if (!player) return true;
       const type = moveCardType(move);
       if (!type) return true;
+      if (move.dsJoker) {
+        dsClearActiveMode();
+        state.cardGame.selectedCardId = null;
+        return true;
+      }
       const refunded = hasJoker(color, "refunds") && player.lastPiecePlayed === type;
       const cardId = move.cardId || state.cardGame.selectedCardId;
       let idx = cardId ? player.hand.findIndex((card) => card.id === cardId && cardMatchesMove(card, move)) : -1;
@@ -5898,7 +6070,7 @@
         discard.textContent = "X";
         discard.addEventListener("click", (e) => { e.stopPropagation(); discardJoker(ownerColor, card.id); });
         actions.append(left, right, discard);
-        if (["black_market", "cloning", "terror_joker", "wes", "wickerbottom"].includes(card.defId)) {
+        if (ACTIVE_JOKERS.has(card.defId)) {
           const use = document.createElement("button");
           use.className = "card-action";
           use.textContent = "Use";
@@ -6032,6 +6204,36 @@
         const bonus = 2 + (player.jokers.length * 2);
         player.dsOddsBonus = Number(player.dsOddsBonus || 0) + bonus;
         discardJoker(color, jokerId);
+      } else if (joker.defId === "woodie") {
+        dsStartActiveMode(color, jokerId, "woodie", "Woodie: choose a pawn, then a rook-line destination outside promotion.");
+        return;
+      } else if (joker.defId === "warly") {
+        dsStartActiveMode(color, jokerId, "warly", "Warly: click one of your non-king pieces to protect it.");
+        return;
+      } else if (joker.defId === "wigfrid") {
+        dsStartActiveMode(color, jokerId, "wigfrid", "Wigfrid: click one of your pawns to promote it.");
+        return;
+      } else if (joker.defId === "wortox") {
+        dsStartActiveMode(color, jokerId, "wortox", "Wortox: choose a piece, then a safe empty teleport square.");
+        return;
+      } else if (joker.defId === "winona") {
+        dsStartActiveMode(color, jokerId, "winona", "Winona: click an empty square to build a catapult.");
+        return;
+      } else if (joker.defId === "wendy") {
+        dsStartActiveMode(color, jokerId, "wendy", "Wendy: click one of your pieces to haunt it for 7 turns.");
+        return;
+      } else if (joker.defId === "wx78") {
+        discardJoker(color, jokerId);
+        ensureDsEffects().wx78 = { color, pending: true, active: false };
+        showCardStatus("WX-78 armed: after your move, you steal the opponent's next turn.");
+      } else if (joker.defId === "maxwell") {
+        discardJoker(color, jokerId);
+        ensureDsEffects().maxwell = { expiresAt: currentPly() + 40, sanity: { w: 100, b: 100 } };
+        showCardStatus("Maxwell opened the Codex Umbra. Sanity pressure lasts 20 turns.");
+      } else if (joker.defId === "wanda") {
+        discardJoker(color, jokerId);
+        ensureDsEffects().wanda[color] = currentPly() + 6;
+        showCardStatus("Wanda empowered your king for 3 turns.");
       }
       renderAll();
       p2pSendCardSync();
@@ -6061,7 +6263,8 @@
     }
 
     function capturedPieceFromUndo(move, undo) {
-      return undo && undo.capturedPiece ? undo.capturedPiece : (move.captured || null);
+      if (undo && typeof undo.capturedPiece === "string") return undo.capturedPiece;
+      return typeof move.captured === "string" ? move.captured : null;
     }
 
     function addReservePiece(color, capturedPiece) {
@@ -6119,6 +6322,131 @@
       queueReward(moverColor);
     }
 
+    function dsRememberSquare(list, entry) {
+      const idx = list.findIndex((item) => item.square === entry.square);
+      if (idx >= 0) list.splice(idx, 1, entry);
+      else list.push(entry);
+    }
+
+    function applyDontStarveCaptureEffects(move, moverColor, undo) {
+      if (!state.cardGame || !state.game || !move.captured) return "";
+      const capturedPiece = capturedPieceFromUndo(move, undo);
+      const captureSquare = move.enPassant
+        ? move.capturedSquare
+        : (Number.isInteger(move.capturedSquare) ? move.capturedSquare : move.to);
+      const fx = ensureDsEffects();
+      const notes = [];
+
+      if (capturedPiece) {
+        if (hasJoker(moverColor, "webber")) {
+          dsRememberSquare(fx.webs, { square: captureSquare, color: moverColor, bornAt: currentPly() });
+          notes.push("Webber left a web.");
+        }
+        if (hasJoker(moverColor, "wormwood")) {
+          dsRememberSquare(fx.flowers, { square: captureSquare, color: moverColor, bornAt: currentPly() });
+          notes.push("Wormwood planted a flower patch.");
+        }
+        if (hasJoker(moverColor, "wurt")) {
+          dsRememberSquare(fx.tentacles, { square: captureSquare, color: moverColor, bornAt: currentPly() });
+          notes.push("Wurt left a tentacle puddle.");
+        }
+      }
+
+      const ghost = dsIsGhostedSquare(captureSquare);
+      const capturer = state.game.position.board[move.to];
+      if (ghost && capturer) {
+        state.game.position.board[move.to] = null;
+        fx.ghosted = fx.ghosted.filter((entry) => entry !== ghost);
+        notes.push("Wendy's ghost destroyed the capturer.");
+      }
+
+      return notes.join(" ");
+    }
+
+    function applyDontStarveHazards(moverColor, checkNow) {
+      if (!state.cardGame || !state.game || isFourPlayerVariant() || isBughouseVariant()) return "";
+      const fx = ensureDsEffects();
+      const board = state.game.position.board;
+      const ply = currentPly();
+      const notes = [];
+
+      for (let i = fx.catapults.length - 1; i >= 0; i -= 1) {
+        const cat = fx.catapults[i];
+        if (!Number.isFinite(cat.readyAt) || cat.readyAt > ply) continue;
+        let bestSq = -1;
+        let bestValue = -1;
+        for (let sq = 0; sq < 64; sq += 1) {
+          const piece = board[sq];
+          if (!piece || colorOf(piece) === cat.color) continue;
+          const value = PIECE_VALUE[pieceType(piece)] || 0;
+          if (value > bestValue) {
+            bestValue = value;
+            bestSq = sq;
+          }
+        }
+        if (bestSq >= 0) {
+          board[bestSq] = null;
+          notes.push(`Winona's catapult hit ${indexToCoord(bestSq)}.`);
+        }
+        fx.catapults.splice(i, 1);
+      }
+
+      for (let i = fx.tentacles.length - 1; i >= 0; i -= 1) {
+        const tentacle = fx.tentacles[i];
+        if ((ply - (tentacle.bornAt || 0)) <= 1) continue;
+        const target = adjacentSquares(tentacle.square).find((sq) => board[sq]);
+        if (Number.isInteger(target)) {
+          board[target] = null;
+          notes.push(`A tentacle struck ${indexToCoord(target)}.`);
+          fx.tentacles.splice(i, 1);
+        }
+      }
+
+      if (fx.maxwell) {
+        fx.maxwell.sanity = fx.maxwell.sanity || { w: 100, b: 100 };
+        for (const color of ["w", "b"]) {
+          let drain = 3;
+          if (color === state.game.position.turn) drain += 2;
+          if (checkNow && color === state.game.position.turn) drain += 8;
+          fx.maxwell.sanity[color] = Math.max(0, Number(fx.maxwell.sanity[color] || 100) - drain);
+          if (fx.maxwell.sanity[color] <= 0) {
+            const victims = [];
+            for (let sq = 0; sq < 64; sq += 1) {
+              const piece = board[sq];
+              if (piece && colorOf(piece) === color && pieceType(piece) !== "k") victims.push(sq);
+            }
+            if (victims.length) {
+              const sq = victims[Math.floor(Math.random() * victims.length)];
+              board[sq] = null;
+              fx.maxwell.sanity[color] = 25;
+              notes.push(`Maxwell's shadows claimed ${indexToCoord(sq)}.`);
+            }
+          }
+        }
+      }
+
+      dsCleanExpiredEffects();
+      return notes.join(" ");
+    }
+
+    function applyWx78TurnSteal(moverColor, statusAfterMove) {
+      if (!state.cardGame || !state.game || statusAfterMove.over) return statusAfterMove;
+      const fx = ensureDsEffects();
+      const wx = fx.wx78;
+      if (!wx || wx.color !== moverColor) return statusAfterMove;
+      if (wx.pending) {
+        wx.pending = false;
+        wx.active = true;
+        state.game.position.turn = moverColor;
+        showCardStatus("WX-78 stole the next turn. Extra-turn moves cannot check or checkmate.");
+        return state.game.getGameStatus();
+      }
+      if (wx.active) {
+        fx.wx78 = null;
+      }
+      return statusAfterMove;
+    }
+
     function applyPostMoveCardEffects(move, moverColor, checkNow, statusAfterMove) {
       if (!state.cardGame || !state.game) return statusAfterMove;
       const player = cardPlayer(moverColor);
@@ -6152,6 +6480,8 @@
       if (hasJoker(opponent, "walter") && hasThreatenedPiece(opponent, moverColor)) {
         drawPieceCards(opponent, 1);
       }
+
+      statusAfterMove = applyWx78TurnSteal(moverColor, statusAfterMove);
 
       if (!statusAfterMove.over) {
         drawForTurn(state.game.position.turn);
@@ -6663,7 +6993,9 @@
         move.castleQueen ? "cq" : "",
         move.bunnyBishop ? "bb" : "",
         move.ghostQueen ? "gq" : "",
-        move.heavyPush ? `hr${move.pushTo}` : ""
+        move.heavyPush ? `hr${move.pushTo}` : "",
+        move.dsJoker || "",
+        move.capturedToken ? `${move.capturedToken.kind}` : ""
       ].join(":");
     }
 
@@ -6813,20 +7145,198 @@
       }
     }
 
+    function moveWouldCheckOrMate(game, move) {
+      const undo = game.applyMove(move);
+      const defender = game.position.turn;
+      const givesCheck = !["antichess", "checkers_vs_chess"].includes(game.variant) && game.isInCheck(defender);
+      const status = game.getGameStatus();
+      game.undoMove(undo);
+      return givesCheck || (status.over && /checkmate/i.test(status.result || ""));
+    }
+
+    function moveCreatesFork(game, move, color) {
+      const undo = game.applyMove(move);
+      const board = game.position.board;
+      let attackedValuable = 0;
+      for (let sq = 0; sq < 64; sq += 1) {
+        const piece = board[sq];
+        if (!piece || colorOf(piece) === color) continue;
+        if (["q", "r", "k"].includes(pieceType(piece)) && isSquareAttacked(game.position, sq, color)) {
+          attackedValuable += 1;
+        }
+      }
+      game.undoMove(undo);
+      return attackedValuable >= 2;
+    }
+
+    function addWoodieMoves(game, moves, seen, color) {
+      const mode = dsActiveMode();
+      if (!mode || mode.defId !== "woodie" || mode.color !== color) return;
+      const board = game.position.board;
+      const promotionRank = color === "w" ? 0 : 7;
+      for (let from = 0; from < 64; from += 1) {
+        const piece = board[from];
+        if (!piece || colorOf(piece) !== color || pieceType(piece) !== "p") continue;
+        const startRank = rankOf(from);
+        const startFile = fileOf(from);
+        for (const [dr, df] of ROOK_DIRS) {
+          let r = startRank + dr;
+          let f = startFile + df;
+          while (inBounds(f, r)) {
+            if (r === promotionRank) break;
+            const to = r * 8 + f;
+            const target = board[to];
+            if (!target) {
+              pushBalatroMove(game, moves, seen, { from, to, piece, captured: false, dsJoker: "woodie", cardFree: true });
+            } else {
+              if (colorOf(target) !== color) {
+                pushBalatroMove(game, moves, seen, { from, to, piece, captured: true, dsJoker: "woodie", cardFree: true });
+              }
+              break;
+            }
+            r += dr;
+            f += df;
+          }
+        }
+      }
+    }
+
+    function addWortoxTeleportMoves(game, moves, seen, color) {
+      const mode = dsActiveMode();
+      if (!mode || mode.defId !== "wortox" || mode.color !== color) return;
+      const board = game.position.board;
+      for (let from = 0; from < 64; from += 1) {
+        const piece = board[from];
+        if (!piece || colorOf(piece) !== color) continue;
+        for (let to = 0; to < 64; to += 1) {
+          if (to === from || board[to] || dsTokenAt(to)) continue;
+          if (pieceType(piece) === "p" && (rankOf(to) === 0 || rankOf(to) === 7)) continue;
+          const move = { from, to, piece, captured: false, dsJoker: "wortox", dsTeleport: true, cardFree: true };
+          if (moveWouldCheckOrMate(game, move)) continue;
+          if (moveCreatesFork(game, move, color)) continue;
+          pushBalatroMove(game, moves, seen, move);
+        }
+      }
+    }
+
+    function addWolfgangMoves(game, moves, seen, color) {
+      if (!hasJoker(color, "wolfgang")) return;
+      const board = game.position.board;
+      for (let from = 0; from < 64; from += 1) {
+        const piece = board[from];
+        if (!piece || colorOf(piece) !== color) continue;
+        const rank = rankOf(from);
+        const file = fileOf(from);
+        for (const [dr, df] of KING_STEPS) {
+          const r = rank + dr;
+          const f = file + df;
+          if (!inBounds(f, r)) continue;
+          const to = r * 8 + f;
+          const target = board[to];
+          if (target && colorOf(target) !== color) {
+            pushBalatroMove(game, moves, seen, { from, to, piece, captured: true, dsJoker: "wolfgang" });
+          }
+        }
+      }
+    }
+
+    function addWandaMoves(game, moves, seen, color) {
+      const fx = state.cardGame ? ensureDsEffects() : null;
+      if (!fx || !Number.isFinite(fx.wanda[color]) || fx.wanda[color] <= currentPly()) return;
+      const board = game.position.board;
+      for (let from = 0; from < 64; from += 1) {
+        const piece = board[from];
+        if (!piece || colorOf(piece) !== color || pieceType(piece) !== "k") continue;
+        const startRank = rankOf(from);
+        const startFile = fileOf(from);
+        for (const [dr, df] of [...BISHOP_DIRS, ...ROOK_DIRS]) {
+          let r = startRank + dr;
+          let f = startFile + df;
+          while (inBounds(f, r)) {
+            const to = r * 8 + f;
+            if (board[to] || dsTokenAt(to)) break;
+            pushBalatroMove(game, moves, seen, { from, to, piece, captured: false, dsJoker: "wanda", cardFree: true });
+            r += dr;
+            f += df;
+          }
+        }
+      }
+    }
+
+    function addDsTokenCaptureMoves(game, moves, seen, color) {
+      if (!state.cardGame) return;
+      const board = game.position.board;
+      const tokens = [
+        ...ensureDsEffects().webs.map((entry) => ({ ...entry, kind: "web" })),
+        ...ensureDsEffects().tentacles.map((entry) => ({ ...entry, kind: "tentacle" })),
+        ...ensureDsEffects().catapults.map((entry) => ({ ...entry, kind: "catapult" }))
+      ];
+      for (const token of tokens) {
+        if (board[token.square]) continue;
+        for (const base of game.generateLegalMoves()) {
+          if (base.to === token.square && !base.captured && base.from >= 0 && pieceType(base.piece) !== "p") {
+            pushBalatroMove(game, moves, seen, { ...base, captured: true, capturedToken: { kind: token.kind }, dsTokenCapture: true });
+          }
+        }
+        const rank = rankOf(token.square);
+        const file = fileOf(token.square);
+        const pawnRank = color === "w" ? rank + 1 : rank - 1;
+        if (pawnRank >= 0 && pawnRank < 8) {
+          for (const df of [-1, 1]) {
+            const pf = file + df;
+            if (!inBounds(pf, pawnRank)) continue;
+            const from = pawnRank * 8 + pf;
+            const piece = board[from];
+            if (piece && colorOf(piece) === color && pieceType(piece) === "p") {
+              pushBalatroMove(game, moves, seen, { from, to: token.square, piece, captured: true, capturedToken: { kind: token.kind }, dsTokenCapture: true });
+            }
+          }
+        }
+      }
+    }
+
+    function dsMoveBlocked(move, attackerColor) {
+      if (!move || !move.captured || move.capturedToken) return false;
+      const square = Number.isInteger(move.capturedSquare) ? move.capturedSquare : move.to;
+      return dsIsProtectedSquare(square, attackerColor);
+    }
+
+    function generateDsActiveMoves(game, color) {
+      const mode = dsActiveMode();
+      if (!mode || mode.color !== color) return null;
+      if (!["woodie", "wortox"].includes(mode.defId)) return [];
+      const moves = [];
+      const seen = new Set();
+      addWoodieMoves(game, moves, seen, color);
+      addWortoxTeleportMoves(game, moves, seen, color);
+      return moves;
+    }
+
     function generateBalatroLegalMoves(game) {
       const color = game.position.turn;
       const base = game.generateLegalMoves();
       if (!state.cardGame || isFourPlayerVariant() || isBughouseVariant()) return base;
-      const moves = base.slice();
+      dsCleanExpiredEffects();
+      const moves = base.filter((move) => !dsTokenAt(move.to) || move.captured || game.position.board[move.to]);
       const seen = new Set(moves.map(moveKey));
       addBalatroDropMoves(game, moves, seen, color);
       addBunnyBishopMoves(game, moves, seen, color);
       addGhostQueenMoves(game, moves, seen, color);
       addHeavyRookMoves(game, moves, seen, color);
-      return moves;
+      addWolfgangMoves(game, moves, seen, color);
+      addWandaMoves(game, moves, seen, color);
+      addDsTokenCaptureMoves(game, moves, seen, color);
+      let filtered = moves.filter((move) => !dsMoveBlocked(move, color));
+      const wx = ensureDsEffects().wx78;
+      if (wx && wx.active && wx.color === color) {
+        filtered = filtered.filter((move) => !moveWouldCheckOrMate(game, move));
+      }
+      return filtered;
     }
 
     function generatePlayableBalatroMoves(game, color = game.position.turn) {
+      const activeMoves = generateDsActiveMoves(game, color);
+      if (activeMoves) return activeMoves;
       const moves = generateBalatroLegalMoves(game);
       return filterMovesBySelectedCard(color, moves);
     }
@@ -8423,6 +8933,13 @@
             square.classList.add("selected");
           }
 
+          const activeMode = dsActiveMode();
+          if (activeMode && activeMode.color === game.position.turn && piece && colorOf(piece) === activeMode.color) {
+            const type = pieceType(piece);
+            if ((activeMode.defId === "woodie" || activeMode.defId === "wigfrid") && type === "p") square.classList.add("ds-special-source");
+            if (activeMode.defId === "wortox" || activeMode.defId === "wendy" || (activeMode.defId === "warly" && type !== "k")) square.classList.add("ds-special-source");
+          }
+
           if (state.lastMoveTrail && (index === state.lastMoveTrail.from || index === state.lastMoveTrail.to)) {
             square.classList.add(index === state.lastMoveTrail.from ? "move-origin" : "move-dest");
             square.style.setProperty("--move-annotation-color", state.lastMoveTrail.color);
@@ -8476,6 +8993,14 @@
             coord.className = "coord";
             coord.textContent = indexToCoord(index);
             square.appendChild(coord);
+          }
+
+          const dsBadge = dsEffectBadge(index);
+          if (dsBadge) {
+            const badge = document.createElement("span");
+            badge.className = "ds-effect-badge";
+            badge.textContent = dsBadge;
+            square.appendChild(badge);
           }
 
           if (!reviewing) {
@@ -8677,6 +9202,17 @@
             ui.statusText.textContent += ` Opening Theory: ${player.openingFree} free moves left.`;
           } else if (!cardById(turn, state.cardGame.selectedCardId)) {
             ui.statusText.textContent += " Choose a piece card to reveal legal moves.";
+          }
+          const mode = dsActiveMode();
+          if (mode && mode.color === turn) {
+            const def = JOKER_BY_ID[mode.defId];
+            ui.statusText.textContent += ` ${def ? def.name : "Joker"} is waiting for a board choice.`;
+          }
+          const fx = ensureDsEffects();
+          if (fx.maxwell) {
+            const sw = Math.round(fx.maxwell.sanity?.w ?? 100);
+            const sb = Math.round(fx.maxwell.sanity?.b ?? 100);
+            ui.statusText.textContent += ` Sanity W${sw}/B${sb}.`;
           }
         }
         ui.statusText.classList.remove("danger");
@@ -9447,6 +9983,72 @@
       }
     }
 
+    function handleDsActiveSquareClick(targetIndex, color) {
+      const mode = dsActiveMode();
+      if (!mode || mode.color !== color || !state.game || !state.cardGame) return false;
+      const board = state.game.position.board;
+      const piece = board[targetIndex];
+      const fx = ensureDsEffects();
+
+      if (mode.defId === "warly") {
+        if (!piece || colorOf(piece) !== color || pieceType(piece) === "k") {
+          showCardStatus("Warly needs one of your non-king pieces.", true);
+          return true;
+        }
+        fx.protected.push({ square: targetIndex, color, expiresAt: currentPly() + 2 });
+        dsClearActiveMode();
+        showCardStatus(`${colorName(color)} protected ${indexToCoord(targetIndex)} for 1 turn.`);
+        renderAll();
+        p2pSendCardSync();
+        return true;
+      }
+
+      if (mode.defId === "wigfrid") {
+        if (!piece || colorOf(piece) !== color || pieceType(piece) !== "p") {
+          showCardStatus("Wigfrid needs one of your pawns.", true);
+          return true;
+        }
+        const choice = (prompt("Promote pawn to N, B, or R:", "N") || "N").trim().toLowerCase()[0];
+        const promotion = ["n", "b", "r"].includes(choice) ? choice : "n";
+        board[targetIndex] = promotePiece(piece, promotion);
+        dsClearActiveMode();
+        showCardStatus(`Wigfrid promoted ${indexToCoord(targetIndex)} to ${promotion.toUpperCase()}.`);
+        renderAll();
+        maybeAutosaveGame();
+        p2pSendCardSync();
+        return true;
+      }
+
+      if (mode.defId === "winona") {
+        if (piece || dsTokenAt(targetIndex)) {
+          showCardStatus("Winona needs an empty square for the catapult.", true);
+          return true;
+        }
+        fx.catapults.push({ square: targetIndex, color, readyAt: currentPly() + 12 });
+        dsClearActiveMode();
+        showCardStatus(`Winona started a catapult on ${indexToCoord(targetIndex)}. It fires after 6 turns.`);
+        renderAll();
+        maybeAutosaveGame();
+        p2pSendCardSync();
+        return true;
+      }
+
+      if (mode.defId === "wendy") {
+        if (!piece || colorOf(piece) !== color) {
+          showCardStatus("Wendy needs one of your pieces to haunt.", true);
+          return true;
+        }
+        fx.ghosted.push({ square: targetIndex, color, expiresAt: currentPly() + 14 });
+        dsClearActiveMode();
+        showCardStatus(`Wendy haunted ${indexToCoord(targetIndex)} for 7 turns.`);
+        renderAll();
+        p2pSendCardSync();
+        return true;
+      }
+
+      return false;
+    }
+
     function onSquareClick(event) {
       if (!event.shiftKey && event.button === 0) planClear();
 
@@ -9492,6 +10094,8 @@
       const humanColor = activeHumanColor();
       if (game.position.turn !== humanColor) return;
       if (isP2PMode() && game.position.turn !== p2p.localColor) return;
+
+      if (handleDsActiveSquareClick(targetIndex, humanColor)) return;
 
       if (state.selectedDropPiece) {
         const legalDrops = state.lastLegalMoves.filter((mv) => mv.dropPiece === state.selectedDropPiece && mv.to === targetIndex);
@@ -9625,6 +10229,7 @@
           musicOnCapture(pieceValues[capturedPiece] || pieceValues[move.captured] || 1);
           applyCaptureCardEffects(move, color, undo);
         }
+        let dsNote = move.captured ? applyDontStarveCaptureEffects(move, color, undo) : "";
         if (move.promotion) musicOnPromotion();
         let statusAfterMove = game.getGameStatus();
         const defender = game.position.turn;
@@ -9632,6 +10237,11 @@
           && !["antichess", "checkers_vs_chess"].includes(game.variant)
           && game.isInCheck(defender);
         statusAfterMove = applyPostMoveCardEffects(move, color, checkNow, statusAfterMove);
+        const hazardNote = applyDontStarveHazards(color, checkNow);
+        if (hazardNote) {
+          dsNote = dsNote ? `${dsNote} ${hazardNote}` : hazardNote;
+          statusAfterMove = game.getGameStatus();
+        }
         maybePlayGameOverSfx();
         if (checkNow && window._achOnCheck) window._achOnCheck();
         if (window.ChessUltimateProgress) {
@@ -9663,6 +10273,9 @@
           state.orientation = game.position.turn;
         }
         renderAll();
+        if (dsNote && ui.statusText && !statusAfterMove.over) {
+          ui.statusText.textContent += ` ${dsNote}`;
+        }
         maybeAutosaveGame();
         if (move.captured) {
           const burstSquare = move.enPassant

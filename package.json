@@ -1,6 +1,6 @@
 {
   "name": "chess-ultimate",
-  "version": "1.5.9",
+  "version": "1.5.10",
   "description": "Chess Ultimate — Battle Edition, Joker's Gambit, Wilderness & Terraria Chess",
   "main": "main.js",
   "config": {

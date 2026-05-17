@@ -199,6 +199,91 @@ async function runEdition(port, edition) {
       for (let i = 0; i < 120 && !state.game; i += 1) await wait(50);
       if (!state.game) throw new Error("Game did not start");
 
+      let dsJokerOk = !needsCards;
+      const dsJokerChecks = [];
+      if (needsCards) {
+        const assertDs = (name, condition) => {
+          dsJokerChecks.push({ name, ok: Boolean(condition) });
+          if (!condition) throw new Error("Don't Starve Joker smoke failed: " + name);
+        };
+        const resetCustom = (entries, turn = "w") => {
+          state.game = new ChessGame("standard");
+          state.variant = "standard";
+          state.game.position.board = Array(64).fill(null);
+          for (const [sq, piece] of entries) state.game.position.board[sq] = piece;
+          state.game.position.turn = turn;
+          state.game.history = [];
+          state.game.positionCount = new Map();
+          state.game.recordPosition();
+          initCardGame();
+          state.playerColor = "w";
+          state.botColor = "b";
+          state.gameMode = "local_multiplayer";
+        };
+
+        resetCustom([[60, "K"], [4, "k"], [36, "R"], [27, "b"]]);
+        state.cardGame.players.w.jokers.push(makeJokerInstance(JOKER_BY_ID.wolfgang));
+        assertDs("Wolfgang diagonal capture", generateBalatroLegalMoves(state.game).some((m) => m.from === 36 && m.to === 27 && m.dsJoker === "wolfgang"));
+
+        resetCustom([[60, "K"], [4, "k"], [52, "P"]]);
+        ensureDsEffects().activeMode = { color: "w", defId: "woodie" };
+        assertDs("Woodie rook pawn move", generatePlayableBalatroMoves(state.game, "w").some((m) => m.from === 52 && m.to === 48 && m.dsJoker === "woodie"));
+
+        resetCustom([[60, "K"], [4, "k"], [36, "N"]]);
+        ensureDsEffects().activeMode = { color: "w", defId: "warly" };
+        handleDsActiveSquareClick(36, "w");
+        assertDs("Warly protection marker", ensureDsEffects().protected.some((entry) => entry.square === 36));
+
+        resetCustom([[60, "K"], [4, "k"], [52, "P"]]);
+        const oldPrompt = window.prompt;
+        window.prompt = () => "R";
+        ensureDsEffects().activeMode = { color: "w", defId: "wigfrid" };
+        handleDsActiveSquareClick(52, "w");
+        window.prompt = oldPrompt;
+        assertDs("Wigfrid non-queen promotion", state.game.position.board[52] === "R");
+
+        resetCustom([[60, "K"], [4, "k"], [57, "N"]]);
+        ensureDsEffects().activeMode = { color: "w", defId: "wortox" };
+        assertDs("Wortox safe teleport", generatePlayableBalatroMoves(state.game, "w").some((m) => m.from === 57 && m.to === 32 && m.dsJoker === "wortox"));
+
+        resetCustom([[60, "K"], [4, "k"], [36, "R"]]);
+        ensureDsEffects().activeMode = { color: "w", defId: "winona" };
+        handleDsActiveSquareClick(35, "w");
+        assertDs("Winona catapult placement", ensureDsEffects().catapults.some((entry) => entry.square === 35));
+
+        resetCustom([[60, "K"], [4, "k"], [36, "R"]]);
+        ensureDsEffects().activeMode = { color: "w", defId: "wendy" };
+        handleDsActiveSquareClick(36, "w");
+        assertDs("Wendy ghost marker", ensureDsEffects().ghosted.some((entry) => entry.square === 36));
+
+        resetCustom([[60, "K"], [4, "k"], [36, "R"], [27, "b"]]);
+        state.cardGame.players.w.jokers.push(makeJokerInstance(JOKER_BY_ID.webber));
+        state.cardGame.players.w.jokers.push(makeJokerInstance(JOKER_BY_ID.wormwood));
+        state.cardGame.players.w.jokers.push(makeJokerInstance(JOKER_BY_ID.wurt));
+        state.game.position.board[27] = "R";
+        applyDontStarveCaptureEffects({ from: 36, to: 27, piece: "R", captured: true }, "w", { capturedPiece: "b" });
+        assertDs("Webber/Wormwood/Wurt terrain", ensureDsEffects().webs.length && ensureDsEffects().flowers.length && ensureDsEffects().tentacles.length);
+
+        resetCustom([[60, "K"], [4, "k"], [36, "R"]]);
+        state.cardGame.players.w.jokers.push(makeJokerInstance(JOKER_BY_ID.maxwell));
+        useJokerAbility("w", state.cardGame.players.w.jokers[0].id);
+        assertDs("Maxwell sanity effect", Boolean(ensureDsEffects().maxwell));
+
+        resetCustom([[60, "K"], [4, "k"]]);
+        state.cardGame.players.w.jokers.push(makeJokerInstance(JOKER_BY_ID.wanda));
+        useJokerAbility("w", state.cardGame.players.w.jokers[0].id);
+        assertDs("Wanda king timer", ensureDsEffects().wanda.w > currentPly());
+
+        resetCustom([[60, "K"], [4, "k"]]);
+        state.cardGame.players.w.jokers.push(makeJokerInstance(JOKER_BY_ID.wx78));
+        useJokerAbility("w", state.cardGame.players.w.jokers[0].id);
+        assertDs("WX-78 armed", Boolean(ensureDsEffects().wx78 && ensureDsEffects().wx78.pending));
+
+        dsJokerOk = dsJokerChecks.every((entry) => entry.ok);
+        document.getElementById("newGameBtn").click();
+        for (let i = 0; i < 120 && (!state.game || state.game.history.length !== 0); i += 1) await wait(50);
+      }
+
       const played = [];
       for (const planned of movesToPlay) {
         const legal = state.game.generateLegalMoves();
@@ -291,6 +376,8 @@ async function runEdition(port, edition) {
         progressReady: Boolean(window.ChessUltimateProgress && document.getElementById("cuProgressOpen")),
         pgnRoundTrip,
         reviewModeOk,
+        dsJokerOk,
+        dsJokerChecks,
         errors: pageErrors,
       };
     })()`);
@@ -329,6 +416,7 @@ async function main() {
         && result.progressReady
         && result.pgnRoundTrip
         && result.reviewModeOk
+        && result.dsJokerOk
         && result.errors.length === 0;
       const mark = ok ? "PASS" : "FAIL";
       console.log(`[${mark}] ${edition.name}: ${result.result || result.statusText} (${result.autosaveCount} autosaves)`);

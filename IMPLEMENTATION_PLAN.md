@@ -26,11 +26,10 @@ This file tracks the large idea-board prompt as an implementation checklist. Com
 - ~~PGN compatibility: export current game and import a PGN move list.~~
 - ~~Move-log review mode: click a move to view that historical board without changing the real game; disable moves while reviewing.~~
 - ~~Wilderness seasons/day-night: autumn/winter/spring/summer, 20-turn seasons, 4-turn day/night cycle, seasonal board effects.~~
+- ~~Complete active implementations for every Don't Starve Joker: Woodie, Warly, Wigfrid, Wortox, Wolfgang, Webber, Winona, Wormwood, Wurt, Wendy, WX-78, Maxwell, Wanda.~~
 
 ## Major Remaining Features
 
-- [ ] Complete active implementations for every Don't Starve Joker:
-  Woodie, Warly, Wigfrid, Wortox, Wolfgang, Webber, Winona, Wormwood, Wurt, Wendy, WX-78, Maxwell, Wanda.
 - [ ] Terraria roguelike rework:
   lives, shop, silver economy, progressive ELO, player/enemy army placement, boss tiers, boss music intensity, run save/quit.
 - [ ] Kerbal Space Chess:
