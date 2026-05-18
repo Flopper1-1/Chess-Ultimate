@@ -7740,7 +7740,11 @@
       if (!text) return;
       const tokens = window.ChessUltimatePGN.tokenize(text);
       const previousMode = ui.gameModeSelect.value;
+      const previousVariant = ui.variantSelect ? ui.variantSelect.value : "standard";
+      const previousMod = ui.variantModSelect ? ui.variantModSelect.value : "";
       ui.gameModeSelect.value = "local_multiplayer";
+      if (ui.variantSelect) ui.variantSelect.value = "standard";
+      if (ui.variantModSelect) ui.variantModSelect.value = "";
       startNewGame();
       try {
         for (const token of tokens) {
@@ -7757,6 +7761,8 @@
         document.getElementById("cuPgnImportModal").classList.remove("open");
       } catch (err) {
         ui.gameModeSelect.value = previousMode;
+        if (ui.variantSelect) ui.variantSelect.value = previousVariant;
+        if (ui.variantModSelect) ui.variantModSelect.value = previousMod;
         startNewGame();
         const errEl = document.getElementById("cuPgnImportError");
         if (errEl) errEl.textContent = err.message || "PGN import failed.";

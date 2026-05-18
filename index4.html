@@ -3009,7 +3009,7 @@
     );
     const TR_SHOP_COSTS = { k: 50, q: 35, r: 25, b: 25, n: 15, p: 7 };
     const TR_PIECE_NAMES = { k: "King", q: "Queen", r: "Rook", b: "Bishop", n: "Knight", p: "Pawn" };
-    const TR_START_ARMY = { k: 1, q: 1, r: 2, b: 2, n: 2, p: 0 };
+    const TR_START_ARMY = { k: 1, q: 1, r: 2, b: 2, n: 2, p: 1 };
 
     /* Boss → rule mutation: variant applied for the duration of that fight */
     const TR_BOSS_MUTATIONS = {
@@ -3161,7 +3161,7 @@
         lives: 3,
         silver: 0,
         botSilver: 18,
-        botElo: 800,
+        botElo: 250,
         wins: 0,
         defeatedBosses: [],
         shopOpen: false,
@@ -3217,20 +3217,31 @@
       const order = ["r", "n", "b", "q", "k", "b", "n", "r"];
       const pieces = [];
       const counts = trCloneArmy(army);
-      for (const type of order) {
+      let queenFile = 3;
+      let queenIdx = 3;
+      for (let i = 0; i < order.length; i += 1) {
+        const type = order[i];
         if (counts[type] > 0) {
           pieces.push(type);
           counts[type] -= 1;
+          if (type === "q") queenFile = i;
         }
       }
-      for (const type of ["k", "q", "r", "b", "n", "p"]) {
+      /* Place extra pawns directly in front of the queen; remaining front-rank slots filled left-to-right */
+      const frontSlots = new Array(8).fill(null);
+      for (let i = 0; i < counts.p; i += 1) {
+        const file = (queenFile + i) % 8;
+        frontSlots[file] = "p";
+      }
+      for (const type of ["k", "r", "b", "n"]) {
         for (let i = 0; i < counts[type]; i += 1) pieces.push(type);
       }
       if (!pieces.includes("k")) pieces.unshift("k");
-      pieces.slice(0, 16).forEach((type, idx) => {
-        const rank = idx < 8 ? backRank : frontRank;
-        const file = idx % 8;
-        trSetPiece(board, rank * 8 + file, color, type);
+      pieces.slice(0, 8).forEach((type, file) => {
+        trSetPiece(board, backRank * 8 + file, color, type);
+      });
+      frontSlots.forEach((type, file) => {
+        if (type) trSetPiece(board, frontRank * 8 + file, color, type);
       });
     }
 
@@ -3253,7 +3264,7 @@
       run.shopOpen = false;
       run.resolvedLevel = false;
       run.boss = trCurrentBoss();
-      run.botElo = Math.min(3000, 800 + (run.level - 1) * 125);
+      run.botElo = Math.min(3000, 250 + (run.level - 1) * 125);
       ui.eloSlider.value = String(run.botElo);
       ui.eloValue.textContent = ui.eloSlider.value;
       setPlayersFromSelection("random");
@@ -3293,6 +3304,8 @@
       const run = state_tr.run;
       if (!ui.trRunPanel) return;
       ui.trRunPanel.style.display = run && state.gameMode === "bot" ? "grid" : "none";
+      if (ui.gameModeSelect) ui.gameModeSelect.disabled = Boolean(run);
+      if (ui.variantSelect) ui.variantSelect.disabled = Boolean(run);
       if (!run) return;
       ui.trRunLevel.textContent = `Game ${run.level}`;
       const mutation = trBossMutation(run.boss);
@@ -9260,6 +9273,7 @@
     });
 
     ui.gameModeSelect.addEventListener("change", () => {
+      if (trIsRunMode()) { ui.gameModeSelect.value = "bot"; return; }
       state.gameMode = selectedGameModeOption();
       state.botThinking = false;
       updateModeNote();
@@ -9269,6 +9283,7 @@
     });
 
     ui.variantSelect.addEventListener("change", () => {
+      if (trIsRunMode()) { ui.variantSelect.value = state.variant || "standard"; return; }
       state.variant = selectedVariantOption();
       renderVariantNote();
     });

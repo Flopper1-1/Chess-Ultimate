@@ -3273,7 +3273,7 @@
       { id: "atomic", name: "Atomic", rarity: "rare", icon: "AT", desc: "Your captures explode adjacent non-pawn pieces like atomic chess." },
       { id: "crazyhouse", name: "Crazyhouse", rarity: "legendary", icon: "CH", desc: "Your captured pieces enter reserve and may be dropped with matching piece cards." },
       { id: "three_check", name: "Three-Check Chess", rarity: "legendary", icon: "3C", desc: "Win by giving 3 checks in a row. The streak resets when you do not check." },
-      { id: "opening_theory", name: "Opening Theory", rarity: "uncommon", icon: "OT", desc: "The next 5 owner moves do not require piece cards." },
+      { id: "opening_theory", name: "Opening Theory", rarity: "rare", icon: "OT", desc: "The next 5 owner moves do not require piece cards." },
       { id: "pawn_shop", name: "Pawn Shop", rarity: "common", icon: "PS", desc: "Pawn cards appear twice as often in your draws." },
       { id: "horsepower", name: "Horsepower", rarity: "rare", icon: "HP", desc: "Knight moves draw 1 extra piece card." },
       { id: "royal_insurance", name: "Royal Insurance", rarity: "ultra", icon: "RI", desc: "If your queen is captured, draw 3 piece cards." },
@@ -6366,7 +6366,7 @@
       const player = cardPlayer(color);
       if (!player) return;
       const idx = player.hand.findIndex((card) => card.id === cardId);
-      if (idx < 0 || player.hand.length < 3 || player.hand.length >= CARD_HAND_LIMIT) {
+      if (idx < 0 || player.hand.length < 3) {
         state.cardGame.cloneMode = false;
         renderAll();
         p2pSendCardSync();
@@ -6379,7 +6379,10 @@
         player.hand.splice(i, 1);
         removed += 1;
       }
-      player.hand.push(makePieceCard(source.type));
+      if (player.hand.length < CARD_HAND_LIMIT) {
+        player.hand.push(makePieceCard(source.type));
+      }
+      discardJoker(color, player.jokers.find((joker) => joker.defId === "cloning")?.id);
       state.cardGame.cloneMode = false;
       renderAll();
       p2pSendCardSync();
@@ -9814,7 +9817,9 @@
       if (!text) return;
       const tokens = window.ChessUltimatePGN.tokenize(text);
       const previousMode = ui.gameModeSelect.value;
+      const previousVariant = ui.variantSelect ? ui.variantSelect.value : "standard";
       ui.gameModeSelect.value = "local_multiplayer";
+      if (ui.variantSelect) ui.variantSelect.value = "standard";
       startNewGame();
       try {
         for (const token of tokens) {
@@ -9831,6 +9836,7 @@
         document.getElementById("cuPgnImportModal").classList.remove("open");
       } catch (err) {
         ui.gameModeSelect.value = previousMode;
+        if (ui.variantSelect) ui.variantSelect.value = previousVariant;
         startNewGame();
         const errEl = document.getElementById("cuPgnImportError");
         if (errEl) errEl.textContent = err.message || "PGN import failed.";

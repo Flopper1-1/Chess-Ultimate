@@ -246,12 +246,25 @@
     if (!ctx || !ctx.status || !ctx.status.over) return;
     const result = String(ctx.status.result || "");
     const relation = ctx.gameMode === "bot" ? "you_vs_bot" : ctx.gameMode === "p2p_multiplayer" ? "you_vs_player" : "";
-    if (relation && /stalemate/i.test(result)) addStat(ctx.edition, relation, "stalemates");
-    if (relation && /threefold/i.test(result)) addStat(ctx.edition, relation, "threefold_repetitions");
-    if (relation && /fivefold/i.test(result)) addStat(ctx.edition, relation, "fivefold_repetitions");
-    if (relation && /50-move|fifty/i.test(result)) addStat(ctx.edition, relation, "fifty_move_rule");
+    if (relation) {
+      if (/stalemate/i.test(result)) addStat(ctx.edition, relation, "stalemates");
+      if (/threefold/i.test(result)) addStat(ctx.edition, relation, "threefold_repetitions");
+      if (/fivefold/i.test(result)) addStat(ctx.edition, relation, "fivefold_repetitions");
+      if (/50-move|fifty/i.test(result)) addStat(ctx.edition, relation, "fifty_move_rule");
+      const playerName = ctx.playerColor === "b" ? "Black" : "White";
+      const playerWins = result.includes(`${playerName} wins`) || result.includes(`${playerName} win`);
+      const botName = ctx.botColor === "b" ? "Black" : "White";
+      const botWins = result.includes(`${botName} wins`) || result.includes(`${botName} win`);
+      if (playerWins) addStat(ctx.edition, relation, "wins");
+      if (botWins) addStat(ctx.edition, relation, "losses");
+      if (/stalemate/i.test(result) || /threefold/i.test(result) || /50-move/i.test(result)) addStat(ctx.edition, relation, "draws");
+    }
     save();
 
+    /* Wilderness joker unlock: no ELO gate — any bot win in wilderness edition qualifies */
+    if (ctx.gameMode === "bot" && ctx.edition === "wilderness" && playerWon({ ...ctx, result })) {
+      try { localStorage.setItem("chessUltimate_dontstarve_jokers_unlocked", "1"); } catch (_) {}
+    }
     if (!(ctx.gameMode === "bot" && Number(ctx.elo || 0) > QUALIFYING_ELO)) return;
     if (playerWon({ ...ctx, result })) {
       data.counters.winsByPlayer = Number(data.counters.winsByPlayer || 0) + 1;
@@ -276,9 +289,6 @@
         if (ctx.lastMoveWasDrop) unlock("crazycheck");
       }
       if (ctx.edition === "balatro") unlock("jokers_gambit_win");
-      if (ctx.edition === "wilderness") {
-        try { localStorage.setItem("chessUltimate_dontstarve_jokers_unlocked", "1"); } catch (_) {}
-      }
     } else if (baseVariantApplies(ctx.variant) && data.counters.playerBlundered) {
       unlock("blunder_lose");
     }
