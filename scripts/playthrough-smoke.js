@@ -211,6 +211,10 @@ async function runEdition(port, edition) {
         trStartRunLevel();
         assertTr("next level keeps run", Boolean(state_tr.run && state_tr.run.level === oldLevel));
         terrariaRunOk = terrariaRunChecks.every((entry) => entry.ok);
+        state_tr.run = null;
+        const placement = document.getElementById("trPlacementOverlay");
+        if (placement) placement.remove();
+        if (typeof trRenderRunPanel === "function") trRenderRunPanel();
       }
 
       modeSelect.value = "local_multiplayer";
