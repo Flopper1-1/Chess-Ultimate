@@ -3625,8 +3625,7 @@
       const run = state_tr.run;
       if (!ui.trRunPanel) return;
       ui.trRunPanel.style.display = run && state.gameMode === "bot" ? "grid" : "none";
-      if (ui.gameModeSelect) ui.gameModeSelect.disabled = Boolean(run);
-      if (ui.variantSelect) ui.variantSelect.disabled = Boolean(run);
+      enforceTerrariaModeLock();
       if (!run) return;
       ui.trRunLevel.textContent = `Game ${run.level}`;
       const mutation = trBossMutation(run.boss);
@@ -5403,11 +5402,11 @@
     }
 
     function selectedVariantOption() {
-      return ui.variantSelect.value || "standard";
+      return "standard";
     }
 
     function selectedGameModeOption() {
-      return ui.gameModeSelect.value || "bot";
+      return "bot";
     }
 
     function isBotMode() {
@@ -5436,6 +5435,26 @@
         ui.modeNote.textContent = "Browser-to-browser — no server needed. Host a game or join with a code.";
         p2pShowPanel(true);
       }
+    }
+
+    function enforceTerrariaModeLock() {
+      state.gameMode = "bot";
+      state.autoRotateMultiplayer = false;
+      if (ui.gameModeSelect) {
+        ui.gameModeSelect.value = "bot";
+        ui.gameModeSelect.disabled = true;
+        ui.gameModeSelect.title = "Terraria Chess is a bot-only roguelike run.";
+      }
+      if (ui.variantSelect) {
+        ui.variantSelect.disabled = true;
+        ui.variantSelect.title = "Terraria Chess controls variants through boss rules only.";
+        if (!state_tr.run || !state_tr.run.boss) ui.variantSelect.value = "standard";
+      }
+      if (ui.autoRotateToggle) {
+        ui.autoRotateToggle.checked = false;
+        ui.autoRotateToggle.disabled = true;
+      }
+      p2pShowPanel(false);
     }
 
     function emptyReserve() {
@@ -8801,6 +8820,7 @@
       setSideSelectionFromColor(state.playerColor);
       applyEditionExtraSaveData(save.extra);
       _lastAutosaveTurnKey = "";
+      enforceTerrariaModeLock();
       updateModeNote();
       renderAll();
       return true;
@@ -8889,7 +8909,10 @@
       }
     }
 
-    function applyLauncherDefaults() {}
+    function applyLauncherDefaults() {
+      enforceTerrariaModeLock();
+      updateModeNote();
+    }
 
     function selectedSideOption() {
       const input = document.querySelector("input[name='side']:checked");
@@ -9687,19 +9710,11 @@
     });
 
     ui.gameModeSelect.addEventListener("change", () => {
-      if (trIsRunMode()) { ui.gameModeSelect.value = "bot"; return; }
-      state.gameMode = selectedGameModeOption();
-      state.botThinking = false;
-      updateModeNote();
-      state.selectedSquare = null;
-      state.selectedDropPiece = null;
-      renderAll();
+      enforceTerrariaModeLock();
     });
 
     ui.variantSelect.addEventListener("change", () => {
-      if (trIsRunMode()) { ui.variantSelect.value = state.variant || "standard"; return; }
-      state.variant = selectedVariantOption();
-      renderVariantNote();
+      enforceTerrariaModeLock();
     });
 
     if (ui.trShopToggleBtn) {
@@ -9734,12 +9749,7 @@
     });
 
     ui.autoRotateToggle.addEventListener("change", () => {
-      state.autoRotateMultiplayer = Boolean(ui.autoRotateToggle.checked);
-      if (state.game && isLocalMultiplayerMode() && state.autoRotateMultiplayer
-          && !isFourPlayerVariant() && !isBughouseVariant()) {
-        state.orientation = state.game.position.turn;
-        renderBoard();
-      }
+      enforceTerrariaModeLock();
     });
 
     ui.newGameBtn.addEventListener("click", () => {

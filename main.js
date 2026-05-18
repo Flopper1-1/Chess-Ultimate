@@ -21,6 +21,7 @@ function createGameWindow(htmlFile) {
     "index.html":  "Chess Ultimate — Battle Edition",
     "index2.html": "Chess Balatro — The Joker's Gambit",
     "index4.html": "Terraria Chess — Mine. Fight. Conquer.",
+    "index5.html": "Kerbal Space Chess - Science Mode",
   };
   const win = new BrowserWindow({
     icon: APP_ICON,
@@ -55,9 +56,11 @@ function createGameWindow(htmlFile) {
 
 function createLauncher() {
   launcherWin = new BrowserWindow({
-    width: 820,
-    height: 660,
-    resizable: false,
+    width: 980,
+    height: 720,
+    minWidth: 760,
+    minHeight: 600,
+    resizable: true,
     frame: false,
     icon: APP_ICON,
     title: "Chess Ultimate",

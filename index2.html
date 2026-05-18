@@ -5599,6 +5599,7 @@
         pendingReward: null,
         rewardQueue: [],
         cloneMode: false,
+        cloneJokerId: null,
         checkStreak: { w: 0, b: 0 },
         dsEffects: createDsEffects(),
         players: { w: createCardPlayer(), b: createCardPlayer() }
@@ -6025,7 +6026,21 @@
     }
 
     function dontStarveJokersUnlocked() {
-      try { return localStorage.getItem("chessUltimate_dontstarve_jokers_unlocked") === "1"; } catch (_) { return false; }
+      try {
+        if (localStorage.getItem("chessUltimate_dontstarve_jokers_unlocked") === "1") return true;
+        const legacy = JSON.parse(localStorage.getItem("chessUltimate_dontstarve_achievements") || "{}");
+        if (legacy && legacy.checkmate) {
+          localStorage.setItem("chessUltimate_dontstarve_jokers_unlocked", "1");
+          return true;
+        }
+        const global = JSON.parse(localStorage.getItem("chessUltimate_global_progress_v1") || "{}");
+        const wildernessWins = Number(global?.stats?.wilderness?.you_vs_bot?.wins || 0);
+        if (wildernessWins > 0) {
+          localStorage.setItem("chessUltimate_dontstarve_jokers_unlocked", "1");
+          return true;
+        }
+      } catch (_) {}
+      return false;
     }
 
     function availableJokerDefs() {
@@ -6367,6 +6382,8 @@
         queueReward(color, true);
       } else if (joker.defId === "cloning") {
         state.cardGame.cloneMode = true;
+        state.cardGame.cloneJokerId = jokerId;
+        showCardStatus("Cloning armed: click the piece card to copy. Two other piece cards will be discarded.");
       } else if (joker.defId === "terror_joker") {
         const opponent = oppositeColor(color);
         const enemy = cardPlayer(opponent);
@@ -6424,9 +6441,21 @@
     function cloneSelectedPieceCard(color, cardId) {
       const player = cardPlayer(color);
       if (!player) return;
+      const cloningJokerId = state.cardGame.cloneJokerId || player.jokers.find((joker) => joker.defId === "cloning")?.id;
+      const cloningJoker = player.jokers.find((joker) => joker.id === cloningJokerId && joker.defId === "cloning");
+      if (!cloningJoker) {
+        state.cardGame.cloneMode = false;
+        state.cardGame.cloneJokerId = null;
+        showCardStatus("Cloning fizzled: the Joker is gone.", true);
+        renderAll();
+        p2pSendCardSync();
+        return;
+      }
       const idx = player.hand.findIndex((card) => card.id === cardId);
       if (idx < 0 || player.hand.length < 3) {
         state.cardGame.cloneMode = false;
+        state.cardGame.cloneJokerId = null;
+        showCardStatus("Cloning needs the chosen card plus two other piece cards.", true);
         renderAll();
         p2pSendCardSync();
         return;
@@ -6441,8 +6470,11 @@
       if (player.hand.length < CARD_HAND_LIMIT) {
         player.hand.push(makePieceCard(source.type));
       }
-      discardJoker(color, player.jokers.find((joker) => joker.defId === "cloning")?.id);
+      discardJoker(color, cloningJokerId);
       state.cardGame.cloneMode = false;
+      state.cardGame.cloneJokerId = null;
+      state.cardGame.selectedCardId = null;
+      showCardStatus(`Cloned a ${CARD_TYPES[source.type]?.name || source.type} card.`);
       renderAll();
       p2pSendCardSync();
     }

@@ -19,8 +19,10 @@
       .replace(/\([^)]*\)/g, " ")
       .split(/\s+/)
       .map((token) => token.trim())
+      .map((token) => token.replace(/^\d+\.(\.\.)?/, "").trim())
       .filter(Boolean)
       .filter((token) => !/^\d+\.(\.\.)?$/.test(token))
+      .filter((token) => !/^\$\d+$/.test(token))
       .filter((token) => !/^(1-0|0-1|1\/2-1\/2|\*)$/.test(token));
   }
 

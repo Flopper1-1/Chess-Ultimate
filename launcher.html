@@ -56,10 +56,18 @@
   .content {
     position: fixed; inset: 0;
     display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: clamp(10px, 2vh, 24px);
-    padding: 36px 20px 24px;
+    align-items: center; justify-content: flex-start;
+    gap: clamp(8px, 1.6vh, 18px);
+    padding: 42px 18px 18px;
     z-index: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148,163,184,0.28) transparent;
+  }
+  .content::-webkit-scrollbar { width: 8px; }
+  .content::-webkit-scrollbar-thumb {
+    background: rgba(148,163,184,0.28);
+    border-radius: 999px;
   }
 
   .logo { text-align: center; }
@@ -80,26 +88,27 @@
   /* Cards grid — 2×2 + 1 centered for five editions */
   .cards {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: clamp(8px, 1.4vw, 18px);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(8px, 1.2vw, 14px);
     width: 100%;
-    max-width: 780px;
-    flex: 1;
-    min-height: 0;
+    max-width: 940px;
+    flex: 0 0 auto;
+    min-height: auto;
     align-items: stretch;
   }
   .card.ksp {
-    grid-column: 1 / -1;
-    max-width: 380px;
-    margin: 0 auto;
+    grid-column: auto;
+    max-width: none;
+    margin: 0;
     width: 100%;
   }
 
   .card {
-    border-radius: 16px;
-    padding: clamp(12px, 2vh, 22px) clamp(12px, 1.8vw, 24px);
+    min-height: 194px;
+    border-radius: 12px;
+    padding: clamp(12px, 1.6vh, 18px) clamp(12px, 1.4vw, 20px);
     display: flex; flex-direction: column; align-items: center;
-    gap: clamp(5px, 1vh, 10px);
+    gap: clamp(5px, 0.9vh, 9px);
     cursor: pointer; border: 1px solid transparent;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     position: relative; overflow: hidden;
@@ -154,7 +163,7 @@
   }
 
   .card-icon {
-    font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1;
+    font-size: clamp(1.8rem, 3.4vw, 3rem); line-height: 1;
     filter: drop-shadow(0 0 14px currentColor);
   }
   .card.battle    .card-icon { color: #38bdf8; }
@@ -174,9 +183,10 @@
   .card.ksp       .card-title { color: #c8dcf0; }
 
   .card-desc {
-    font-size: clamp(0.68rem, 1vw, 0.82rem);
+    font-size: clamp(0.66rem, 0.9vw, 0.78rem);
     color: rgba(255,255,255,0.38);
-    text-align: center; line-height: 1.55;
+    text-align: center; line-height: 1.42;
+    max-width: 26ch;
   }
 
   .card-tag {
@@ -192,8 +202,8 @@
   .card.ksp       .card-tag { background: rgba(74,155,212,0.15); color: #7ec8f0; }
 
   .card-btn {
-    margin-top: 4px;
-    padding: clamp(8px, 1.2vh, 12px) clamp(18px, 2.5vw, 32px);
+    margin-top: auto;
+    padding: clamp(8px, 1vh, 11px) clamp(18px, 2.2vw, 28px);
     border-radius: 9px; border: none;
     font-size: clamp(0.75rem, 1vw, 0.9rem);
     font-weight: 700; letter-spacing: 0.08em;
@@ -271,6 +281,40 @@
     cursor: pointer;
   }
   .settings-action.primary { background: #38bdf8; color: #04111c; }
+
+  @media (max-width: 780px) {
+    .cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      max-width: 620px;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .cards {
+      grid-template-columns: 1fr;
+      max-width: 360px;
+    }
+    .card { min-height: 170px; }
+  }
+
+  @media (max-height: 650px) and (min-width: 780px) {
+    .content {
+      gap: 8px;
+      padding-top: 38px;
+    }
+    .logo h1 { font-size: 1.85rem; }
+    .logo p { margin-top: 5px; font-size: 0.68rem; }
+    .card {
+      min-height: 166px;
+      padding: 11px 14px;
+      gap: 5px;
+    }
+    .card-icon { font-size: 2rem; }
+    .card-title { font-size: 0.94rem; }
+    .card-desc { font-size: 0.66rem; line-height: 1.32; }
+    .card-tag { padding: 2px 8px; }
+    .version { line-height: 1.4; }
+  }
 </style>
 </head>
 <body>
@@ -332,7 +376,7 @@
   </div>
 
   <div class="version">
-    <div>Chess Ultimate v<span id="appVersion">1.5.18</span></div>
+    <div>Chess Ultimate v<span id="appVersion">1.5.19</span></div>
     <div class="credit">Made by TheHollyCow and Masternazz</div>
   </div>
 </div>

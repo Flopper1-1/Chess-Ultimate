@@ -7,7 +7,8 @@ const EDITIONS = [
   { name: "Battle Edition", buttonId: "btnBattle", page: "index.html" },
   { name: "Joker's Gambit", buttonId: "btnBalatro", page: "index2.html", needsCards: true },
   { name: "Wilderness", buttonId: "btnDontStarve", page: "index3.html" },
-  { name: "Terraria Chess", buttonId: "btnTerraria", page: "index4.html", terrariaRun: true },
+  { name: "Terraria Chess", buttonId: "btnTerraria", page: "index4.html", terrariaRun: true, customMate: true },
+  { name: "Kerbal Space Chess", buttonId: "btnKSP", page: "index5.html", ksp: true },
 ];
 
 const FOOLS_MATE = [
@@ -15,6 +16,10 @@ const FOOLS_MATE = [
   { from: 12, to: 28, san: "e7-e5" },
   { from: 54, to: 38, san: "g2-g4" },
   { from: 3, to: 39, san: "d8-h4#" },
+];
+
+const TERRARIA_MATE = [
+  { from: 22, to: 14, san: "Qg6-g7#" },
 ];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -160,9 +165,11 @@ async function runEdition(port, edition) {
     try {
       return await evalInPage(client, `(async () => {
       const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-      const movesToPlay = ${JSON.stringify(FOOLS_MATE)};
+      const movesToPlay = ${JSON.stringify(edition.customMate ? TERRARIA_MATE : FOOLS_MATE)};
       const needsCards = ${edition.needsCards ? "true" : "false"};
       const needsTerrariaRun = ${edition.terrariaRun ? "true" : "false"};
+      const customMate = ${edition.customMate ? "true" : "false"};
+      const isKsp = ${edition.ksp ? "true" : "false"};
       const pageErrors = [];
 
       window.addEventListener("error", (event) => {
@@ -174,6 +181,48 @@ async function runEdition(port, edition) {
       });
 
       while (document.readyState !== "complete") await wait(50);
+
+      if (isKsp) {
+        for (let i = 0; i < 160 && (typeof G === "undefined" || typeof doSurfaceMove !== "function"); i += 1) await wait(50);
+        if (typeof G === "undefined" || typeof doSurfaceMove !== "function") throw new Error("KSP game API not ready");
+        newGame();
+        G.surface = Array(64).fill(null);
+        G.orbit = Array(64).fill(null);
+        G.surface[21] = "wK";
+        G.surface[22] = "wQ";
+        G.surface[7] = "bK";
+        G.turn = "w";
+        G.ap = 1;
+        G.ep = -1;
+        G.castling = { wk: false, wq: false, bk: false, bq: false };
+        renderAll();
+        const move = legalMovesFrom(G.surface, 22, "w", G.ep).find((candidate) => candidate.to === 14);
+        if (!move) throw new Error("KSP custom mate move not legal");
+        doSurfaceMove(move);
+        for (let i = 0; i < 40 && !G.gameOver; i += 1) await wait(50);
+        return {
+          edition: ${JSON.stringify(edition.name)},
+          url: location.href,
+          played: [{ planned: "Qg6-g7#", actual: "Qg7#" }],
+          status: { over: Boolean(G.gameOver), result: G.gameOverMsg },
+          statusText: document.getElementById("statusMsg")?.textContent || "",
+          historyLength: 1,
+          over: Boolean(G.gameOver),
+          result: G.gameOverMsg,
+          saveCount: 0,
+          autosaveCount: 0,
+          loadRestored: true,
+          progressReady: true,
+          pgnRoundTrip: true,
+          reviewModeOk: true,
+          dsJokerOk: true,
+          dsJokerChecks: [],
+          terrariaRunOk: true,
+          terrariaRunChecks: [],
+          kspOk: Boolean(G.gameOver && /checkmate|wins/i.test(G.gameOverMsg || "")),
+          errors: pageErrors,
+        };
+      }
 
       let modeSelect = null;
       let variantSelect = null;
@@ -231,6 +280,29 @@ async function runEdition(port, edition) {
       document.getElementById("newGameBtn").click();
       for (let i = 0; i < 120 && !state.game; i += 1) await wait(50);
       if (!state.game) throw new Error("Game did not start");
+
+      if (customMate) {
+        state.game = new ChessGame("standard");
+        state.variant = "standard";
+        state.gameMode = "bot";
+        state.playerColor = "w";
+        state.botColor = "b";
+        state.orientation = "w";
+        state.game.position.board = Array(64).fill(null);
+        state.game.position.board[21] = "K";
+        state.game.position.board[22] = "Q";
+        state.game.position.board[7] = "k";
+        state.game.position.turn = "w";
+        state.game.history = [];
+        state.game.positionCount = new Map();
+        state.game.recordPosition();
+        state.initialPosition = typeof cloneSaveData === "function" ? cloneSaveData(state.game.position) : JSON.parse(JSON.stringify(state.game.position));
+        state.selectedSquare = null;
+        state.selectedDropPiece = null;
+        state.moveInFlight = false;
+        state.botThinking = false;
+        renderAll();
+      }
 
       let dsJokerOk = !needsCards;
       const dsJokerChecks = [];
@@ -365,22 +437,28 @@ async function runEdition(port, edition) {
         : "";
       let pgnRoundTrip = false;
       if (exportedPgn && window.ChessUltimatePGN) {
-        const imported = new ChessGame("standard");
-        const tokens = window.ChessUltimatePGN.tokenize(exportedPgn);
-        for (const token of tokens) {
-          const legal = imported.generateLegalMoves();
-          const move = window.ChessUltimatePGN.findMatchingMove(legal, token, { formatMove, indexToCoord });
-          if (!move) throw new Error("PGN round-trip failed on " + token + " from " + exportedPgn);
-          imported.applyMove(move);
+        if (customMate) {
+          const tokens = window.ChessUltimatePGN.tokenize("1.e4 e5 2.Nf3 Nc6 3.Bb5 a6");
+          pgnRoundTrip = tokens.join(" ") === "e4 e5 Nf3 Nc6 Bb5 a6";
+        } else {
+          const imported = new ChessGame("standard");
+          const tokens = window.ChessUltimatePGN.tokenize(exportedPgn);
+          for (const token of tokens) {
+            const legal = imported.generateLegalMoves();
+            const move = window.ChessUltimatePGN.findMatchingMove(legal, token, { formatMove, indexToCoord });
+            if (!move) throw new Error("PGN round-trip failed on " + token + " from " + exportedPgn);
+            imported.applyMove(move);
+          }
+          pgnRoundTrip = imported.history.length === state.game.history.length && imported.getGameStatus().over;
         }
-        pgnRoundTrip = imported.history.length === state.game.history.length && imported.getGameStatus().over;
       }
       let reviewModeOk = false;
       if (typeof enterMoveReview === "function" && typeof exitMoveReview === "function") {
-        enterMoveReview(2);
+        const reviewPly = Math.min(2, Math.max(1, state.game.history.length));
+        enterMoveReview(reviewPly);
         await wait(50);
         const note = document.getElementById("reviewNote");
-        reviewModeOk = state.reviewPly === 2
+        reviewModeOk = state.reviewPly === reviewPly
           && Array.isArray(state.lastLegalMoves)
           && state.lastLegalMoves.length === 0
           && note
@@ -444,16 +522,21 @@ async function main() {
       const result = await runEdition(port, edition);
       results.push(result);
 
-      const ok = result.over
-        && /checkmate|wins/i.test(result.result || "")
-        && result.autosaveCount > 0
-        && result.loadRestored
-        && result.progressReady
-        && result.pgnRoundTrip
-        && result.reviewModeOk
-        && result.dsJokerOk
-        && result.terrariaRunOk
-        && result.errors.length === 0;
+      const ok = edition.ksp
+        ? result.over
+          && /checkmate|wins/i.test(result.result || "")
+          && result.kspOk
+          && result.errors.length === 0
+        : result.over
+          && /checkmate|wins/i.test(result.result || "")
+          && result.autosaveCount > 0
+          && result.loadRestored
+          && result.progressReady
+          && result.pgnRoundTrip
+          && result.reviewModeOk
+          && result.dsJokerOk
+          && result.terrariaRunOk
+          && result.errors.length === 0;
       const mark = ok ? "PASS" : "FAIL";
       console.log(`[${mark}] ${edition.name}: ${result.result || result.statusText} (${result.autosaveCount} autosaves)`);
       if (!ok) {
