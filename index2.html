@@ -2401,6 +2401,15 @@
     font-weight: 700; cursor: pointer; margin-left: 6px; vertical-align: middle; flex-shrink: 0;
   }
   #dsJokerHelpBtn:hover { background: rgba(245,158,11,0.15); }
+
+  /* Maxwell sanity distortion effects */
+  .sanity-low { animation: sanityDistort 3s ease-in-out infinite; }
+  .sanity-critical { animation: sanityDistort 0.8s ease-in-out infinite; filter: hue-rotate(30deg) saturate(1.4); }
+  @keyframes sanityDistort {
+    0%,100% { transform: skewX(0deg) skewY(0deg); }
+    25% { transform: skewX(0.4deg) skewY(0.2deg); }
+    75% { transform: skewX(-0.3deg) skewY(-0.15deg); }
+  }
   </style>
 </head>
 <body>
@@ -5766,6 +5775,56 @@
       for (const color of ["w", "b"]) {
         if (Number.isFinite(fx.wanda[color]) && fx.wanda[color] <= ply) fx.wanda[color] = 0;
       }
+      // Clean up sanity FX classes when maxwell expires
+      if (!fx.maxwell) {
+        ui.board.classList.remove("sanity-low", "sanity-critical");
+      }
+    }
+
+    function updateSanityFx() {
+      if (!state.cardGame || !ui.board) return;
+      const fx = ensureDsEffects();
+      ui.board.classList.remove("sanity-low", "sanity-critical");
+      if (!fx.maxwell || !isBotMode()) return;
+      // Only apply distortion based on the human player's sanity
+      const humanColor = state.playerColor;
+      if (!humanColor) return;
+      const sanity = Number(fx.maxwell.sanity?.[humanColor] ?? 100);
+      if (sanity < 30) {
+        ui.board.classList.add("sanity-critical");
+      } else if (sanity < 60) {
+        ui.board.classList.add("sanity-low");
+      }
+    }
+
+    async function applyMaxwellPossessedMove() {
+      if (!state.cardGame || !state.game || !isBotMode()) return;
+      const fx = ensureDsEffects();
+      if (!fx.maxwell) return;
+      const humanColor = state.playerColor;
+      if (!humanColor) return;
+      const sanity = Number(fx.maxwell.sanity?.[humanColor] ?? 100);
+      if (sanity >= 85) return; // Not enough sanity drained (need >15 lost)
+      const lastAt = fx.maxwell.lastControlAt ?? -999;
+      if (currentPly() - lastAt < 5) return;
+      // Trigger: opponent (bot) controls one of the human's pieces for one move
+      const game = state.game;
+      if (game.isGameOver()) return;
+      // Temporarily switch turn to human color to generate their legal moves
+      const savedTurn = game.position.turn;
+      game.position.turn = humanColor;
+      const humanMoves = game.generateLegalMoves();
+      game.position.turn = savedTurn;
+      if (!humanMoves || humanMoves.length === 0) return;
+      const possessedMove = humanMoves[Math.floor(Math.random() * humanMoves.length)];
+      fx.maxwell.lastControlAt = currentPly();
+      if (ui.statusText) {
+        ui.statusText.textContent = "Your piece is possessed! The opponent controls one of your pieces.";
+        ui.statusText.classList.add("danger");
+      }
+      // Apply the possessed move silently as a haunted annotation
+      const annotation = { symbol: "👻", label: "possessed", cpLoss: 0 };
+      await applyAnnotatedMove(possessedMove, annotation, humanColor, "bot", "👻 Possessed:");
     }
 
     function dsTokenAt(square) {
@@ -6552,6 +6611,7 @@
       }
 
       dsCleanExpiredEffects();
+      updateSanityFx();
       return notes.join(" ");
     }
 
@@ -10547,6 +10607,10 @@
       await applyAnnotatedMove(move, annotation, moverColor, "human", actorLabel);
       if (isP2PMode() && p2p.ready) {
         p2pSend("move", { move, cardGame: p2pSerializableCardGame() });
+      }
+      // Maxwell possession: opponent controls one of the human's pieces
+      if (!game.isGameOver() && isBotMode()) {
+        await applyMaxwellPossessedMove();
       }
       if (!game.isGameOver() && isBotMode()) {
         await waitForRewardModalClosed();

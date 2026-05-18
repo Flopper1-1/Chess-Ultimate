@@ -305,6 +305,9 @@
       overflow: auto;
       padding: 14px 10px;
       gap: 16px;
+      perspective: 1200px;
+      perspective-origin: 50% 30%;
+      transform-style: preserve-3d;
     }
 
     .boards-row {
@@ -466,6 +469,123 @@
       0%, 100% { opacity: 0.7; }
       50%       { opacity: 1; }
     }
+
+    /* ── 3D Space Scene ── */
+    /* The 3D scene root — a column that holds both board planes */
+    .scene-3d {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 48px;   /* visible gap between the two angled boards */
+      transform-style: preserve-3d;
+    }
+
+    /* Each board plane */
+    .board-plane {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transform-style: preserve-3d;
+    }
+
+    /* Surface plane — tilted, pushed back */
+    .board-plane.surface-plane {
+      transform: rotateX(38deg) translateZ(-60px);
+    }
+
+    /* Orbit plane — same tilt, pushed forward */
+    .board-plane.orbit-plane {
+      transform: rotateX(38deg) translateZ(60px);
+    }
+
+    /* Floating plane labels above each board */
+    .plane-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 4px;
+      margin-bottom: 5px;
+      white-space: nowrap;
+    }
+    .plane-label.surface-label {
+      color: #6de880;
+      background: rgba(30, 90, 40, 0.55);
+      border: 1px solid rgba(80, 200, 90, 0.35);
+      text-shadow: 0 0 8px rgba(80, 220, 100, 0.6);
+    }
+    .plane-label.orbit-label {
+      color: #7ec8f0;
+      background: rgba(10, 40, 80, 0.6);
+      border: 1px solid rgba(74, 155, 212, 0.4);
+      text-shadow: 0 0 8px rgba(74, 155, 212, 0.7);
+    }
+
+    /* Enhanced surface square colors */
+    .sq.surface-light.kerbin { background: #2a6e3a; }
+    .sq.surface-dark.kerbin  { background: #1a4226; }
+    .sq.surface-light.mun   { background: #5c5248; }
+    .sq.surface-dark.mun    { background: #342e2a; }
+
+    /* Enhanced orbit square colors */
+    .sq.orbit-light { background: #1a2850; }
+    .sq.orbit-dark  { background: #080e22; }
+
+    /* Space background behind the 3D scene */
+    .scene-bg {
+      position: absolute;
+      /* big enough to bleed behind both boards when they tilt */
+      inset: -120px -60px;
+      border-radius: 18px;
+      pointer-events: none;
+      z-index: -1;
+      background:
+        radial-gradient(1px 1px at 10%  8%, rgba(255,255,255,0.85) 0%, transparent 100%),
+        radial-gradient(1px 1px at 23% 15%, rgba(255,255,255,0.60) 0%, transparent 100%),
+        radial-gradient(2px 2px at 37%  5%, rgba(255,255,255,0.70) 0%, transparent 100%),
+        radial-gradient(1px 1px at 52% 12%, rgba(255,255,255,0.55) 0%, transparent 100%),
+        radial-gradient(1px 1px at 65%  3%, rgba(255,255,255,0.80) 0%, transparent 100%),
+        radial-gradient(2px 2px at 78% 18%, rgba(255,255,255,0.65) 0%, transparent 100%),
+        radial-gradient(1px 1px at 88%  9%, rgba(255,255,255,0.50) 0%, transparent 100%),
+        radial-gradient(1px 1px at  5% 30%, rgba(255,255,255,0.70) 0%, transparent 100%),
+        radial-gradient(1px 1px at 17% 42%, rgba(255,255,255,0.45) 0%, transparent 100%),
+        radial-gradient(2px 2px at 30% 55%, rgba(255,255,255,0.60) 0%, transparent 100%),
+        radial-gradient(1px 1px at 44% 38%, rgba(255,255,255,0.80) 0%, transparent 100%),
+        radial-gradient(1px 1px at 58% 47%, rgba(255,255,255,0.55) 0%, transparent 100%),
+        radial-gradient(1px 1px at 72% 33%, rgba(255,255,255,0.65) 0%, transparent 100%),
+        radial-gradient(2px 2px at 85% 50%, rgba(255,255,255,0.75) 0%, transparent 100%),
+        radial-gradient(1px 1px at 93% 62%, rgba(255,255,255,0.50) 0%, transparent 100%),
+        radial-gradient(1px 1px at  8% 70%, rgba(255,255,255,0.60) 0%, transparent 100%),
+        radial-gradient(1px 1px at 20% 80%, rgba(255,255,255,0.45) 0%, transparent 100%),
+        radial-gradient(2px 2px at 35% 90%, rgba(255,255,255,0.55) 0%, transparent 100%),
+        radial-gradient(1px 1px at 50% 75%, rgba(255,255,255,0.70) 0%, transparent 100%),
+        radial-gradient(1px 1px at 63% 88%, rgba(255,255,255,0.50) 0%, transparent 100%),
+        radial-gradient(1px 1px at 76% 78%, rgba(255,255,255,0.65) 0%, transparent 100%),
+        radial-gradient(1px 1px at 90% 85%, rgba(255,255,255,0.40) 0%, transparent 100%),
+        linear-gradient(180deg, #030810 0%, #060d1a 40%, #04080f 100%);
+    }
+
+    /* Scene wrapper (relative, holds bg + scene-3d together) */
+    .scene-wrap {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 50px 50px;
+      transform-style: preserve-3d;
+    }
+
+    /* Launch / land animation */
+    @keyframes launch {
+      0%   { transform: scale(1)   translateY(0); }
+      50%  { transform: scale(1.4) translateY(-8px); }
+      100% { transform: scale(1)   translateY(0); }
+    }
+    .piece-glyph.launching {
+      animation: launch 0.45s ease-in-out;
+    }
   </style>
 </head>
 <body>
@@ -556,25 +676,32 @@
 
     <!-- Boards -->
     <div class="boards-area">
-      <div class="boards-row">
-        <!-- Surface Board -->
-        <div class="board-container">
-          <div class="board-label">🌍 Layer 0 — Kerbin Surface</div>
-          <div class="board-wrap">
-            <div class="board" id="surfaceBoard"></div>
+      <div class="scene-wrap">
+        <!-- Space background -->
+        <div class="scene-bg"></div>
+
+        <!-- 3D scene: both boards stacked on Z axis -->
+        <div class="scene-3d">
+          <!-- Surface Board — lower Z plane -->
+          <div class="board-plane surface-plane">
+            <div class="plane-label surface-label">🌍 Kerbin Surface</div>
+            <div class="board-wrap">
+              <div class="board" id="surfaceBoard"></div>
+            </div>
           </div>
-        </div>
-        <!-- Orbit Board -->
-        <div class="board-container">
-          <div class="board-label">🛸 Layer 1 — Low Orbit</div>
-          <div class="board-wrap">
-            <div class="board" id="orbitBoard"></div>
+
+          <!-- Orbit Board — higher Z plane (closer to viewer) -->
+          <div class="board-plane orbit-plane">
+            <div class="plane-label orbit-label">🛸 Low Orbit</div>
+            <div class="board-wrap">
+              <div class="board" id="orbitBoard"></div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Legend -->
-      <div style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;font-size:0.65rem;color:var(--muted);letter-spacing:0.08em">
+      <div style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;font-size:0.65rem;color:var(--muted);letter-spacing:0.08em;margin-top:8px">
         <span>👨‍🚀 Kerbal = knight+EVA</span>
         <span>🚀 Rocket = rook</span>
         <span>🛸 Station = immovable relay</span>
@@ -1168,6 +1295,21 @@ function doOrbitMove(move) {
   renderAll();
 }
 
+// ── Launch animation helper ───────────────────────────────────
+function animatePieceLaunch(boardId, idx, callback) {
+  const boardEl = document.getElementById(boardId);
+  if (!boardEl) { callback(); return; }
+  const sqEl = boardEl.querySelector(`[data-idx="${idx}"]`);
+  const glyphEl = sqEl && sqEl.querySelector(".piece-glyph");
+  if (!glyphEl) { callback(); return; }
+  glyphEl.classList.add("launching");
+  glyphEl.addEventListener("animationend", function handler() {
+    glyphEl.removeEventListener("animationend", handler);
+    glyphEl.classList.remove("launching");
+    callback();
+  });
+}
+
 function doLaunch(idx) {
   const p = G.surface[idx];
   if (!p || pieceColor(p) !== G.turn) { setStatusMsg("Select your piece on surface first."); return; }
@@ -1191,16 +1333,18 @@ function doLaunch(idx) {
   const cost = G.upgrades[G.turn].fuel ? 0 : 1;
   if (G.ap < cost) { setStatusMsg(`Not enough AP to launch (need ${cost}).`); return; }
 
-  G.orbit[targetOrbit] = p;
-  G.surface[idx] = null;
-  G.inertia[targetOrbit] = null; // no inertia yet
-  addScience(G.turn, 1, "launch");
-  checkStationRelay(targetOrbit, G.turn);
   playLaunchBlip();
-  logMsg(`${G.turn === "w" ? "W" : "B"}: Launched ${pieceGlyph(p)} to orbit ${coordName(targetOrbit)}`);
-  clearSelection();
-  if (cost > 0) consumeAP(cost);
-  else { renderAll(); updateUI(); }
+  animatePieceLaunch("surfaceBoard", idx, () => {
+    G.orbit[targetOrbit] = p;
+    G.surface[idx] = null;
+    G.inertia[targetOrbit] = null; // no inertia yet
+    addScience(G.turn, 1, "launch");
+    checkStationRelay(targetOrbit, G.turn);
+    logMsg(`${G.turn === "w" ? "W" : "B"}: Launched ${pieceGlyph(p)} to orbit ${coordName(targetOrbit)}`);
+    clearSelection();
+    if (cost > 0) consumeAP(cost);
+    else { renderAll(); updateUI(); }
+  });
 }
 
 function doLand(idx) {
@@ -1223,14 +1367,16 @@ function doLand(idx) {
   }
   if (targetSurface < 0) { setStatusMsg("Surface is full!"); return; }
 
-  G.surface[targetSurface] = p;
-  G.orbit[idx] = null;
-  delete G.inertia[idx];
   playLandBlip();
-  logMsg(`${G.turn === "w" ? "W" : "B"}: Landed ${pieceGlyph(p)} at ${coordName(targetSurface)}`);
-  clearSelection();
-  consumeAP(1);
-  renderAll();
+  animatePieceLaunch("orbitBoard", idx, () => {
+    G.surface[targetSurface] = p;
+    G.orbit[idx] = null;
+    delete G.inertia[idx];
+    logMsg(`${G.turn === "w" ? "W" : "B"}: Landed ${pieceGlyph(p)} at ${coordName(targetSurface)}`);
+    clearSelection();
+    consumeAP(1);
+    renderAll();
+  });
 }
 
 // ── Mission log ───────────────────────────────────────────────

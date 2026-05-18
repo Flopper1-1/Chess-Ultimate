@@ -3013,27 +3013,29 @@
 
     /* Boss → rule mutation: variant applied for the duration of that fight */
     const TR_BOSS_MUTATIONS = {
-      "Eye of Cthulhu":    { variant: "standard",   label: "Standard" },
-      "King Slime":        { variant: "standard",   label: "Standard" },
-      "Torch God":         { variant: "fog_of_war", label: "Fog of War" },
-      "Skeletron":         { variant: "atomic",     label: "Atomic Chess" },
-      "Queen Bee":         { variant: "standard",   label: "Standard" },
-      "Deerclops":         { variant: "fog_of_war", label: "Fog of War" },
-      "Wall of Flesh":     { variant: "atomic",     label: "Atomic Chess" },
-      "The Twins":         { variant: "crazyhouse", label: "Crazyhouse" },
-      "The Destroyer":     { variant: "atomic",     label: "Atomic Chess" },
-      "Skeletron Prime":   { variant: "crazyhouse", label: "Crazyhouse" },
-      "Plantera":          { variant: "fog_of_war", label: "Fog of War" },
-      "Queen Slime":       { variant: "crazyhouse", label: "Crazyhouse" },
-      "Golem":             { variant: "antichess",  label: "Antichess" },
-      "Duke Fishron":      { variant: "atomic",     label: "Atomic Chess" },
-      "Empress of Light":  { variant: "fog_of_war", label: "Fog of War" },
-      "Lunatic Cultist":   { variant: "antichess",  label: "Antichess" },
-      "Solar Pillar":      { variant: "atomic",     label: "Atomic Chess" },
-      "Vortex Pillar":     { variant: "fog_of_war", label: "Fog of War" },
-      "Nebula Pillar":     { variant: "crazyhouse", label: "Crazyhouse" },
-      "Stardust Pillar":   { variant: "antichess",  label: "Antichess" },
-      "Moon Lord":         { variant: "crazyhouse", label: "Crazyhouse — Final Battle" },
+      "Eye of Cthulhu":    { variant: "standard",     label: "Bishop-Knights" },
+      "King Slime":        { variant: "standard",     label: "Slime Reinforcements" },
+      "Torch God":         { variant: "fog_of_war",   label: "Fog of War" },
+      "Skeletron":         { variant: "three_check",  label: "Three-Check (6 checks)" },
+      "Queen Bee":         { variant: "standard",     label: "No Pawn Double Push" },
+      "Deerclops":         { variant: "fog_of_war",   label: "Fog of War" },
+      "Wall of Flesh":     { variant: "standard",     label: "Middle 4 Files Only" },
+      "The Twins":         { variant: "standard",     label: "Mirror Moves" },
+      "The Destroyer":     { variant: "standard",     label: "Rail Gun Rooks" },
+      "Skeletron Prime":   { variant: "atomic",       label: "Atomic 5×5 Blasts" },
+      "Plantera":          { variant: "standard",     label: "Thorn Squares" },
+      "Queen Slime":       { variant: "crazyhouse",   label: "Crazyhouse" },
+      "Golem":             { variant: "standard",     label: "Bot Pieces Have 2HP" },
+      "Duke Fishron":      { variant: "standard",     label: "Tidal Wave" },
+      "Empress of Light":  { variant: "standard",     label: "Day/Night Restriction" },
+      "Lunatic Cultist":   { variant: "chess960",     label: "Chess960 + Cloning" },
+      "Solar Pillar":      { variant: "atomic",       label: "Atomic Chess" },
+      "Vortex Pillar":     { variant: "fog_of_war",   label: "Fog of War" },
+      "Nebula Pillar":     { variant: "crazyhouse",   label: "Crazyhouse" },
+      "Stardust Pillar":   { variant: "antichess",    label: "Antichess" },
+      "Moon Lord":         { variant: "standard",     label: "Grayscale — 30 Move Limit" },
+      "Eater of Worlds":   { variant: "crazyhouse",   label: "Crazyhouse + Bonus Drops" },
+      "Brain of Cthulhu":  { variant: "fog_of_war",   label: "Fog + Invisible Pieces" },
     };
 
     const state_tr = {
@@ -3041,7 +3043,8 @@
       kingLevel: { w: 1, b: 1 },
       combo: { w: 0, b: 0 },
       lastCapturerClass: { w: null, b: null },
-      run: null
+      run: null,
+      bossEffects: {}
     };
 
     function trGetLevel(xp) {
@@ -3205,6 +3208,321 @@
       return TR_BOSS_MUTATIONS[bossName] || { variant: "standard", label: "Standard" };
     }
 
+    /* ══════════════════════════════════════════════════════════
+       TERRARIA BOSS UNIQUE MECHANICS
+    ══════════════════════════════════════════════════════════ */
+
+    function trInitBossEffects() {
+      const run = state_tr.run;
+      const boss = run && run.boss;
+      const be = {};
+      if (boss === "King Slime")        be.moveCount = 0;
+      if (boss === "Eye of Cthulhu")    be.enabled = true;
+      if (boss === "Eater of Worlds")   be.moveCount = 0;
+      if (boss === "Brain of Cthulhu")  { be.moveCount = 0; be.hiddenSquares = []; }
+      if (boss === "Skeletron")         { if (state.game && state.game.position && state.game.position.checksGiven) { state.game.position.checksGiven.w = 0; state.game.position.checksGiven.b = 0; } }
+      if (boss === "Queen Bee")         be.enabled = true;
+      if (boss === "Wall of Flesh")     be.enabled = true;
+      if (boss === "The Destroyer")     be.enabled = true;
+      if (boss === "The Twins")         be.moveCount = 0;
+      if (boss === "Skeletron Prime")   be.enabled = true;
+      if (boss === "Plantera")          { be.moveCount = 0; be.thornedSquares = []; }
+      if (boss === "Golem")             { be.hp = {}; }
+      if (boss === "Duke Fishron")      be.moveCount = 0;
+      if (boss === "Empress of Light")  { be.cycleCount = 0; }
+      if (boss === "Lunatic Cultist")   be.moveCount = 0;
+      if (boss === "Moon Lord") {
+        be.moveCount = 0;
+        be.moveLimit = 30;
+        if (ui.board) ui.board.style.filter = "grayscale(1)";
+      }
+      if (boss === "Moon Lord (Champion)") {
+        be.moveCount = 0;
+        be.moveLimit = 20;
+        if (ui.board) ui.board.style.filter = "grayscale(1)";
+      }
+      state_tr.bossEffects = be;
+    }
+
+    function trClearBossEffects() {
+      state_tr.bossEffects = {};
+      if (ui.board) ui.board.style.filter = "";
+    }
+
+    /* Called after every move. color = color that just moved. */
+    function trApplyBossEffects(color, moveCount, lastMove) {
+      if (!trIsRunMode()) return;
+      const run = state_tr.run;
+      const boss = run && run.boss;
+      if (!boss) return;
+      const be = state_tr.bossEffects;
+      const game = state.game;
+      if (!game) return;
+      const board = game.position.board;
+      const botColor = state.botColor;
+      const playerColor = state.playerColor;
+
+      if (boss === "King Slime" && color === botColor) {
+        be.moveCount = (be.moveCount || 0) + 1;
+        if (be.moveCount % 5 === 0) {
+          const backRanks = botColor === "b" ? [0, 1, 2] : [5, 6, 7];
+          const empties = [];
+          for (const r of backRanks) {
+            for (let f = 0; f < 8; f++) {
+              const sq = r * 8 + f;
+              if (!board[sq]) empties.push(sq);
+            }
+          }
+          if (empties.length > 0) {
+            const sq = empties[Math.floor(Math.random() * empties.length)];
+            board[sq] = botColor === "b" ? "p" : "P";
+            renderBoard();
+          }
+        }
+      }
+
+      if (boss === "Eater of Worlds" && color === botColor) {
+        be.moveCount = (be.moveCount || 0) + 1;
+        if (be.moveCount % 3 === 0 && game.position.reserves) {
+          const reserve = game.position.reserves[botColor];
+          const types = Object.keys(reserve).filter(t => reserve[t] > 0);
+          if (types.length > 0) {
+            const t = types[Math.floor(Math.random() * types.length)];
+            reserve[t] += 1;
+          }
+        }
+      }
+
+      if (boss === "Brain of Cthulhu" && color === botColor) {
+        be.moveCount = (be.moveCount || 0) + 1;
+        be.hiddenSquares = (be.hiddenSquares || []).filter(h => h.turnsLeft > 0).map(h => ({ ...h, turnsLeft: h.turnsLeft - 1 }));
+        if (be.moveCount % 4 === 0) {
+          const playerSquares = [];
+          for (let sq = 0; sq < 64; sq++) {
+            const p = board[sq];
+            if (p && colorOf(p) === playerColor && pieceType(p) !== "k") playerSquares.push(sq);
+          }
+          if (playerSquares.length > 0) {
+            const sq = playerSquares[Math.floor(Math.random() * playerSquares.length)];
+            if (!be.hiddenSquares.find(h => h.sq === sq)) {
+              be.hiddenSquares.push({ sq, turnsLeft: 2 });
+              renderBoard();
+            }
+          }
+        }
+      }
+
+      if (boss === "Plantera") {
+        be.moveCount = (be.moveCount || 0) + 1;
+        if (be.moveCount % 6 === 0) {
+          const empties = [];
+          const thornSet = new Set((be.thornedSquares || []).map(t => t.sq));
+          for (let sq = 0; sq < 64; sq++) {
+            if (!board[sq] && !thornSet.has(sq)) empties.push(sq);
+          }
+          if (empties.length > 0) {
+            const sq = empties[Math.floor(Math.random() * empties.length)];
+            be.thornedSquares = be.thornedSquares || [];
+            be.thornedSquares.push({ sq });
+            renderBoard();
+          }
+        }
+      }
+
+      if (boss === "Duke Fishron") {
+        be.moveCount = (be.moveCount || 0) + 1;
+        if (be.moveCount % 8 === 0) {
+          for (let f = 0; f < 8; f++) {
+            const sq = 3 * 8 + f;
+            const piece = board[sq];
+            if (piece && pieceType(piece) === "p") {
+              const dir = colorOf(piece) === "w" ? 1 : -1;
+              const targetRank = 3 + dir;
+              if (targetRank >= 0 && targetRank < 8 && !board[targetRank * 8 + f]) {
+                board[targetRank * 8 + f] = piece;
+                board[sq] = null;
+              }
+            }
+          }
+          renderBoard();
+        }
+      }
+
+      if (boss === "Empress of Light") {
+        be.cycleCount = (be.cycleCount || 0) + 1;
+      }
+
+      if (boss === "Lunatic Cultist" && color === botColor) {
+        be.moveCount = (be.moveCount || 0) + 1;
+        if (be.moveCount % 10 === 0) {
+          const botPieceSquares = [];
+          for (let sq = 0; sq < 64; sq++) {
+            const p = board[sq];
+            if (p && colorOf(p) === botColor && pieceType(p) !== "k") botPieceSquares.push(sq);
+          }
+          if (botPieceSquares.length > 0) {
+            const src = botPieceSquares[Math.floor(Math.random() * botPieceSquares.length)];
+            const srcRank = rankOf(src);
+            const srcFile = fileOf(src);
+            const nearby = [];
+            for (let dr = -2; dr <= 2; dr++) {
+              for (let df = -2; df <= 2; df++) {
+                if (dr === 0 && df === 0) continue;
+                const nr = srcRank + dr;
+                const nf = srcFile + df;
+                if (inBounds(nf, nr) && !board[nr * 8 + nf]) nearby.push(nr * 8 + nf);
+              }
+            }
+            if (nearby.length > 0) {
+              const dest = nearby[Math.floor(Math.random() * nearby.length)];
+              board[dest] = board[src];
+              renderBoard();
+            }
+          }
+        }
+      }
+
+      if ((boss === "Moon Lord" || boss === "Moon Lord (Champion)") && color === playerColor) {
+        be.moveCount = (be.moveCount || 0) + 1;
+        const limit = be.moveLimit || 30;
+        if (be.moveCount >= limit && !game.isGameOver() && !state_tr.run.resolvedLevel) {
+          const botWins = botColor === "w" ? "White wins" : "Black wins";
+          trHandleRunGameOver({ over: true, result: `${botWins} by Moon Lord's curse (move limit).` });
+        }
+      }
+
+      if (boss === "The Twins" && color === playerColor && lastMove) {
+        be.moveCount = (be.moveCount || 0) + 1;
+        const mirrorTo = rankOf(lastMove.to) * 8 + (7 - fileOf(lastMove.to));
+        const mirrorFrom = rankOf(lastMove.from) * 8 + (7 - fileOf(lastMove.from));
+        if (mirrorFrom !== mirrorTo) {
+          const botPiece = board[mirrorFrom];
+          if (botPiece && colorOf(botPiece) === botColor && !board[mirrorTo]) {
+            board[mirrorTo] = botPiece;
+            board[mirrorFrom] = null;
+            renderBoard();
+          }
+        }
+      }
+    }
+
+    /* Filters legal moves for human player based on active boss mechanics. */
+    function trFilterLegalMoves(moves) {
+      if (!trIsRunMode()) return moves;
+      const run = state_tr.run;
+      const boss = run && run.boss;
+      if (!boss) return moves;
+      const be = state_tr.bossEffects;
+      const game = state.game;
+      const playerColor = state.playerColor;
+
+      if (boss === "Queen Bee") {
+        moves = moves.filter(mv => {
+          if (!mv.piece) return true;
+          if (pieceType(mv.piece) !== "p" || colorOf(mv.piece) !== playerColor) return true;
+          const fromRank = rankOf(mv.from);
+          const toRank = rankOf(mv.to);
+          const dist = Math.abs(toRank - fromRank);
+          return dist <= 1;
+        });
+      }
+
+      if (boss === "Wall of Flesh") {
+        moves = moves.filter(mv => {
+          const fromFile = fileOf(mv.from);
+          const toFile = fileOf(mv.to);
+          return fromFile >= 2 && fromFile <= 5 && toFile >= 2 && toFile <= 5;
+        });
+      }
+
+      if (boss === "Empress of Light") {
+        const cycle = (be.cycleCount || 0) % 9;
+        const isNight = cycle >= 5;
+        if (!isNight) {
+          const hasCheck = moves.some(mv => {
+            const undo = game.applyMove(mv);
+            const inChk = game.isInCheck(state.botColor);
+            game.undoMove(undo);
+            return inChk;
+          });
+          const hasCapture = moves.some(mv => mv.captured);
+          if (hasCheck || hasCapture) {
+            moves = moves.filter(mv => {
+              if (mv.captured) return true;
+              const undo = game.applyMove(mv);
+              const inChk = game.isInCheck(state.botColor);
+              game.undoMove(undo);
+              return inChk;
+            });
+          } else {
+            moves = [];
+          }
+        }
+      }
+
+      if (boss === "Plantera" && be.thornedSquares && be.thornedSquares.length > 0) {
+        const thornSet = new Set(be.thornedSquares.map(t => t.sq));
+        moves = moves.filter(mv => !thornSet.has(mv.to));
+      }
+
+      return moves;
+    }
+
+    /* Returns extra legal moves injected by boss mechanics for the bot. */
+    function trBotBishopKnightMoves(game, botColor) {
+      const board = game.position.board;
+      const knightDeltas = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+      const extras = [];
+      for (let sq = 0; sq < 64; sq++) {
+        const p = board[sq];
+        if (!p || colorOf(p) !== botColor || pieceType(p) !== "b") continue;
+        const r = rankOf(sq);
+        const f = fileOf(sq);
+        for (const [dr, df] of knightDeltas) {
+          const nr = r + dr;
+          const nf = f + df;
+          if (!inBounds(nf, nr)) continue;
+          const dest = nr * 8 + nf;
+          const target = board[dest];
+          if (target && colorOf(target) === botColor) continue;
+          extras.push({ from: sq, to: dest, piece: p, captured: target || null });
+        }
+      }
+      return extras;
+    }
+
+    /* The Destroyer: bot rooks can pass through one friendly piece (rail gun). */
+    function trDestroyerRailMoves(game, botColor) {
+      const board = game.position.board;
+      const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+      const extras = [];
+      for (let sq = 0; sq < 64; sq++) {
+        const p = board[sq];
+        if (!p || colorOf(p) !== botColor || pieceType(p) !== "r") continue;
+        for (const [dr, df] of dirs) {
+          let r = rankOf(sq) + dr;
+          let f = fileOf(sq) + df;
+          let skipped = false;
+          while (inBounds(f, r)) {
+            const dest = r * 8 + f;
+            const target = board[dest];
+            if (target) {
+              if (colorOf(target) === botColor) {
+                if (!skipped) { skipped = true; r += dr; f += df; continue; }
+                else break;
+              }
+              extras.push({ from: sq, to: dest, piece: p, captured: target });
+              break;
+            } else if (skipped) {
+              extras.push({ from: sq, to: dest, piece: p, captured: null });
+            }
+            r += dr; f += df;
+          }
+        }
+      }
+      return extras;
+    }
+
     function trSetPiece(board, square, color, type) {
       board[square] = color === "w" ? type.toUpperCase() : type;
     }
@@ -3282,6 +3600,8 @@
       state.lastMoveTrail = null;
       state.gameOverSoundPlayed = false;
       trApplyRunArmies();
+      trClearBossEffects();
+      trInitBossEffects();
 
       /* Boost music tension at start of boss fight */
       if (run.boss) {
@@ -3478,6 +3798,7 @@
         run.wins += 1;
         run.level += 1;
         run.silver += run.boss ? 12 + trSilverBonus() : 4 + trSilverBonus();
+        trClearBossEffects();
         if (run.boss) {
           run.defeatedBosses.push(run.boss);
           const tier = Math.min(9, Math.max(1, Math.ceil((run.level - 1) / 3)));
@@ -3490,9 +3811,13 @@
         run.lastResult = run.boss ? `Boss defeated: ${run.boss}` : "Victory. Shop before the next board.";
       } else if (botWon) {
         run.lives = Math.max(0, run.lives - 1);
+        if (run.level > 10) {
+          run.silver = Math.max(0, run.silver - 5);
+        }
         run.lastResult = run.lives > 0 ? "Life lost. Shop, then retry." : "Run over. Start a new run.";
       } else {
         run.lastResult = "Draw. No life lost.";
+        trClearBossEffects();
       }
       run.botSilver += 10 + run.level;
       trBotAutoShop();
@@ -5315,10 +5640,12 @@
         }
 
         if (this.variant === "three_check") {
-          if (this.position.checksGiven.w >= 3) {
+          const checkLimit = (typeof trIsRunMode === "function" && trIsRunMode()
+            && state_tr && state_tr.run && state_tr.run.boss === "Skeletron") ? 6 : 3;
+          if (this.position.checksGiven.w >= checkLimit) {
             return { over: true, result: "White wins by delivering three checks." };
           }
-          if (this.position.checksGiven.b >= 3) {
+          if (this.position.checksGiven.b >= checkLimit) {
             return { over: true, result: "Black wins by delivering three checks." };
           }
         }
@@ -5508,7 +5835,20 @@
 
         if (this.variant === "atomic" && wasCapture) {
           const center = move.enPassant ? move.capturedSquare : move.to;
-          const blast = [center, ...adjacentSquares(center)];
+          const skPrime = trIsRunMode && trIsRunMode() && state_tr.run && state_tr.run.boss === "Skeletron Prime";
+          const blastRange = skPrime ? 2 : 1;
+          const blastSquares = [];
+          const cr = rankOf(center);
+          const cf = fileOf(center);
+          for (let dr = -blastRange; dr <= blastRange; dr++) {
+            for (let df = -blastRange; df <= blastRange; df++) {
+              if (dr === 0 && df === 0) { blastSquares.push(center); continue; }
+              const nr = cr + dr;
+              const nf = cf + df;
+              if (inBounds(nf, nr)) blastSquares.push(nr * 8 + nf);
+            }
+          }
+          const blast = blastSquares;
           for (const sq of blast) {
             const piece = board[sq];
             if (!piece) continue;
@@ -6278,12 +6618,33 @@
     }
 
     function chooseBotMove(game, elo) {
-      const legalMoves = game.generateLegalMoves();
+      let legalMoves = game.generateLegalMoves();
+      const botColor = game.position.turn;
+      if (trIsRunMode()) {
+        const run = state_tr.run;
+        const boss = run && run.boss;
+        if (boss === "Eye of Cthulhu" && botColor === state.botColor) {
+          legalMoves = legalMoves.concat(trBotBishopKnightMoves(game, botColor));
+        }
+        if (boss === "The Destroyer" && botColor === state.botColor) {
+          const railGunMoves = trDestroyerRailMoves(game, botColor);
+          legalMoves = legalMoves.concat(railGunMoves);
+        }
+        if (boss === "Wall of Flesh") {
+          legalMoves = legalMoves.filter(mv => {
+            const ff = fileOf(mv.from);
+            const tf = fileOf(mv.to);
+            return ff >= 2 && ff <= 5 && tf >= 2 && tf <= 5;
+          });
+        }
+        if (boss === "Plantera") {
+          const thornSet = new Set((state_tr.bossEffects.thornedSquares || []).map(t => t.sq));
+          if (thornSet.size > 0) legalMoves = legalMoves.filter(mv => !thornSet.has(mv.to));
+        }
+      }
       if (legalMoves.length === 0) {
         return null;
       }
-
-      const botColor = game.position.turn;
       if (game.variant === "antichess") {
         const sorted = legalMoves
           .map((move) => ({ move, score: scoreAntichessBotMove(game, move, botColor) }))
@@ -7687,7 +8048,7 @@
       const visibilityColor = activeHumanColor();
       const fogVisible = isVariant("fog_of_war") ? visibleSquaresForColor(game, visibilityColor) : null;
 
-      const legalMoves = reviewing ? [] : game.generateLegalMoves();
+      const legalMoves = reviewing ? [] : trFilterLegalMoves(game.generateLegalMoves());
       state.lastLegalMoves = legalMoves;
       const selected = state.selectedSquare;
       const targets = selected == null ? [] : legalMoves.filter((mv) => mv.from === selected);
@@ -7719,6 +8080,22 @@
               piece = null;
             }
           }
+          /* Brain of Cthulhu: some player pieces become invisible */
+          if (trIsRunMode() && state_tr.run && state_tr.run.boss === "Brain of Cthulhu"
+              && piece && colorOf(piece) === state.playerColor) {
+            const hidden = state_tr.bossEffects.hiddenSquares || [];
+            if (hidden.some(h => h.sq === index && h.turnsLeft > 0)) {
+              piece = null;
+            }
+          }
+          /* Wall of Flesh: shade files outside c-f */
+          const isWoF = trIsRunMode() && state_tr.run && state_tr.run.boss === "Wall of Flesh";
+          if (isWoF && (boardFile < 2 || boardFile > 5)) {
+            /* tint handled via class added below */
+          }
+          /* Plantera: mark thorned squares */
+          const thornedSqs = (trIsRunMode() && state_tr.run && state_tr.run.boss === "Plantera"
+            && state_tr.bossEffects.thornedSquares) ? new Set(state_tr.bossEffects.thornedSquares.map(t => t.sq)) : null;
 
           const square = document.createElement("button");
           square.className = `square ${(dr + df) % 2 === 0 ? "light" : "dark"}`;
@@ -7733,6 +8110,23 @@
           // Fog of War: darken squares hidden from current player
           if (isFog && !fogVisible.has(index)) {
             square.classList.add("fog-hidden");
+          }
+
+          // Wall of Flesh: dim files outside c-f
+          if (isWoF && (boardFile < 2 || boardFile > 5)) {
+            square.style.opacity = "0.35";
+            square.style.pointerEvents = "none";
+          }
+
+          // Plantera: show thorned squares
+          if (thornedSqs && thornedSqs.has(index)) {
+            square.classList.add("thorned-square");
+            const thorn = document.createElement("span");
+            thorn.className = "piece-glyph";
+            thorn.textContent = "🌿";
+            thorn.style.cssText = "position:absolute;font-size:1.1em;opacity:0.85;pointer-events:none;";
+            square.style.position = "relative";
+            square.appendChild(thorn);
           }
 
           if (selected === index) {
@@ -9017,9 +9411,27 @@
         clearCheckFx();
         await animateMove(move);
         const undo = game.applyMove(move);
-        const capturedPiece = undo.capturedPiece || (typeof move.captured === "string" ? move.captured : null);
-        const didCapture = Boolean(capturedPiece || move.captured);
+        let capturedPiece = undo.capturedPiece || (typeof move.captured === "string" ? move.captured : null);
+        let didCapture = Boolean(capturedPiece || move.captured);
         move.capturedPiece = capturedPiece;
+
+        /* Golem: bot pieces have 2HP — first capture reduces HP but piece survives */
+        if (trIsRunMode() && state_tr.run && state_tr.run.boss === "Golem"
+            && capturedPiece && colorOf(capturedPiece) === state.botColor) {
+          const be = state_tr.bossEffects;
+          be.hp = be.hp || {};
+          const prevSq = move.to;
+          const curHp = be.hp[prevSq] !== undefined ? be.hp[prevSq] : 2;
+          if (curHp > 1) {
+            be.hp[prevSq] = curHp - 1;
+            game.position.board[prevSq] = capturedPiece;
+            capturedPiece = null;
+            didCapture = false;
+            move.capturedPiece = null;
+          } else {
+            delete be.hp[prevSq];
+          }
+        }
         undo.annotation = annotation;
         undo.annotatedText = formatAnnotated(move, annotation);
 
@@ -9073,6 +9485,7 @@
         }
         trHandleMoveEconomy(move, annotation, color, actor, checkNow, statusAfterMove, capturedPiece);
         trHandleRunGameOver(statusAfterMove);
+        if (!statusAfterMove.over) trApplyBossEffects(color, game.history ? game.history.length : 0, move);
         if (checkNow && window._achOnCheck) window._achOnCheck();
         if (window.ChessUltimateProgress) {
           const progressPayload = {

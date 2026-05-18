@@ -1,6 +1,6 @@
 {
   "name": "chess-ultimate",
-  "version": "1.5.16",
+  "version": "1.5.17",
   "description": "Chess Ultimate — Battle Edition, Joker's Gambit, Wilderness, Terraria Chess & Kerbal Space Chess",
   "main": "main.js",
   "config": {
